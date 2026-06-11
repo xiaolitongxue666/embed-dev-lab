@@ -1,0 +1,87 @@
+{
+  "tools": [
+    {
+      "id": "cmake",
+      "command": "cmake",
+      "required": true,
+      "windows_paths": [
+        "C:/Program Files/CMake/bin",
+        "C:/Program Files (x86)/CMake/bin"
+      ],
+      "user_path": true,
+      "bashrc": true
+    },
+    {
+      "id": "ninja",
+      "command": "ninja",
+      "required": true,
+      "windows_paths": [
+        "C:/ProgramData/chocolatey/bin",
+        "C:/Users/${USER}/AppData/Local/Microsoft/WinGet/Links"
+      ],
+      "user_path": true,
+      "bashrc": true
+    },
+    {
+      "id": "arm-gcc",
+      "command": "arm-none-eabi-gcc",
+      "required": true,
+      "windows_glob": "C:/Program Files/Arm GNU Toolchain arm-none-eabi/*/bin",
+      "windows_globs": [
+        "C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/*/bin"
+      ],
+      "user_path": true,
+      "bashrc": true
+    },
+    {
+      "id": "clangd",
+      "command": "clangd",
+      "required": true,
+      "windows_paths": [
+        "C:/Program Files/LLVM/bin"
+      ],
+      "user_path": true,
+      "bashrc": true
+    },
+    {
+      "id": "probe-rs",
+      "command": "probe-rs",
+      "required": true,
+      "windows_paths": [
+        "${USERPROFILE}/.cargo/bin"
+      ],
+      "user_path": true,
+      "bashrc": true
+    },
+    {
+      "id": "openocd",
+      "command": "openocd",
+      "required": false,
+      "windows_paths": [
+        "${HOME}/.local/share/embed-dev-lab/openocd/bin"
+      ],
+      "user_path": true,
+      "bashrc": true
+    },
+    {
+      "id": "cursor",
+      "command": "cursor",
+      "required": false,
+      "windows_paths": [
+        "${LOCALAPPDATA}/Programs/cursor/resources/app/bin"
+      ],
+      "user_path": false,
+      "bashrc": true
+    },
+    {
+      "id": "code",
+      "command": "code",
+      "required": false,
+      "windows_paths": [
+        "${LOCALAPPDATA}/Programs/Microsoft VS Code/bin"
+      ],
+      "user_path": false,
+      "bashrc": true
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build F103",
+      "type": "shell",
+      "command": "./scripts/build.sh f103-blink",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "C:/Program Files/Git/bin/bash.exe",
+          "args": ["-l", "-c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build and Flash F103",
+      "type": "shell",
+      "command": "./scripts/build.sh f103-blink build && ./scripts/build.sh f103-blink flash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "C:/Program Files/Git/bin/bash.exe",
+          "args": ["-l", "-c"]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash OpenOCD",
+      "type": "shell",
+      "command": "./scripts/build.sh f103-blink flash-openocd",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "C:/Program Files/Git/bin/bash.exe",
+          "args": ["-l", "-c"]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Env Check",
+      "type": "shell",
+      "command": "./scripts/env-check.sh",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "C:/Program Files/Git/bin/bash.exe",
+          "args": ["-l", "-c"]
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}

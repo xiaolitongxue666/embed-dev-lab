@@ -1,0 +1,9 @@
+{
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "cmake.usePresets": "always",
+  "cmake.configureOnOpen": false,
+  "cmake.environment": {},
+  "clangd.checkUpdates": false,
+  "clangd.path": "clangd",
+  "C_Cpp.intelliSenseEngine": "disabled"
+}

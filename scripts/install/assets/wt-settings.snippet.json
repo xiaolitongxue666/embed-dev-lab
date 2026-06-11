@@ -1,0 +1,11 @@
+{
+  "defaultProfile": "Git Bash",
+  "profiles": {
+    "Git Bash": {
+      "path": "C:/Program Files/Git/bin/bash.exe",
+      "args": ["-l"],
+      "icon": "terminal-bash",
+      "name": "Git Bash"
+    }
+  }
+}

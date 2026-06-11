@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "F103 Probe-rs Debug",
+      "type": "probe-rs-debug",
+      "request": "launch",
+      "preLaunchTask": "Build F103",
+      "cwd": "${workspaceFolder}",
+      "chip": "STM32F103C8Tx",
+      "flashingConfig": {
+        "flashingEnabled": true,
+        "haltAfterReset": true,
+        "formatOptions": {
+          "binaryFormat": "elf"
+        }
+      },
+      "coreConfigs": [
+        {
+          "programBinary": "${workspaceFolder}/modules/f103-blink/build/f103-blink.elf"
+        }
+      ],
+      "connectUnderReset": true
+    },
+    {
+      "name": "F103 OpenOCD Debug",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/modules/f103-blink/build/f103-blink.elf",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32f1x.cfg"
+      ],
+      "preLaunchTask": "Build F103"
+    }
+  ]
+}

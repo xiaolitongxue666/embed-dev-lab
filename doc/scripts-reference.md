@@ -172,6 +172,25 @@ flash-openocd → OpenOCD 烧录 .hex
 
 ---
 
+### fetch-stm32cubef1.sh — STM32CubeF1 固件包
+
+获取 ST **STM32CubeF1**（CMSIS/HAL/例程）至 `vendor-pack/STM32CubeF1/`。  
+GitHub「Download ZIP」不含 submodule；请用 **ST 官网 ZIP** 或脚本的 **`--clone`**。
+
+```bash
+./scripts/fetch-stm32cubef1.sh
+./scripts/fetch-stm32cubef1.sh --from-zip vendor-pack/STM32CubeF1/archives/STM32CubeF1-1.8.6.zip
+./scripts/fetch-stm32cubef1.sh --clone
+./scripts/fetch-stm32cubef1.sh --verify-only
+./scripts/fetch-stm32cubef1.sh --force
+```
+
+- 默认：若 `archives/*.zip` 存在则解压，否则 `git clone --recursive` v1.8.6  
+- 验证：`Drivers/CMSIS/.../startup_stm32f103xb.s` 与 `system_stm32f1xx.c`（旧版为 `system_stm32f10x.c`）  
+- 详见 [vendor-pack/STM32CubeF1/README.md](../vendor-pack/STM32CubeF1/README.md)
+
+---
+
 ### install-mcp-skills.sh — MCP 与项目 Skill
 
 安装 **embedded-debugger-mcp**（cargo 构建 + probe-rs）与 **embed-dev-lab** Skill。详见 [mcp-skills.md](mcp-skills.md)。

@@ -34,7 +34,7 @@ ERROR.md
 Thumbs.db
 Desktop.ini
 
-# --- 编译中间文件 / 二进制（模块 build/ 与 install_packet 驱动包见下方例外）---
+# --- 编译中间文件 / 二进制（模块 build/ 与 vendor-pack 驱动包见下方例外）---
 *.d
 *.o
 *.ko
@@ -71,44 +71,52 @@ Mkfile.old
 dkms.conf
 *.dwo
 
-# 可执行文件（保留 install_packet 内 ST-Link WinUSB 安装器）
+# 可执行文件（保留 vendor-pack 内 ST-Link WinUSB 安装器）
 *.exe
-!install_packet/STLink/STLink/USBDriver/
-!install_packet/STLink/STLink/USBDriver/**
-!install_packet/STLink/STLink/USBDriver/dpinst_amd64.exe
-!install_packet/STLink/STLink/USBDriver/dpinst_x86.exe
-!install_packet/STLink/STLink/USBDriver/amd64/
-!install_packet/STLink/STLink/USBDriver/amd64/**
-!install_packet/STLink/STLink/USBDriver/x86/
-!install_packet/STLink/STLink/USBDriver/x86/**
+!vendor-pack/STLink/STLink/USBDriver/
+!vendor-pack/STLink/STLink/USBDriver/**
+!vendor-pack/STLink/STLink/USBDriver/dpinst_amd64.exe
+!vendor-pack/STLink/STLink/USBDriver/dpinst_x86.exe
+!vendor-pack/STLink/STLink/USBDriver/amd64/
+!vendor-pack/STLink/STLink/USBDriver/amd64/**
+!vendor-pack/STLink/STLink/USBDriver/x86/
+!vendor-pack/STLink/STLink/USBDriver/x86/**
 
 # 动态库（保留 USBDriver 内 WinUSB 安装依赖）
 *.dll
-!install_packet/STLink/STLink/USBDriver/amd64/*.dll
-!install_packet/STLink/STLink/USBDriver/x86/*.dll
+!vendor-pack/STLink/STLink/USBDriver/amd64/*.dll
+!vendor-pack/STLink/STLink/USBDriver/x86/*.dll
 
-# --- install_packet：厂商驱动 + 板级参考（本地资料，不全量进库）---
+# --- vendor-pack：厂商驱动 + 板级参考 + Cube 固件（本地资料，不全量进库）---
 #
 # 目录说明：
-#   install_packet/STLink/              ST-Link WinUSB 驱动（脚本依赖 USBDriver/，可提交）
-#   install_packet/STM32F103C8T6核心板/  核心板 MDK 例程、PCB 等参考（~360MB，仅本地）
-#   install_packet/*.zip / *.7z         原始压缩包，本地解压后使用
+#   vendor-pack/STLink/              ST-Link WinUSB 驱动（脚本依赖 USBDriver/，可提交）
+#   vendor-pack/STM32F103C8T6核心板/  核心板 MDK 例程、PCB 等参考（~360MB，仅本地）
+#   vendor-pack/STM32CubeF1/         ST 官方 F1 固件包（fetch 脚本，仅 README 提交）
+#   vendor-pack/*.zip / *.7z         原始压缩包，本地解压后使用
 #
-# 参考：doc/probe-rs.md、scripts/install/stlink-winusb-windows.sh
+# 参考：doc/probe-rs.md、scripts/install/stlink-winusb-windows.sh、scripts/fetch-stm32cubef1.sh
 
 # 核心板参考包（体积大，与仓库 demo 无构建依赖）
-install_packet/STM32F103C8T6核心板/
+vendor-pack/STM32F103C8T6核心板/
+
+# STM32CubeF1 固件包（体积大，本地 fetch）
+vendor-pack/STM32CubeF1/archives/
+vendor-pack/STM32CubeF1/archives/**
+vendor-pack/STM32CubeF1/STM32CubeF1-*/
+vendor-pack/STM32CubeF1/STM32CubeF1/
+!vendor-pack/STM32CubeF1/README.md
 
 # 厂商原始压缩包
-install_packet/*.zip
-install_packet/*.7z
-install_packet/*.rar
+vendor-pack/*.zip
+vendor-pack/*.7z
+vendor-pack/*.rar
 
 # ST-Link 包内非 WinUSB 脚本所需文件
-install_packet/STLink/STLink/Error.log
-install_packet/STLink/STLink/*.dll
-install_packet/STLink/STLink/*.exe
-install_packet/STLink/STLink/*.bin
+vendor-pack/STLink/STLink/Error.log
+vendor-pack/STLink/STLink/*.dll
+vendor-pack/STLink/STLink/*.exe
+vendor-pack/STLink/STLink/*.bin
 
 # --- ST 官方 PDF（本地 fetch，不全量进库）---
 doc/reference/stm32f103/pdf/*.pdf

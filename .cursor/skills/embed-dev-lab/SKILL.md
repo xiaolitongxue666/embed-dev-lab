@@ -39,7 +39,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 ## Windows ST-Link
 
 - WinUSB：`./scripts/install/stlink-winusb-windows.sh --check-only` / `--install`
-- 驱动包：`install_packet/STLink/STLink/USBDriver/`
+- 驱动包：`vendor-pack/STLink/STLink/USBDriver/`
 - `probe-rs list` 应见 `STLink V2 -- 0483:3748`
 
 ## embedded-debugger MCP 使用约束

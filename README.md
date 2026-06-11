@@ -112,7 +112,7 @@ embed-dev-lab/
 │   └── skills/embed-dev-lab/       # Cursor Skill 注册
 ├── .vscode/                        # launch.json / tasks.json / extensions.json
 ├── AGENTS.md                       # Codex 等无 MCP Agent 的 Skill 摘要
-├── install_packet/                 # ST-Link WinUSB 驱动、核心板资料（gitignore）
+├── vendor-pack/                 # ST-Link WinUSB 驱动、核心板资料（gitignore）
 ├── .tools/                         # MCP cargo 构建缓存（gitignore）
 ├── PROJECT_MEMORY.md               # 维护速查（Agent / 维护者）
 └── README.md
@@ -292,7 +292,7 @@ Windows 上 probe-rs 需要 ST-Link **Debug** 接口 **WinUSB**：
 probe-rs list
 ```
 
-驱动包：`install_packet/STLink/STLink/USBDriver/`  
+驱动包：`vendor-pack/STLink/STLink/USBDriver/`  
 完整说明：[doc/probe-rs.md](doc/probe-rs.md)
 
 ---

@@ -1,6 +1,6 @@
 # f103-blink 模块
 
-**STM32F103C8T6** 核心板 **PC13 LED 闪烁** demo，纯寄存器实现，对齐厂商例程 `install_packet/.../核心板测试程序(PC13闪烁)`。
+**STM32F103C8T6** 核心板 **PC13 LED 闪烁** demo，纯寄存器实现，对齐厂商例程 `vendor-pack/.../核心板测试程序(PC13闪烁)`。
 
 ## 目录结构
 
@@ -90,7 +90,7 @@ PC13 属于 **Backup 域** GPIO，配置前必须：
 |------|------|
 | LED 引脚 | PC13 |
 | SWD | SWDIO=PA13, SWCLK=PA14 |
-| 厂商例程 | `install_packet/STM32F103C8T6核心板/.../核心板测试程序(PC13闪烁)/` |
+| 厂商例程 | `vendor-pack/STM32F103C8T6核心板/.../核心板测试程序(PC13闪烁)/` |
 
 ## 调试
 

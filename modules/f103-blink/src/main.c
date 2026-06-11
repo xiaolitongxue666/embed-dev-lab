@@ -3,7 +3,7 @@
  * @brief   STM32F103C8T6 核心板 PC13 LED 闪烁（纯寄存器实现）
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
- * @ref     install_packet/.../核心板测试程序(PC13闪烁)/USER/main.c
+ * @ref     vendor-pack/.../核心板测试程序(PC13闪烁)/USER/main.c
  *
  * @note    本模块无串口/printf；若后续添加日志，输出语言统一为英文。
  *          时钟初始化见 system_stm32f10x.c（Reset_Handler 中 SystemInit 调用）。

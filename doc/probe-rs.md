@@ -63,7 +63,7 @@ probe-rs 需要 ST-Link **Debug 接口** 绑定 **WinUSB**（不是仅 ST 官方
 ./scripts/install/stlink-winusb-windows.sh --install   # UAC 管理员
 ```
 
-驱动文件目录：`install_packet/STLink/STLink/USBDriver/`
+驱动文件目录：`vendor-pack/STLink/STLink/USBDriver/`
 
 手动步骤：
 

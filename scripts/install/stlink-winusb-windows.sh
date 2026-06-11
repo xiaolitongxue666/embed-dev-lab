@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # Windows ST-Link WinUSB 驱动（probe-rs 需要 Debug 接口 WinUSB）
-# 驱动包：install_packet/STLink/STLink/USBDriver/
+# 驱动包：vendor-pack/STLink/STLink/USBDriver/
 # Linux/macOS：无操作
 # 用法: ./scripts/install/stlink-winusb-windows.sh [--check-only|--install]
 # -----------------------------------------------------------------------------
@@ -18,7 +18,7 @@ source "$_STLINK_ROOT/scripts/lib/os-detect.sh"
 # shellcheck source=../lib/paths.sh
 source "$_STLINK_ROOT/scripts/lib/paths.sh"
 
-STLINK_WINUSB_DIR="$_STLINK_ROOT/install_packet/STLink/STLink/USBDriver"
+STLINK_WINUSB_DIR="$_STLINK_ROOT/vendor-pack/STLink/STLink/USBDriver"
 STLINK_WINUSB_INSTALL_BAT="$STLINK_WINUSB_DIR/stlink_winusb_install.bat"
 STLINK_WINUSB_UNINSTALL_BAT="$STLINK_WINUSB_DIR/stlink_winusb_uninstall.bat"
 

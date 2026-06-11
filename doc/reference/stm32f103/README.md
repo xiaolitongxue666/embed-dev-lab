@@ -2,11 +2,12 @@
 
 ST 官方 **Datasheet（DS5319）** 与 **Reference Manual（RM0008）**，供 `modules/f103-blink` 及后续 F103 模块查阅。
 
-## 与 install_packet 的区别
+## 与 vendor-pack 的区别
 
 | 位置 | 内容 |
 |------|------|
-| [`install_packet/STM32F103C8T6核心板/`](../../../install_packet/) | 板级 MDK 例程、PCB、厂商测试程序（本地资料） |
+| [`vendor-pack/STM32F103C8T6核心板/`](../../../vendor-pack/) | 板级 MDK 例程、PCB、厂商测试程序（本地资料） |
+| [`vendor-pack/STM32CubeF1/`](../../../vendor-pack/STM32CubeF1/) | ST 官方 F1 固件包 CMSIS/HAL（`fetch-stm32cubef1.sh`） |
 | **本目录** | ST 官网 Datasheet / Reference Manual（权威寄存器与电气特性） |
 
 ## 文档清单

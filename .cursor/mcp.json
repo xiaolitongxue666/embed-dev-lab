@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "embedded-debugger": {
+      "command": "E:/Code/my_code/Embedded/embed-dev-lab/scripts/lib/run-embedded-debugger-mcp.sh",
+      "args": [],
+      "env": {
+        "RUST_LOG": "info",
+        "HTTP_PROXY": "http://127.0.0.1:7890",
+        "HTTPS_PROXY": "http://127.0.0.1:7890",
+        "http_proxy": "http://127.0.0.1:7890",
+        "https_proxy": "http://127.0.0.1:7890"
+      }
+    }
+  }
+}

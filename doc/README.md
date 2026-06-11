@@ -9,7 +9,8 @@
 3. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 4. [脚本参考](scripts-reference.md) — 全脚本与自动化链路  
 5. [f103-blink 模块](modules-f103-blink.md) — 源码与硬件要点  
-6. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008（fetch 脚本 + 精选 MD）
+6. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008（fetch 脚本 + 精选 MD）  
+7. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
 
 ## 文档列表
 
@@ -21,6 +22,7 @@
 | [scripts-reference.md](scripts-reference.md) | scripts/ 脚本说明 |
 | [modules-f103-blink.md](modules-f103-blink.md) | F103 PC13 demo |
 | [reference/stm32f103/](reference/stm32f103/README.md) | ST 官方 Datasheet / RM + 精选主题 |
+| [mcp-skills.md](mcp-skills.md) | embedded-debugger MCP + 项目 Skill |
 
 ## 其他
 

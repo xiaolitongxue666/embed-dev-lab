@@ -25,6 +25,7 @@ DO_INSTALL=true
 DO_BUILD=true
 WITH_EXTENSIONS=true
 SKIP_EXTENSIONS=false
+WITH_MCP=false
 STRICT_ENV=false
 STRICT_EXTENSIONS=false
 
@@ -39,6 +40,7 @@ Options:
   --install-only      Install tools and refresh PATH, do not build
   --with-extensions   Install Cursor/VSCode extensions (default: on)
   --skip-extensions   Skip extension install (offline / slow network)
+  --with-mcp          Install embedded-debugger MCP + project Skill (requires Rust/cargo)
   --strict-extensions Fail bootstrap if required extensions missing
   --strict-env        env-check must pass extensions section too
   --module <name>     Module to build (default: f103-blink)
@@ -49,6 +51,7 @@ Options:
 Examples:
   ./scripts/bootstrap.sh
   ./scripts/bootstrap.sh --build-only
+  ./scripts/bootstrap.sh --with-mcp
   ./scripts/bootstrap.sh --with-extensions
 EOF
 }
@@ -71,6 +74,10 @@ while [[ $# -gt 0 ]]; do
     --skip-extensions)
       WITH_EXTENSIONS=false
       SKIP_EXTENSIONS=true
+      shift
+      ;;
+    --with-mcp)
+      WITH_MCP=true
       shift
       ;;
     --strict-extensions)
@@ -122,8 +129,8 @@ count_steps() {
     TOTAL_STEPS=$((TOTAL_STEPS + 1))
   fi
   TOTAL_STEPS=$((TOTAL_STEPS + 1))
-  is_true "$DO_BUILD" && TOTAL_STEPS=$((TOTAL_STEPS + 1))
-  is_true "$DO_BUILD" && TOTAL_STEPS=$((TOTAL_STEPS + 1))
+  is_true "$DO_BUILD" && TOTAL_STEPS=$((TOTAL_STEPS + 2))
+  is_true "$WITH_MCP" && TOTAL_STEPS=$((TOTAL_STEPS + 1))
 }
 
 step_banner() {
@@ -208,6 +215,11 @@ if is_true "$DO_BUILD"; then
 else
   run_step "Verify environment" false \
     bash "$ROOT/scripts/env-check.sh" "${env_args[@]}"
+fi
+
+if is_true "$WITH_MCP"; then
+  run_step "Install MCP and project Skill" false \
+    bash "$ROOT/scripts/install-mcp-skills.sh"
 fi
 
 if is_true "$DO_BUILD"; then

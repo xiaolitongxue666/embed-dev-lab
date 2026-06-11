@@ -1,0 +1,25 @@
+version: 1
+# embed-dev-lab P0 MCP servers (installed by scripts/install-mcp-skills.sh)
+
+servers:
+  - id: embedded-debugger
+    required: true
+    repo: https://github.com/Adancurusul/embedded-debugger-mcp.git
+    binary_name: embedded-debugger-mcp
+    wrapper: scripts/lib/run-embedded-debugger-mcp.sh
+    env:
+      RUST_LOG: info
+    platforms: [cursor, claude-code, codewhale]
+    description: probe-rs embedded debug — flash, RTT, registers (STM32 F103, etc.)
+
+# Future optional servers (not installed by default):
+# optional:
+#   - id: serial-mcp
+#   - id: esp-mcp
+#   - id: zephyr-mcp
+#   - id: platformio-mcp
+
+skills:
+  - id: embed-dev-lab
+    source: skills/embed-dev-lab
+    platforms: [cursor, claude-code, codewhale]

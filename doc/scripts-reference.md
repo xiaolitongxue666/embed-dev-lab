@@ -156,6 +156,19 @@ F103 chip：`STM32F103C8Tx`。ELF：`modules/<module>/build/<module>.elf`。
 
 ---
 
+### install-mcp-skills.sh — MCP 与项目 Skill
+
+安装 **embedded-debugger-mcp**（cargo 构建 + probe-rs）与 **embed-dev-lab** Skill。详见 [mcp-skills.md](mcp-skills.md)。
+
+```bash
+./scripts/install-mcp-skills.sh
+./scripts/install-mcp-skills.sh --global
+./scripts/install-mcp-skills.sh --verify-only
+./scripts/bootstrap.sh --with-mcp    # bootstrap 可选步骤
+```
+
+---
+
 ## 相关文档
 
 - [快速上手](getting-started.md)

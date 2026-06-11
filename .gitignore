@@ -1,25 +1,40 @@
 # =============================================================================
 # embed-dev-lab
+# 构建产物、IDE 本地缓存、厂商大文件、MCP cargo 缓存等不入库
 # =============================================================================
 
 # --- 构建产物 ---
 build/
 **/build/
 compile_commands.json
-.cache/clangd/
 
-# --- IDE 本地配置（仓库内共享 launch/tasks/extensions 仍提交）---
+# --- clangd 索引缓存（模块内 .cache/clangd，非仅仓库根）---
+**/.cache/
+.cache/
+
+# --- IDE 本地配置（launch/tasks/extensions 仍提交）---
 .vscode/settings.local.json
+.cursor/plans/
 
-# --- 维护备份 ---
+# --- Python（install-mcp-skills / mcp-merge.py 等）---
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# --- Agent / 维护临时目录 ---
 .project-memory-backups/
+logs/
+graphify-out/
+temp_args.json
+ERROR.md
 
 # --- OS 残留 ---
 .DS_Store
 Thumbs.db
 Desktop.ini
 
-# --- 编译中间文件 / 二进制（模块 build 与 install_packet 驱动包除外，见下方例外）---
+# --- 编译中间文件 / 二进制（模块 build/ 与 install_packet 驱动包见下方例外）---
 *.d
 *.o
 *.ko
@@ -42,6 +57,7 @@ Desktop.ini
 *.i*86
 *.x86_64
 *.hex
+*.bin
 *.dSYM/
 *.su
 *.idb

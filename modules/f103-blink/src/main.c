@@ -87,6 +87,7 @@ static void gpio_configuration(void)
  */
 int main(void)
 {
+    int count = 0;
     gpio_configuration();
 
     for (;;) {
@@ -97,5 +98,7 @@ int main(void)
         PCout(LED_PIN) = 0;
         delay(0xFFFFFU);
         delay(0xFFFFFU);
+
+        count++;
     }
 }

@@ -71,6 +71,22 @@ flowchart TB
 
 F103 chip：`STM32F103C8Tx`。ELF：`modules/<module>/build/<module>.elf`。
 
+#### 构建产物与格式转换
+
+工具链为 **`arm-none-eabi-gcc`**（裸机），非 `arm-linux-gnueabihf`。
+
+| 文件 | 生成时机 | 用途 |
+|------|----------|------|
+| `<module>.elf` | Ninja 链接 | probe-rs `flash`、IDE F5 |
+| `<module>.hex` | build 后 POST_BUILD（[`mcu-config.cmake`](../cmake/mcu-config.cmake) 内 `arm-none-eabi-objcopy -O ihex`） | `flash-openocd` |
+| `<module>.bin` | **未生成** | — |
+
+```text
+build  → .elf + .hex（objcopy 自动）
+flash  → probe-rs 烧录 .elf
+flash-openocd → OpenOCD 烧录 .hex
+```
+
 ---
 
 ### install-tools.sh — 分 OS 安装

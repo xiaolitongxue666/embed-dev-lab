@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# 刷新 embed-dev-lab 工具 PATH（User PATH + ~/.bashrc）
+# 用法: ./scripts/setup-path.sh [--scan]
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

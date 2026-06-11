@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# 环境校验：CLI 工具、PATH、调试 probe、IDE 扩展
+# 用法: ./scripts/env-check.sh [--tools-only]
+# --tools-only 跳过扩展检查（无 GUI / CI 场景）
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -43,6 +49,7 @@ done
 
 FAILURES=0
 
+# 检查命令是否在 PATH 中
 check_command() {
   local name="$1"
   local required="${2:-true}"
@@ -59,6 +66,7 @@ check_command() {
   return 1
 }
 
+# 检查工具并在 Windows 上验证是否写入 User PATH
 check_path_tool() {
   local name="$1"
   local required="${2:-true}"

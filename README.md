@@ -239,7 +239,8 @@ probe-rs list
 |------|------|----------|
 | Git Bash | Windows 脚本运行时（**必须**） | 用户自装 |
 | CMake ≥ 3.20 + Ninja | 构建系统 | [`install-tools.sh`](scripts/install-tools.sh) |
-| arm-none-eabi-gcc | ARM 交叉编译 | 同上 |
+| arm-none-eabi-gcc | ARM **裸机**交叉编译（非 arm-linux-gnueabihf） | 同上 |
+| arm-none-eabi-objcopy | build 后 **ELF→HEX**（POST_BUILD，见 [`mcu-config.cmake`](cmake/mcu-config.cmake)） | 随 gcc 安装 |
 | clangd | C LSP / 跳转补全 | 同上；[`setup-clangd.sh`](scripts/setup-clangd.sh) 同步 compile_commands |
 | probe-rs | **主** 烧录 + 调试 | 同上 |
 | OpenOCD | **备选** 烧录 / 调试 | optional；`flash-openocd` / Cortex-Debug |
@@ -251,6 +252,22 @@ probe-rs list
 | probe-rs chip | `STM32F103C8Tx` |
 | CLI 烧录格式 | `--binary-format elf`（勿用废弃的 `--format`） |
 | ELF 产物 | `modules/f103-blink/build/f103-blink.elf` |
+| HEX 产物 | `modules/f103-blink/build/f103-blink.hex`（build 时 objcopy 自动生成） |
+
+### 3.1.1 构建产物与 ELF→HEX
+
+```text
+./scripts/build.sh f103-blink build
+  → Ninja 链接 → f103-blink.elf
+  → POST_BUILD arm-none-eabi-objcopy -O ihex → f103-blink.hex
+```
+
+| 烧录方式 | 使用文件 | 入口 |
+|----------|----------|------|
+| probe-rs（主） | `.elf` | `build.sh flash`、IDE F5 |
+| OpenOCD（备选） | `.hex` | `build.sh flash-openocd` |
+
+当前**不生成 `.bin`**。实现位置：[`cmake/mcu-config.cmake`](cmake/mcu-config.cmake) 中 `embed_mcu_add_executable` 的 POST_BUILD。
 
 ### 3.2 烧录与调试路径对比
 

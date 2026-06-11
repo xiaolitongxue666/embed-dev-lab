@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# ST-Link WinUSB driver helper for Windows (probe-rs).
-# Uses bundled driver package under install_packet/STLink/STLink/USBDriver.
-# Linux/macOS: no-op (udev / no driver needed).
+# -----------------------------------------------------------------------------
+# Windows ST-Link WinUSB 驱动（probe-rs 需要 Debug 接口 WinUSB）
+# 驱动包：install_packet/STLink/STLink/USBDriver/
+# Linux/macOS：无操作
+# 用法: ./scripts/install/stlink-winusb-windows.sh [--check-only|--install]
+# -----------------------------------------------------------------------------
 
 set -euo pipefail
 
@@ -19,6 +22,7 @@ STLINK_WINUSB_DIR="$_STLINK_ROOT/install_packet/STLink/STLink/USBDriver"
 STLINK_WINUSB_INSTALL_BAT="$STLINK_WINUSB_DIR/stlink_winusb_install.bat"
 STLINK_WINUSB_UNINSTALL_BAT="$STLINK_WINUSB_DIR/stlink_winusb_uninstall.bat"
 
+# 校验驱动包文件是否完整
 stlink_winusb_validate_package() {
   local missing=0
   for f in "$STLINK_WINUSB_INSTALL_BAT" \
@@ -32,6 +36,7 @@ stlink_winusb_validate_package() {
   ((missing == 0))
 }
 
+# probe-rs list 是否能看到调试器
 stlink_probe_visible() {
   command -v probe-rs >/dev/null 2>&1 || return 1
   local out

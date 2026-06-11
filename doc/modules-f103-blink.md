@@ -28,10 +28,37 @@ modules/f103-blink/
 
 产物：
 
-- `modules/f103-blink/build/f103-blink.elf`
-- `modules/f103-blink/build/f103-blink.hex`
+- `modules/f103-blink/build/f103-blink.elf` — 链接输出；**probe-rs / IDE F5** 直接烧录
+- `modules/f103-blink/build/f103-blink.hex` — build 时自动生成（见下方）
+- `modules/f103-blink/build/f103-blink.map` — 链接 map（调试用）
 
 probe-rs chip：**`STM32F103C8Tx`**
+
+## 构建产物与 ELF→HEX
+
+本项目使用 **`arm-none-eabi-gcc` 裸机工具链**（非 `arm-linux-gnueabihf` Linux 应用链）。
+
+| 步骤 | 位置 | 说明 |
+|------|------|------|
+| 链接 `.elf` | Ninja（`cmake --build`） | `embed_mcu_add_executable` 在 [`cmake/mcu-config.cmake`](../cmake/mcu-config.cmake) |
+| `.elf` → `.hex` | 同上目标的 **POST_BUILD** | `arm-none-eabi-objcopy -O ihex f103-blink.elf f103-blink.hex` |
+| 生成 `.bin` | **无** | 当前未配置；需要可在 `mcu-config.cmake` POST_BUILD 增加 `-O binary` |
+
+烧录时格式选择：
+
+| 命令 / 方式 | 使用文件 |
+|-------------|----------|
+| `./scripts/build.sh f103-blink flash` | `.elf`（probe-rs） |
+| `./scripts/build.sh f103-blink flash-openocd` | `.hex`（OpenOCD） |
+| IDE **F103 Probe-rs Debug**（F5） | `.elf` |
+
+```text
+build.sh build → Ninja 链接 → f103-blink.elf
+              → POST_BUILD objcopy → f103-blink.hex
+
+build.sh flash          → probe-rs 读 .elf
+build.sh flash-openocd  → OpenOCD 读 .hex
+```
 
 ## 时钟
 

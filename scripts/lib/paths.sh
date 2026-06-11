@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Path normalization for scripts, JSON, and CMake on Windows/Git Bash.
+# -----------------------------------------------------------------------------
+# 路径规范化：MSYS/Windows/JSON 互转、用户主目录解析
+# 供 path-setup、build、MCP 安装等脚本使用
+# -----------------------------------------------------------------------------
 
+# Windows 路径转为 MSYS 风格 (/c/Users/...)
 to_msys_path() {
   local input="$1"
   if command -v cygpath >/dev/null 2>&1; then
@@ -10,6 +14,7 @@ to_msys_path() {
   fi
 }
 
+# MSYS 路径转为 Windows 风格 (C:/Users/...)
 to_win_path() {
   local input="$1"
   if command -v cygpath >/dev/null 2>&1; then
@@ -36,20 +41,21 @@ expand_tilde() {
   esac
 }
 
+# 展开 JSON/配置中的 ${USERPROFILE} 等变量
 expand_env_vars() {
   local input="$1"
   local result="$input"
   local user_home
   user_home="$(embed_user_home)"
 
-  # ${VAR} style
+  # ${VAR} 形式
   if [[ "$result" == *'${'* ]]; then
     result="${result//\$\{USERPROFILE\}/${user_home}}"
     result="${result//\$\{LOCALAPPDATA\}/${user_home}/AppData/Local}"
     result="${result//\$\{HOME\}/${user_home}}"
   fi
 
-  # $VAR style (simple)
+  # $VAR 形式（简单替换）
   result="${result//\$USERPROFILE/${user_home}}"
   result="${result//\$LOCALAPPDATA/${user_home}/AppData/Local}"
   result="${result//\$HOME/${user_home}}"
@@ -57,6 +63,7 @@ expand_env_vars() {
   normalize_path_slashes "$result"
 }
 
+# 解析用户主目录（Git Bash 下 USERPROFILE 可能未设置，多级回退）
 embed_user_home() {
   if [[ -n "${USERPROFILE:-}" ]]; then
     to_msys_path "$USERPROFILE"

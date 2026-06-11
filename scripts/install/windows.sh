@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# Windows 工具链安装（winget + probe-rs 安装脚本 + OpenOCD 解压）
+# 由 install-tools.sh source 并调用 windows_install
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
+# 若命令已存在则跳过
 install_if_missing() {
   local cmd="$1"
   local install_fn="$2"
@@ -12,6 +18,7 @@ install_if_missing() {
   "$install_fn"
 }
 
+# 通过 winget 静默安装
 winget_install() {
   local id="$1"
   winget install -e --id "$id" --source winget \
@@ -59,6 +66,7 @@ install_probe_rs() {
   fi
 }
 
+# 从 GitHub releases 解压 OpenOCD（可选）
 install_openocd() {
   local version="0.12.0"
   local url="https://github.com/openocd-org/openocd/releases/download/v${version}/openocd-v${version}-x86_64-w64-mingw32.tar.gz"
@@ -89,6 +97,7 @@ print_stlink_winusb_hint() {
   stlink_winusb_install_hint
 }
 
+# Windows 安装主流程：逐项安装并在每步后刷新 PATH
 windows_install() {
   detect_os
   require_git_bash_on_windows

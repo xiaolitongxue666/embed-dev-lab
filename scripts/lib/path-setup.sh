@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Unified PATH registration for embed-dev-lab tools (Windows dual-channel).
+# -----------------------------------------------------------------------------
+# 工具链 PATH 注册：Windows User PATH + ~/.bashrc 双通道
+# 由 setup-path.sh / bootstrap 调用
+# -----------------------------------------------------------------------------
 
 EMBED_PATH_BASHRC_START="# >>> embed-dev-lab PATH >>>"
 EMBED_PATH_BASHRC_END="# <<< embed-dev-lab PATH <<<"
@@ -14,6 +17,7 @@ _resolve_manifest_path() {
   expand_env_vars "$raw"
 }
 
+# 从 path-manifest.json 收集各工具 bin 目录（无 jq 时用常见路径回退）
 _collect_tool_bin_dirs() {
   local root="$1"
   local manifest
@@ -56,7 +60,7 @@ _collect_tool_bin_dirs() {
       done < <(printf '%s' "$tool_json" | jq -r '.windows_globs[]? // empty')
     done < <(jq -c '.tools[]' "$manifest")
   else
-    # Minimal fallback: probe known dirs + PATH
+    # 无 jq：探测 CMake/LLVM/WinGet Links/cargo 等常见安装位置
     local user_home win_links cargo_home
     user_home="$(embed_user_home)"
     win_links="${user_home}/AppData/Local/Microsoft/WinGet/Links"
@@ -91,7 +95,7 @@ _collect_tool_bin_dirs() {
     fi
   fi
 
-  # Deduplicate
+  # 去重后输出
   local -A seen=()
   local d norm
   for d in "${dirs[@]}"; do
@@ -104,6 +108,7 @@ _collect_tool_bin_dirs() {
   done
 }
 
+# 写入 Windows 用户级 PATH（PowerShell 脚本）
 _add_to_windows_user_path() {
   local dir="$1"
   local win_dir ps1_script
@@ -127,6 +132,7 @@ _in_windows_user_path() {
   return "$rc"
 }
 
+# 更新 ~/.bashrc 中 embed-dev-lab PATH 块
 _update_bashrc_path_block() {
   local -a dirs=("$@")
   local bashrc="${HOME}/.bashrc"
@@ -154,6 +160,7 @@ _update_bashrc_path_block() {
   mv "$tmp" "$bashrc"
 }
 
+# 主入口：发现工具目录并写入 PATH（scan_only=true 时仅刷新当前 shell）
 apply_path_setup() {
   local root="$1"
   local scan_only="${2:-false}"

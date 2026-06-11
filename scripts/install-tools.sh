@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# 分操作系统安装 CLI 工具链（CMake/Ninja/GCC/clangd/probe-rs 等）
+# 末尾可选：setup-path、install-extensions、env-check
+# 用法: ./scripts/install-tools.sh [--skip-extensions]
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -41,6 +47,7 @@ done
 
 log_info "embed-dev-lab tool installer (OS: $EMBED_OS)"
 
+# 按 OS 调用 install/{windows,linux,macos}.sh
 case "$EMBED_OS" in
   windows)
     # shellcheck source=install/windows.sh

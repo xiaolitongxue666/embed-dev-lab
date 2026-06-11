@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Download ST official STM32F103 docs (DS5319 + RM0008) into doc/reference/stm32f103/pdf/
-# ST 官网 PDF 无需注册；若 curl 超时，可用浏览器打开直链保存，再 --verify-only 校验。
+# -----------------------------------------------------------------------------
+# 下载 ST 官方 STM32F103 文档（DS5319 + RM0008）至 doc/reference/stm32f103/pdf/
+# ST 官网 PDF 无需注册；curl 失败可用浏览器保存后 --verify-only
+# 用法: ./scripts/fetch-stm32f103-docs.sh [--verify-only] [--force]
+# -----------------------------------------------------------------------------
 
 set -u
 
@@ -14,7 +17,7 @@ DOCS_DIR="$ROOT/doc/reference/stm32f103"
 PDF_DIR="$DOCS_DIR/pdf"
 CHECKSUM_FILE="$DOCS_DIR/checksums.sha256"
 
-# Primary ST URLs (no login required)
+# ST 直链（无需登录）
 URLS_DS5319=(
   "https://www.st.com/resource/en/datasheet/stm32f103c8.pdf"
   "https://www.st.com/resource/en/datasheet/CD00161566.pdf"

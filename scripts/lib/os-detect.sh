@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# OS detection and Windows Git Bash validation.
+# -----------------------------------------------------------------------------
+# 操作系统检测与 Windows Git Bash 校验
+# 设置 EMBED_OS / EMBED_IS_WINDOWS / EMBED_PKG_MANAGER 等全局变量
+# -----------------------------------------------------------------------------
 
 EMBED_OS=""
 EMBED_OS_FAMILY=""
@@ -7,6 +10,7 @@ EMBED_PKG_MANAGER=""
 EMBED_IS_WINDOWS=false
 EMBED_IS_GIT_BASH=false
 
+# 根据 uname 判定 OS 与包管理器
 detect_os() {
   local uname_s
   uname_s="$(uname -s 2>/dev/null || echo unknown)"
@@ -46,7 +50,7 @@ detect_os() {
       ;;
   esac
 
-  # Detect Git Bash on Windows (MSYSTEM is set by Git for Windows)
+  # Git for Windows 下 MSYSTEM 表示当前在 Git Bash 中
   if [[ "$EMBED_IS_WINDOWS" == true ]]; then
     if [[ -n "${MSYSTEM:-}" ]] || [[ "$uname_s" == MINGW* ]] || [[ "$uname_s" == MSYS* ]]; then
       EMBED_IS_GIT_BASH=true
@@ -56,6 +60,7 @@ detect_os() {
   fi
 }
 
+# Windows 上必须在 Git Bash 中运行脚本
 require_git_bash_on_windows() {
   detect_os
   if [[ "$EMBED_IS_WINDOWS" == true ]] && [[ "$EMBED_IS_GIT_BASH" != true ]]; then

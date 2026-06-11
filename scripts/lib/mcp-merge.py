@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge MCP server entries into agent config JSON (idempotent, non-destructive)."""
+"""合并 MCP server 配置到各 Agent 的 JSON 文件（幂等、不覆盖已有其他 server）。"""
 
 from __future__ import annotations
 

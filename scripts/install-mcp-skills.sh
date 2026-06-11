@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Install embedded-debugger MCP + project Skill for embed-dev-lab.
+# -----------------------------------------------------------------------------
+# 安装 embedded-debugger MCP + 项目 Skill embed-dev-lab
+# cargo 构建至 .tools/；合并 .cursor/mcp.json；可选 --global
+# 用法: ./scripts/install-mcp-skills.sh [--verify-only] [--global]
+# -----------------------------------------------------------------------------
 
 set -u
 

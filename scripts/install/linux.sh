@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# Linux 工具链安装（apt + probe-rs 官方安装脚本）
+# 由 install-tools.sh source 并调用 linux_install
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
 apt_install() {
@@ -17,6 +22,7 @@ install_if_missing() {
   apt_install "$@"
 }
 
+# Linux 安装主流程
 linux_install() {
   detect_os
 

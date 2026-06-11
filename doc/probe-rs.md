@@ -149,6 +149,18 @@ probe-rs chip info --chip STM32F103C8Tx
 
 ---
 
+## ELF 与 HEX 的关系
+
+| 项目 | 说明 |
+|------|------|
+| 工具链 | **`arm-none-eabi-gcc`** 裸机链，非 `arm-linux-gnueabihf` |
+| `.elf` | Ninja 链接产物；**probe-rs 与本项目主烧录路径使用 ELF** |
+| `.hex` | `build` 时由 [`cmake/mcu-config.cmake`](../cmake/mcu-config.cmake) POST_BUILD 调用 `arm-none-eabi-objcopy -O ihex` 自动生成 |
+| `.bin` | 当前工程**不生成** |
+| OpenOCD | `./scripts/build.sh f103-blink flash-openocd` 烧录 **`.hex`**，须先 `build` |
+
+---
+
 ## 故障排查
 
 | 现象 | 可能原因 | 处理 |

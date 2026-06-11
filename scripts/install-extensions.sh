@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# 安装 .vscode/extensions.json 中的 IDE 扩展
+# 必需扩展失败 exit 1；可选扩展（cortex-debug）尽力安装
+# 用法: ./scripts/install-extensions.sh [--check-only] [--editor cursor|code]
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -62,6 +68,7 @@ fi
 
 FAILURES=0
 
+# 检查/安装单个扩展；安装后复检 list-extensions
 process_extension() {
   local ext_id="$1"
   local required="$2"

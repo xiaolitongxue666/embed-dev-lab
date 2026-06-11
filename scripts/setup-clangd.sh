@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# 生成 .vscode/settings.local.json，配置 clangd 参数
+# 依赖 compile_commands.json 与 arm-none-eabi-gcc 路径
+# 用法: ./scripts/setup-clangd.sh（build 后自动调用）
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -15,6 +21,7 @@ OUT="$ROOT/.vscode/settings.local.json"
 COMPILE_DB="$ROOT/compile_commands.json"
 TOOLCHAIN_BIN=""
 
+# 查找 compile_commands.json（根目录或 modules/*/build/）
 find_compile_commands() {
   if [[ -f "$COMPILE_DB" ]]; then
     printf '%s\n' "$COMPILE_DB"

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Launch embedded-debugger-mcp binary from embed-dev-lab .tools cache.
+# -----------------------------------------------------------------------------
+# 启动 embedded-debugger-mcp 二进制（供 .cursor/mcp.json 调用）
+# 二进制由 install-mcp-skills.sh cargo 构建至 .tools/
+# -----------------------------------------------------------------------------
 
 set -u
 

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# macOS 工具链安装（Homebrew + probe-rs）
+# 由 install-tools.sh source 并调用 macos_install
+# -----------------------------------------------------------------------------
+
 set -euo pipefail
 
 brew_install() {
@@ -16,6 +21,7 @@ install_if_missing() {
   brew_install "$@"
 }
 
+# macOS 安装主流程
 macos_install() {
   detect_os
 

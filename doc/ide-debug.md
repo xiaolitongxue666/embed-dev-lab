@@ -117,6 +117,7 @@ preLaunchTask "Build F103"
 | F5 提示找不到 probe-rs | User PATH 添加 cargo/WinGet 路径；重启 Cursor |
 | 调试前 build 失败 | 终端单独运行 `./scripts/build.sh f103-blink` 看错误 |
 | 烧录后无断点停住 | 确认 `haltAfterReset: true`；检查 SWD |
+| OpenOCD 报找不到 hex | 须先 `build` 生成 `.hex`（objcopy POST_BUILD）；probe-rs 路径用 `.elf` |
 | Git Bash 路径错误 | 工作区已设 profile 名；User settings 中配置实际 bash 路径 |
 
 ---

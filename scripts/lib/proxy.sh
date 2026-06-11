@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Optional HTTP(S) proxy for downloads (curl, cargo, etc.)
+# -----------------------------------------------------------------------------
+# HTTP(S) 代理：bootstrap、文档下载、MCP cargo 构建等网络操作
+# 默认 http://127.0.0.1:7890；EMBED_NO_PROXY=true 可禁用
+# -----------------------------------------------------------------------------
 
 EMBED_PROXY_URL="${EMBED_PROXY_URL:-http://127.0.0.1:7890}"
 
+# 将代理写入标准环境变量
 apply_embed_proxy() {
   if is_true "${EMBED_NO_PROXY:-false}"; then
     log_info "Proxy disabled (EMBED_NO_PROXY)"
@@ -24,6 +28,7 @@ apply_embed_proxy() {
   log_info "Using network proxy: $EMBED_PROXY_URL"
 }
 
+# 探测代理是否可达（失败仅警告，不阻断）
 probe_embed_proxy() {
   if is_true "${EMBED_NO_PROXY:-false}"; then
     return 0

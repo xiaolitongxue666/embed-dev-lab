@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Detect Cursor or VS Code CLI for extension management.
+# -----------------------------------------------------------------------------
+# 检测 Cursor / VS Code CLI，供扩展安装与环境校验
+# Windows Git Bash 需 prepare_editor_cli_env 设置 USERPROFILE
+# -----------------------------------------------------------------------------
 
 EMBED_EDITOR_CLI=""
 EMBED_EDITOR_NAME=""
 
+# 在 PATH 或默认安装路径查找 cursor / code 可执行文件
 _find_editor_cli() {
   local name="$1"
   local cli=""
@@ -49,6 +53,7 @@ _find_editor_cli() {
   [[ -n "$cli" ]] && printf '%s\n' "$cli"
 }
 
+# 检测编辑器 CLI；优先 cursor，其次 code
 detect_editor_cli() {
   local forced="${EMBED_EDITOR:-${1:-}}"
 
@@ -89,6 +94,7 @@ Restart Git Bash / Windows Terminal, then retry.
 EOF
 }
 
+# Windows：为 Cursor/Electron CLI 补全 USERPROFILE（Git Bash 子 shell 常缺失）
 prepare_editor_cli_env() {
   local user_home win_home script_dir
 

@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Detect arm-none-eabi-gcc toolchain location.
+# -----------------------------------------------------------------------------
+# 检测 arm-none-eabi-gcc 工具链 bin 目录
+# 供 env-check、setup-clangd 配置 clangd --query-driver
+# -----------------------------------------------------------------------------
 
 EMBED_TOOLCHAIN_BIN=""
 
+# 在 PATH 或常见安装路径中查找工具链
 detect_arm_toolchain_bin() {
   local gcc_path=""
   local bin_dir=""
@@ -15,7 +19,7 @@ detect_arm_toolchain_bin() {
     return 0
   fi
 
-  # Windows common install locations
+  # Windows 常见安装目录（含版本号子目录）
   local arm_glob arm_latest
   for arm_glob in \
     "/c/Program Files/Arm GNU Toolchain arm-none-eabi/"*/bin \

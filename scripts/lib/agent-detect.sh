@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Detect installed AI agents and their MCP/config root paths.
+# -----------------------------------------------------------------------------
+# 检测已安装的 AI Agent（Cursor / Claude Code / CodeWhale / Codex）
+# 返回各 Agent 的 MCP 配置路径、Skill 目录等
+# -----------------------------------------------------------------------------
 
 # shellcheck disable=SC2034
 AGENT_CURSOR="cursor"
@@ -9,6 +12,7 @@ AGENT_CODEX="codex"
 
 ALL_AGENTS=(cursor claude-code codewhale codex)
 
+# 规范化 Agent 别名
 agent_normalize_id() {
   case "${1,,}" in
     cursor) echo "cursor" ;;
@@ -19,6 +23,7 @@ agent_normalize_id() {
   esac
 }
 
+# Codex 不支持 MCP
 agent_supports_mcp() {
   case "$1" in
     cursor | claude-code | codewhale) return 0 ;;
@@ -52,6 +57,7 @@ agent_is_installed() {
   [[ -n "$cmd" ]] && command_exists "$cmd"
 }
 
+# 全局配置根目录（~/.cursor 等）
 agent_config_root() {
   local agent_id="$1"
   local home

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# One-click install + build for embed-dev-lab.
-# Orchestrates existing scripts in order with clear progress output.
+# -----------------------------------------------------------------------------
+# 一键环境：安装工具 → PATH → IDE 扩展 → 校验 → 编译 demo → clangd
+# 用法: ./scripts/bootstrap.sh [--build-only] [--skip-extensions] [--with-mcp]
+# 默认不含烧录；扩展安装失败会阻断退出
+# -----------------------------------------------------------------------------
 
 set -u
 
@@ -119,6 +122,7 @@ TOTAL_STEPS=0
 CURRENT_STEP=0
 BOOTSTRAP_FAILED=false
 
+# 根据选项计算总步骤数（用于 STEP x/y 横幅）
 count_steps() {
   TOTAL_STEPS=0
   if ! is_true "$DO_INSTALL"; then
@@ -141,6 +145,7 @@ step_banner() {
   printf '%s\n\n' "================================================================"
 }
 
+# 执行单步；required=true 时失败会标记 BOOTSTRAP_FAILED
 run_step() {
   local title="$1"
   local required="$2"
@@ -153,7 +158,7 @@ run_step() {
     return 0
   fi
   local rc=$?
-  # Guard: empty rc after failure
+  # 防止失败时 rc 为空被误判为成功
   [[ "$rc" -eq 0 ]] && rc=1
   if is_true "$required"; then
     log_fail "Required step failed (exit $rc): $title"
@@ -164,6 +169,7 @@ run_step() {
   return 0
 }
 
+# 在当前 shell 刷新 PATH（含 .cargo/bin）
 refresh_path_in_shell() {
   step_banner "Refresh PATH in current shell"
   if apply_path_setup "$ROOT" true; then
@@ -205,6 +211,7 @@ if is_true "$DO_INSTALL"; then
 fi
 
 env_args=()
+# 完整 bootstrap 且安装了扩展时，env-check 也校验 IDE 扩展
 if is_true "$STRICT_ENV"; then
   :
 elif is_true "$SKIP_EXTENSIONS" || ! is_true "$DO_INSTALL"; then

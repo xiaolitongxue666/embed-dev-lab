@@ -13,6 +13,7 @@
 | STM32CubeF1 fetch | `./scripts/fetch-stm32cubef1.sh` |
 | ST 官方参考（PDF+MD） | `doc/reference/stm32f103/` |
 | 裸机入门笔记 | `doc/learn/stm32-bare-metal-bootstrap.md` |
+| DS5319 / RM0008 分工 | `doc/learn/datasheet-vs-reference-manual.md` |
 | 厂商本地资料 | `vendor-pack/`（驱动 / 板级例程 / CubeF1） |
 | MCP / Skill 安装 | `./scripts/install-mcp-skills.sh` |
 | MCP 校验 | `./scripts/install-mcp-skills.sh --verify-only` |
@@ -34,11 +35,11 @@
 9. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
 10. **启动文件**：`startup_stm32f103xb.s` 为 CMSIS 风格启动流程（`.data`/`.bss` → `SystemInit` → `main`）；demo 内为精简手写版。
 11. **flash 前需 build**：`build.sh f103-blink flash` 不自动编译。
-12. **ST 官方 PDF+MD**：`doc/reference/stm32f103/`；PDF 在 `pdf/`（gitignore）；`fetch-stm32f103-docs.sh`（ST 直链，RM Keil 镜像）；topic 页码以本地 PDF Rev 为准。
+12. **ST 官方 PDF+MD**：`doc/reference/stm32f103/`；**DS5319 定约束/时钟树，RM0008 写寄存器**（改 `system_stm32f10x.c` 以 RM §6 RCC 为主）；详见 `doc/learn/datasheet-vs-reference-manual.md`；fetch + topic 页码以本地 PDF Rev 为准。
 13. **vendor-pack**（原 install_packet）：ST-Link 驱动（可提交）+ 核心板 MDK 例程 + STM32CubeF1；与 `doc/reference/` 分工不同。
 14. **fetch-stm32cubef1.sh**：优先 `vendor-pack/STM32CubeF1/archives/*.zip` 解压，否则 `git clone --recursive v1.8.6`；**勿用 GitHub「Download ZIP」**（缺 submodule）。
 15. **CMSIS 模板路径**（CubeF1 fetch 后）：`.../Templates/gcc/startup_stm32f103xb.s`；system 新版为 **`system_stm32f1xx.c`**（旧包可能仍为 `system_stm32f10x.c`）；f103-blink **不链接** Cube 包构建。
-16. **用户文档**：`doc/` 中文；入口 `doc/README.md`；脚本 `doc/scripts-reference.md`；学习笔记 `doc/learn/stm32-bare-metal-bootstrap.md`（RCC/HSE/startup/CMSIS 问答）。
+16. **用户文档**：`doc/` 中文；入口 `doc/README.md`；脚本 `doc/scripts-reference.md`；学习笔记 `doc/learn/`（bootstrap、DS/RM 分工）。
 17. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线 SWDIO/SWCLK/GND/3.3V。
 18. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`。
 19. **调试**：Cursor Run →「F103 Probe-rs Debug」；`.vscode/launch.json` 已配置。
@@ -59,6 +60,7 @@
 | `unexpected argument '--format'` | 改用 `--binary-format elf` |
 | ST PDF curl 超时/SSL 失败 | 浏览器保存至 `pdf/`；RM0008 可用 Keil 镜像；`--verify-only` |
 | RM0008 topic 页码对不上 | 核对本地 PDF 页脚 Rev（Rev 9 vs Rev 21） |
+| 改 system/外设不知看 DS 还是 RM | **DS5319 定方案与上限，RM0008 写寄存器**；F103 RCC 读 **§6**（非 §7）；见 `doc/learn/datasheet-vs-reference-manual.md` |
 | GitHub STM32CubeF1「Download ZIP」缺文件 | `git clone --recursive` 或 ST 官网 ZIP + `fetch-stm32cubef1.sh` |
 | fetch CubeF1 报缺 `system_stm32f10x.c` | 新版 CMSIS 为 `system_stm32f1xx.c`；脚本 `--verify-only` 已适配 |
 | 文档/脚本仍写 `install_packet` | 已更名为 **`vendor-pack/`** |

@@ -40,6 +40,7 @@ modules/f103-blink/        可构建 demo：手写 startup / system / GPIO
 
 - **Datasheet（DS5319）** 不够写寄存器：它给时钟树、最高主频（F103 medium-density → 72 MHz）、HSE 电气参数。
 - **Reference Manual（RM0008）§6 RCC** 才是写 `RCC_CR`、`RCC_CFGR` 每一位的依据；Flash 等待周期见 RM0008 Flash 章节。
+- **两份手册如何分工、改本文件该以哪本为主**，见 [Datasheet 与 Reference Manual 怎么读？](datasheet-vs-reference-manual.md)。
 
 **推荐步骤**
 
@@ -158,6 +159,7 @@ STM32F103 硬件
 
 ## 延伸阅读
 
+- [Datasheet 与 Reference Manual 怎么读？](datasheet-vs-reference-manual.md)
 - [RCC：HSE → PLL → 72 MHz](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)
 - [f103-blink 模块说明](../modules-f103-blink.md)
 - [脚本：fetch-stm32cubef1.sh](../scripts-reference.md#fetch-stm32cubef1sh--stm32cubef1-固件包)

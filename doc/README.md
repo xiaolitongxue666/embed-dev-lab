@@ -24,6 +24,7 @@
 | [modules-f103-blink.md](modules-f103-blink.md) | F103 PC13 demo |
 | [reference/stm32f103/](reference/stm32f103/README.md) | ST 官方 Datasheet / RM + 精选主题 |
 | [learn/stm32-bare-metal-bootstrap.md](learn/stm32-bare-metal-bootstrap.md) | startup、RCC、CMSIS、资料分工 |
+| [learn/datasheet-vs-reference-manual.md](learn/datasheet-vs-reference-manual.md) | DS5319 与 RM0008 分工、改 system 该看哪本 |
 | [mcp-skills.md](mcp-skills.md) | embedded-debugger MCP + 项目 Skill |
 
 ## 其他

@@ -92,6 +92,8 @@ HSE 8 MHz → PLL ×9 → SYSCLK 72 MHz
 
 HSE 启动失败时，本仓库 `set_sys_clock_to_72mhz()` 超时返回，继续使用复位默认 **HSI 8 MHz**，避免无晶振板卡死。
 
+轮询 `HSERDY` 的原因与代码位置见 [Q9](#q9为什么需要轮询-hserdy)。
+
 ---
 
 ## Q5：`startup_stm32f103xb.s` 是哪里来的？
@@ -154,6 +156,61 @@ STM32F103 硬件
 - **CubeMX** 常规生成 HAL 工程：`main.c`、`SystemClock_Config()`、外设 `MX_*_Init()` 等。
 - **`startup_*.s` / `system_*.c`** 通常来自 **CMSIS Device 包**，CubeMX 引用而非从零生成。
 - 裸机项目可手写精简版 startup/system（本仓库做法），用 Cube 包作对照即可。
+
+---
+
+## Q9：为什么需要轮询 `HSERDY`？
+
+[`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) 中：
+
+```c
+#define HSE_STARTUP_TIMEOUT 0x0500U   /* 与 CMSIS 一致，1280 次循环 */
+
+RCC_CR |= RCC_CR_HSEON;
+while (!(RCC_CR & RCC_CR_HSERDY) && startup < HSE_STARTUP_TIMEOUT) {
+    startup++;
+}
+if (!(RCC_CR & RCC_CR_HSERDY)) {
+    return;   /* 超时：不升频，继续 HSI 8 MHz */
+}
+```
+
+**要点**
+
+1. **上电后外部晶振需要一点时间才能稳定起振**  
+   写 `HSEON=1` 只是「请求启动」，晶振起振、幅度稳定通常要毫秒级（见 DS5319 HSE 电气特性）。此期间不能把 HSE 当 PLL 输入或系统时钟。
+
+2. **软件轮询 `HSERDY`，不是读「HSE 本身」**  
+   `RCC_CR` bit17 **`HSERDY`** 由硬件置 1，表示 HSE 已稳定可用。裸机 `SystemInit` 惯例是 busy-wait 读该位（无专用「HSE 就绪中断」流程）。
+
+3. **`HSE_STARTUP_TIMEOUT` 防止死等**  
+   无晶振、晶振损坏、负载电容不对时，`HSERDY` 永远为 0；无超时则卡在 `while` 里。超时后 `return`，跳过 PLL/72 MHz，程序仍进 `main`，用 **HSI 8 MHz**。
+
+**归纳（流程）**
+
+```text
+HSEON → 轮询 HSERDY（计数 < HSE_STARTUP_TIMEOUT）
+         ├─ HSERDY=1 → 继续 Flash 等待 / PLL / 切 72 MHz → main
+         └─ 超时仍无 HSERDY → return，保持 HSI 8 MHz → main（不卡死）
+```
+
+**手册**：起振时间量级见 DS5319 §5.3.6；`HSERDY` 位定义见 RM0008 §6 RCC。
+
+---
+
+## Q10：f103-blink 代码里有体现吗？
+
+**有。** 逻辑在 `system_stm32f10x.c`；`main.c` 不重复实现 HSE 等待，但会间接受时钟影响。
+
+| 位置 | 体现 |
+|------|------|
+| [`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) | `HSE_STARTUP_TIMEOUT`、轮询 `HSERDY`、超时 `return`；文件头 `@note` 说明 HSE 失败保持 HSI |
+| [`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) | `Reset_Handler` 在 `main` 前 `bl SystemInit` |
+| [`main.c`](../../modules/f103-blink/src/main.c) | 注释指向 `system_stm32f10x.c`；`delay()` 按 CPU 主频忙等，**不区分** 72 MHz / 8 MHz |
+
+HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：同一延时约慢 9 倍，LED 仍闪，符合「超时退回 HSI、main 照常跑」的设计。
+
+**对比**：同文件内 PLL 切换也轮询 `PLLRDY` / `SWS`，但**未**加超时（ST 裸机例程常见写法）；仅 HSE 等待做超时，因「无晶振板」最常见。
 
 ---
 

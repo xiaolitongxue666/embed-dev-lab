@@ -113,6 +113,7 @@ preLaunchTask "Build F103"
 
 | 问题 | 处理 |
 |------|------|
+| 扩展未安装 / bootstrap 报 extension failed | 运行 `./scripts/install-extensions.sh`；必需扩展失败时 bootstrap 会退出；无 GUI 环境用 `--skip-extensions` |
 | F5 提示找不到 probe-rs | User PATH 添加 cargo/WinGet 路径；重启 Cursor |
 | 调试前 build 失败 | 终端单独运行 `./scripts/build.sh f103-blink` 看错误 |
 | 烧录后无断点停住 | 确认 `haltAfterReset: true`；检查 SWD |

@@ -10,6 +10,8 @@ source "$ROOT/scripts/lib/os-detect.sh"
 source "$ROOT/scripts/lib/proxy.sh"
 # shellcheck source=lib/editor-detect.sh
 source "$ROOT/scripts/lib/editor-detect.sh"
+# shellcheck source=lib/extensions-read.sh
+source "$ROOT/scripts/lib/extensions-read.sh"
 
 require_bash
 require_git_bash_on_windows
@@ -32,6 +34,9 @@ while [[ $# -gt 0 ]]; do
     -h | --help)
       cat <<EOF
 Usage: ./scripts/install-extensions.sh [--editor cursor|code] [--check-only]
+
+Install required extensions from .vscode/extensions.json.
+Optional extensions (e.g. cortex-debug) are installed best-effort.
 EOF
       exit 0
       ;;
@@ -39,67 +44,81 @@ EOF
   esac
 done
 
-EXTENSIONS_JSON="$ROOT/.vscode/extensions.json"
-META_JSON="$ROOT/scripts/install/assets/extensions-meta.json"
-
-[[ -f "$EXTENSIONS_JSON" ]] || die "Missing $EXTENSIONS_JSON"
-
 if ! detect_editor_cli "$EDITOR_FORCE"; then
   print_editor_path_hint
   die "Editor CLI not found"
 fi
 
+prepare_editor_cli_env
+
 log_info "Using editor: $EMBED_EDITOR_NAME ($EMBED_EDITOR_CLI)"
 
-read_extensions() {
-  if command -v jq >/dev/null 2>&1; then
-    jq -r '.recommendations[]' "$EXTENSIONS_JSON"
-  else
-    grep -oE '"[a-zA-Z0-9.-]+/[a-zA-Z0-9.-]+"' "$EXTENSIONS_JSON" | tr -d '"'
-  fi
-}
+embed_load_extension_lists "$ROOT"
 
-is_optional_extension() {
-  local ext_id="$1"
-  if [[ -f "$META_JSON" ]] && command -v jq >/dev/null 2>&1; then
-    jq -e --arg id "$ext_id" '.optional[] | select(. == $id)' "$META_JSON" >/dev/null 2>&1
-    return $?
-  fi
-  [[ "$ext_id" == "marus25.cortex-debug" ]]
-}
+log_info "Required extensions (${#EMBED_EXT_REQUIRED[@]}): ${EMBED_EXT_REQUIRED[*]}"
+if ((${#EMBED_EXT_OPTIONAL[@]} > 0)); then
+  log_info "Optional extensions (${#EMBED_EXT_OPTIONAL[@]}): ${EMBED_EXT_OPTIONAL[*]}"
+fi
 
 FAILURES=0
-while IFS= read -r ext_id; do
-  [[ -z "$ext_id" ]] && continue
 
-  if "$EMBED_EDITOR_CLI" --list-extensions 2>/dev/null | grep -qi "^${ext_id}$"; then
+process_extension() {
+  local ext_id="$1"
+  local required="$2"
+
+  if embed_extension_installed "$EMBED_EDITOR_CLI" "$ext_id"; then
     log_ok "extension $ext_id"
-    continue
+    return 0
   fi
 
   if is_true "$CHECK_ONLY"; then
-    if is_optional_extension "$ext_id"; then
-      log_warn "extension $ext_id not installed (optional)"
-    else
+    if is_true "$required"; then
       log_fail "extension $ext_id not installed"
       FAILURES=$((FAILURES + 1))
+    else
+      log_warn "extension $ext_id not installed (optional)"
     fi
-    continue
+    return 0
   fi
 
   log_info "Installing extension $ext_id..."
   if "$EMBED_EDITOR_CLI" --install-extension "$ext_id" --force; then
-    log_ok "installed $ext_id"
-  else
-    if is_optional_extension "$ext_id"; then
-      log_warn "failed to install optional extension $ext_id"
-    else
-      log_fail "failed to install $ext_id"
-      log_info "Marketplace: https://marketplace.visualstudio.com/items?itemName=${ext_id//./}"
+    if embed_extension_installed "$EMBED_EDITOR_CLI" "$ext_id"; then
+      log_ok "installed $ext_id"
+    elif is_true "$required"; then
+      log_fail "install reported success but $ext_id not listed"
+      log_info "Marketplace: $(embed_marketplace_url "$ext_id")"
       FAILURES=$((FAILURES + 1))
+    else
+      log_warn "optional extension $ext_id install unverified"
+    fi
+  else
+    if is_true "$required"; then
+      log_fail "failed to install $ext_id"
+      log_info "Marketplace: $(embed_marketplace_url "$ext_id")"
+      FAILURES=$((FAILURES + 1))
+    else
+      log_warn "failed to install optional extension $ext_id"
     fi
   fi
-done < <(read_extensions)
+}
+
+for ext_id in "${EMBED_EXT_REQUIRED[@]}"; do
+  if embed_is_optional_extension "$ext_id"; then
+    process_extension "$ext_id" false
+  else
+    process_extension "$ext_id" true
+  fi
+done
+
+for ext_id in "${EMBED_EXT_OPTIONAL[@]}"; do
+  local_found=false
+  for required_id in "${EMBED_EXT_REQUIRED[@]}"; do
+    [[ "$required_id" == "$ext_id" ]] && local_found=true && break
+  done
+  is_true "$local_found" && continue
+  process_extension "$ext_id" false
+done
 
 if ((FAILURES > 0)); then
   die "$FAILURES required extension(s) failed"

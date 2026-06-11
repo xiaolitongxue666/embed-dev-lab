@@ -68,6 +68,8 @@ detect_editor_cli() {
     return 1
   fi
 
+  prepare_editor_cli_env
+
   if ! "$EMBED_EDITOR_CLI" --version >/dev/null 2>&1; then
     return 1
   fi
@@ -85,6 +87,26 @@ In Cursor or VS Code:
 
 Restart Git Bash / Windows Terminal, then retry.
 EOF
+}
+
+prepare_editor_cli_env() {
+  local user_home win_home script_dir
+
+  case "$(uname -s 2>/dev/null)" in
+    MINGW* | MSYS* | CYGWIN* | Windows_NT)
+      if ! declare -F embed_user_home >/dev/null 2>&1; then
+        script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        # shellcheck source=paths.sh
+        source "$script_dir/paths.sh"
+      fi
+      user_home="$(embed_user_home)"
+      win_home="$(to_win_path "$user_home")"
+      win_home="${win_home//\//\\}"
+      export USERPROFILE="$win_home"
+      export LOCALAPPDATA="${USERPROFILE}\\AppData\\Local"
+      export APPDATA="${USERPROFILE}\\AppData\\Roaming"
+      ;;
+  esac
 }
 
 export EMBED_EDITOR_CLI EMBED_EDITOR_NAME

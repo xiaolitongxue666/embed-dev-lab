@@ -12,6 +12,8 @@ source "$ROOT/scripts/lib/paths.sh"
 source "$ROOT/scripts/lib/path-setup.sh"
 # shellcheck source=lib/editor-detect.sh
 source "$ROOT/scripts/lib/editor-detect.sh"
+# shellcheck source=lib/extensions-read.sh
+source "$ROOT/scripts/lib/extensions-read.sh"
 # shellcheck source=lib/detect-toolchain.sh
 source "$ROOT/scripts/lib/detect-toolchain.sh"
 
@@ -124,36 +126,34 @@ section "Extensions"
 if is_true "$TOOLS_ONLY"; then
   log_info "Skipping extension checks (--tools-only)"
 elif detect_editor_cli; then
+  prepare_editor_cli_env
   log_ok "editor CLI ($EMBED_EDITOR_NAME) -> $EMBED_EDITOR_CLI"
 
-  EXTENSIONS_JSON="$ROOT/.vscode/extensions.json"
-  META_JSON="$ROOT/scripts/install/assets/extensions-meta.json"
-  if [[ -f "$EXTENSIONS_JSON" ]]; then
-    local_ext_ids=()
-    if command -v jq >/dev/null 2>&1; then
-      mapfile -t local_ext_ids < <(jq -r '.recommendations[]' "$EXTENSIONS_JSON")
+  embed_load_extension_lists "$ROOT"
+
+  for ext_id in "${EMBED_EXT_REQUIRED[@]}"; do
+    if embed_extension_installed "$EMBED_EDITOR_CLI" "$ext_id"; then
+      log_ok "extension $ext_id"
+    elif embed_is_optional_extension "$ext_id"; then
+      log_warn "extension $ext_id not installed (optional)"
     else
-      mapfile -t local_ext_ids < <(grep -oE '"[a-zA-Z0-9.-]+/[a-zA-Z0-9.-]+"' "$EXTENSIONS_JSON" | tr -d '"')
+      log_fail "extension $ext_id not installed"
+      FAILURES=$((FAILURES + 1))
     fi
+  done
 
-    for ext_id in "${local_ext_ids[@]}"; do
-      optional=false
-      if [[ -f "$META_JSON" ]] && command -v jq >/dev/null 2>&1; then
-        if jq -e --arg id "$ext_id" '.optional[] | select(. == $id)' "$META_JSON" >/dev/null; then
-          optional=true
-        fi
-      fi
-
-      if "$EMBED_EDITOR_CLI" --list-extensions 2>/dev/null | grep -qi "^${ext_id}$"; then
-        log_ok "extension $ext_id"
-      elif is_true "$optional"; then
-        log_warn "extension $ext_id not installed (optional)"
-      else
-        log_fail "extension $ext_id not installed"
-        FAILURES=$((FAILURES + 1))
-      fi
+  for ext_id in "${EMBED_EXT_OPTIONAL[@]}"; do
+    local_found=false
+    for required_id in "${EMBED_EXT_REQUIRED[@]}"; do
+      [[ "$required_id" == "$ext_id" ]] && local_found=true && break
     done
-  fi
+    is_true "$local_found" && continue
+    if embed_extension_installed "$EMBED_EDITOR_CLI" "$ext_id"; then
+      log_ok "extension $ext_id"
+    else
+      log_warn "extension $ext_id not installed (optional)"
+    fi
+  done
 else
   print_editor_path_hint
   log_fail "editor CLI not available"

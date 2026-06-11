@@ -41,7 +41,7 @@ Options:
   --with-extensions   Install Cursor/VSCode extensions (default: on)
   --skip-extensions   Skip extension install (offline / slow network)
   --with-mcp          Install embedded-debugger MCP + project Skill (requires Rust/cargo)
-  --strict-extensions Fail bootstrap if required extensions missing
+  --strict-extensions Fail bootstrap if required extensions missing (default: on; alias)
   --strict-env        env-check must pass extensions section too
   --module <name>     Module to build (default: f103-blink)
   --proxy <url>       HTTP proxy for downloads (default: http://127.0.0.1:7890)
@@ -197,9 +197,7 @@ if is_true "$DO_INSTALL"; then
   refresh_path_in_shell
 
   if ! is_true "$SKIP_EXTENSIONS"; then
-    ext_required=false
-    is_true "$STRICT_EXTENSIONS" && ext_required=true
-    run_step "Install editor extensions" "$ext_required" \
+    run_step "Install editor extensions" true \
       bash "$ROOT/scripts/install-extensions.sh"
   else
     log_info "Skipping editor extensions (--skip-extensions)"
@@ -207,7 +205,11 @@ if is_true "$DO_INSTALL"; then
 fi
 
 env_args=()
-is_true "$STRICT_ENV" || env_args+=("--tools-only")
+if is_true "$STRICT_ENV"; then
+  :
+elif is_true "$SKIP_EXTENSIONS" || ! is_true "$DO_INSTALL"; then
+  env_args+=("--tools-only")
+fi
 
 if is_true "$DO_BUILD"; then
   run_step "Verify build toolchain" true \

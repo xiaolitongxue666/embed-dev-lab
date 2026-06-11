@@ -69,7 +69,7 @@ fi
 
 if ! is_true "$SKIP_EXTENSIONS"; then
   log_info "Installing editor extensions..."
-  bash "$ROOT/scripts/install-extensions.sh" || log_warn "Extension install had issues"
+  bash "$ROOT/scripts/install-extensions.sh"
 fi
 
 if ! is_true "$SKIP_ENV_CHECK"; then

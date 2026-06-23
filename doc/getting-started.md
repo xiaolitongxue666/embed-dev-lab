@@ -17,7 +17,14 @@ Windows 请安装 [Git for Windows](https://git-scm.com/download/win)，Cursor �
 ## 步骤 1：克隆并进入仓库
 
 ```bash
-cd /path/to/embed-dev-lab
+git clone --recursive <repo-url>
+cd embed-dev-lab
+```
+
+若已普通 clone、需拉取 CMSIS 子模块（core + device-f1）：
+
+```bash
+./scripts/fetch-cmsis.sh
 ```
 
 ## 步骤 2：一键环境 + 编译

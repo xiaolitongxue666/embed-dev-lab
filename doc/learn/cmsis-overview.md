@@ -10,8 +10,9 @@
 
 **CMSIS** = **C**ortex **M**icrocontroller **S**oftware **I**nterface **S**tandard（Cortex 微控制器软件接口标准）。
 
-- **本质**：ARM 主导的全行业软件接口**标准**，官方提供的源码是标准的**参考实现**，并非「芯片初始化范例」。
-- **价值**：统一所有 Cortex 内核芯片的底层软件接口，降低跨芯片、跨厂商移植成本。
+- **本质**：ARM 主导的全行业软件接口**标准**；当前主线为 [CMSIS 6](https://arm-software.github.io/CMSIS_6/latest/General/index.html)。官方源码是标准的**参考实现**，并非「芯片初始化范例」。
+- **价值**：统一 Cortex 内核芯片的底层软件接口；通过 **CMSIS-Pack** 交付组件，编译器无关，降低跨芯片、跨厂商移植成本。
+- **边界**：CMSIS **不是**厚重运行时层，也**不**定义标准外设驱动逻辑（外设功能封装由厂商 HAL/LL 或用户寄存器代码完成）。
 
 ```mermaid
 flowchart BT
@@ -29,16 +30,27 @@ flowchart BT
 
 | 层级 | 制定/实现方 | 职责 | 是否必选 |
 |------|-------------|------|----------|
-| **CMSIS-Core** | ARM | NVIC、SysTick、SCB、MPU 等内核寄存器与标准操作（`__disable_irq()`、`NVIC_EnableIRQ()`、`SysTick_Config()`）；启动流程与向量表规范；`SystemInit()` 标准接口；跨编译器适配 | 必选 |
-| **CMSIS-Device** | 芯片厂商（ST） | 片上外设寄存器地址与位域（`GPIOA->ODR` 的来源）；工具链启动文件（`.s`）与中断向量表；`SystemInit()` 实现（时钟等） | 必选 |
-| **CMSIS 扩展** | ARM / 第三方 | CMSIS-DSP、CMSIS-RTOS v2、CMSIS-Driver 等 | 可选 |
+| **CMSIS-Core** | ARM（ST 经 [cmsis-core](https://github.com/STMicroelectronics/cmsis-core) 镜像分发） | NVIC、SysTick、SCB、MPU 等内核寄存器与标准操作（`__disable_irq()`、`NVIC_EnableIRQ()`、`SysTick_Config()`）；启动流程与向量表规范；`SystemInit()` 标准接口；跨编译器适配 | 必选 |
+| **CMSIS-Device** | 芯片厂商（ST 经 `cmsis-device-*` 分发） | 片上外设寄存器地址与位域（`GPIOA->ODR` 的来源）；工具链启动文件（`.s`）与中断向量表；`SystemInit()` 实现（时钟等） | 必选 |
+| **CMSIS 扩展** | ARM / 第三方 | CMSIS-DSP、CMSIS-RTOS2、CMSIS-Driver 等 | 可选 |
 
 **CMSIS-Device 边界**：只做硬件描述（寄存器映射、启动框架），**不提供**外设操作逻辑与功能函数。
 
-**扩展组件说明**：
+### 1.2 CMSIS 6 组件体系（官方分类）
+
+摘自 [CMSIS 6 Introduction](https://arm-software.github.io/CMSIS_6/latest/General/index.html)：
+
+| 类别 | 组件 | 说明 |
+|------|------|------|
+| **Base** | CMSIS-Core、CMSIS-Driver、CMSIS-RTOS2 | 设备基础抽象；Core 为裸机/HAL 底座 |
+| **Extended** | CMSIS-DSP、CMSIS-NN、CMSIS-View、CMSIS-Compiler | 面向 DSP/ML、调试视图、C 库 I/O 重定向等 |
+| **Tools** | CMSIS-Toolbox、CMSIS Solution、CMSIS Debugger 等 | Pack 管理、VS Code 扩展、命令行构建 |
+| **Specifications** | CMSIS-Pack、CMSIS-SVD | 软件包交付格式；外设 SVD 调试描述 |
+
+**扩展组件说明**（STM32 常见）：
 
 - **CMSIS-DSP**：针对 Cortex-M 指令集优化的数学库
-- **CMSIS-RTOS v2**：RTOS 通用 API 抽象，可封装 FreeRTOS 等
+- **CMSIS-RTOS2**：RTOS 通用 API 抽象；ST 可提供 ThreadX 封装（见 [stm32-mw-cmsis-rtos-tx](https://github.com/STMicroelectronics/stm32-mw-cmsis-rtos-tx)）
 - **CMSIS-Driver**：通用外设驱动接口标准；**ST 未采用**，主推自研 HAL/LL
 
 ---
@@ -47,24 +59,44 @@ flowchart BT
 
 ### 2.1 官方仓库拆分
 
-ST 按 CMSIS 分层拆分仓库，核心层与设备层更新节奏不同：
+ST 按 CMSIS 分层拆分 **MCU Component** 仓库（2019 年起），与 ARM 上游及单体 Cube 包关系如下：
 
 | 仓库类型 | 代表仓库 | 核心内容 | 与型号关系 |
 |----------|----------|----------|------------|
-| 通用核心 | [cmsis-core](https://github.com/ARM-software/CMSIS-Core) | `core_cm3.h` 等、编译器适配 | 全 STM32 通用 |
-| 系列设备 | [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) | 设备头文件、各工具链启动文件、`system_*.c` | 按 F1 系列 |
-| 完整固件包 | [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) | CMSIS + HAL/LL + Middleware + 例程 | F1 全包 |
+| ARM 上游 | [ARM-software/CMSIS_6](https://github.com/ARM-software/CMSIS_6) | CMSIS 6 标准源与 Pack 定义 | 全行业 |
+| ST 核心镜像 | [STMicroelectronics/cmsis-core](https://github.com/STMicroelectronics/cmsis-core) | `core_cm3.h` 等、编译器适配；根 `Include/` 为兼容副本 | 全 STM32；按 `_cm3` 等 tag 精简 |
+| 系列设备 | [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) 等 | 设备头文件、各工具链启动文件、`system_*.c` | 按系列 |
+| 完整固件包 | [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) | Core + Device + HAL/LL + Middleware + 例程 | F1 全包 |
+
+**ARM 与 ST 勿混用链接**：工程里说的 ST「cmsis-core」指 ST 镜像仓库，不是 ARM 仓库路径的直接 submodule。各仓库职责与 F4/L4/H5/H7/U5、ThreadX RTOS 中间件见 **[ST CMSIS 组件仓库归纳](stm32-cmsis-component-repos.md)**。
 
 启动文件按工具链分为 `gcc` / `iar` / `arm`（Keil MDK）三个版本，向量表顺序与执行流程一致，仅汇编语法不同。
 
 ### 2.2 本仓库获取途径
+
+**CMSIS-Core + CMSIS-Device F1（submodule，随仓库提交指针）**
+
+```bash
+git clone --recursive <repo-url>          # 首次推荐
+./scripts/fetch-cmsis.sh                  # 已 clone 后初始化
+./scripts/fetch-cmsis.sh --verify-only
+```
+
+| 层 | 路径 | Tag |
+|----|------|-----|
+| Core | `vendor-pack/cmsis-core/` | `v5.4.0_cm3` |
+| Device F1 | `vendor-pack/cmsis-device-f1/` | `v4.3.3`（与 Core 成对） |
+
+说明：[`cmsis-core.embed-dev-lab.md`](../../vendor-pack/cmsis-core.embed-dev-lab.md)、[`cmsis-device-f1.embed-dev-lab.md`](../../vendor-pack/cmsis-device-f1.embed-dev-lab.md)
+
+**CMSIS-Device + HAL 全包（可选，本地 fetch）**
 
 ```bash
 ./scripts/fetch-stm32cubef1.sh
 ./scripts/fetch-stm32cubef1.sh --verify-only
 ```
 
-解压后 CMSIS 关键路径（相对固件包根目录）：
+解压后 Device 关键路径（相对固件包根目录）：
 
 | 文件 | 路径 |
 |------|------|
@@ -74,7 +106,7 @@ ST 按 CMSIS 分层拆分仓库，核心层与设备层更新节奏不同：
 
 详见 [`vendor-pack/STM32CubeF1/README.md`](../../vendor-pack/STM32CubeF1/README.md) 与 [脚本参考](../scripts-reference.md#fetch-stm32cubef1sh--stm32cubef1-固件包)。
 
-**注意**：GitHub 页面「Download ZIP」不含 submodule，CMSIS 会缺失；请用官网 ZIP 或 `git clone --recursive`。
+**注意**：GitHub 页面「Download ZIP」不含 submodule，CubeF1 内 CMSIS 会缺失；请用官网 ZIP 或 `git clone --recursive`。
 
 ---
 
@@ -195,9 +227,9 @@ flowchart BT
 
 embed-dev-lab 选择 **「自写 CMSIS 兼容底层 + 纯寄存器开发」**：
 
-- [`f103-blink`](../../modules/f103-blink/) **不链接**官方 CMSIS 头文件与 HAL，不参与 `vendor-pack/STM32CubeF1` 构建
+- [`f103-blink`](../../modules/f103-blink/) **不链接**官方 CMSIS 头文件与 HAL，不参与 `vendor-pack` 构建
 - 保留 `SystemInit`、向量表命名与 Reset 流程，便于与 ST 模板和工具链对照
-- `vendor-pack/STM32CubeF1/` 供**对照官方 CMSIS 模板**与后续模块参考
+- `vendor-pack/cmsis-core/`（Core）与 `vendor-pack/cmsis-device-f1/`（Device）为 **submodule**；`vendor-pack/STM32CubeF1/`（HAL/全包）可选 fetch
 
 两种路径均符合 Cortex-M 架构要求：
 
@@ -222,6 +254,7 @@ embed-dev-lab 选择 **「自写 CMSIS 兼容底层 + 纯寄存器开发」**：
 
 ## 延伸阅读
 
+- [ST CMSIS 组件仓库归纳](stm32-cmsis-component-repos.md) — cmsis-core / cmsis-device-* / ThreadX RTOS 中间件
 - [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) — 向量表、NVIC、与 startup / CMSIS 边界
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — startup、RCC、HSE/HSERDY、SystemInit 调用链、ARM 汇编与 x86 对比（Q5/Q9–Q12）
 - [f103-blink 模块说明](../modules-f103-blink.md)

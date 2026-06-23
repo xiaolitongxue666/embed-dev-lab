@@ -193,6 +193,28 @@ CMake / 链接细节见 [f103-blink 编译流程](learn/f103-module-build-flow.m
 
 ---
 
+### fetch-cmsis.sh — CMSIS 子模块（Core + Device F1）
+
+初始化或更新 ST CMSIS **git submodules**：
+
+| 路径 | Tag | 层 |
+|------|-----|-----|
+| `vendor-pack/cmsis-core/` | `v5.4.0_cm3` | CMSIS-Core（Cortex-M3） |
+| `vendor-pack/cmsis-device-f1/` | `v4.3.3` | CMSIS-Device F1（与 Core 成对） |
+
+```bash
+git clone --recursive <repo-url>
+./scripts/fetch-cmsis.sh
+./scripts/fetch-cmsis.sh --verify-only
+```
+
+- 验证：Core `Include/core_cm3.h`；Device `Include/stm32f103xb.h`、`Source/Templates/gcc/startup_stm32f103xb.s`、`Source/Templates/system_stm32f1xx.c`
+- 说明：[cmsis-core.embed-dev-lab.md](../vendor-pack/cmsis-core.embed-dev-lab.md)、[cmsis-device-f1.embed-dev-lab.md](../vendor-pack/cmsis-device-f1.embed-dev-lab.md)
+- 组件归纳：[doc/learn/stm32-cmsis-component-repos.md](learn/stm32-cmsis-component-repos.md)
+- 兼容：`fetch-cmsis-core.sh` 为同脚本的别名入口
+
+---
+
 ### fetch-stm32cubef1.sh — STM32CubeF1 固件包
 
 获取 ST **STM32CubeF1**（CMSIS/HAL/例程）至 `vendor-pack/STM32CubeF1/`。  

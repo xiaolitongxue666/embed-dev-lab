@@ -33,4 +33,8 @@ ST 官方 **STM32Cube MCU Package for F1**，含 CMSIS-Core/Device、HAL/LL 驱�
 
 ## 与本仓库 demo 的关系
 
-[`modules/f103-blink`](../../modules/f103-blink) 使用**手写**精简版 `startup_stm32f103xb.s` 与 `system_stm32f10x.c`，不链接 HAL，不依赖本目录构建。此处固件包供**对照 ST 官方 CMSIS 模板**与后续模块参考。CMSIS 分层与手写兼容边界见 [`doc/learn/cmsis-overview.md`](../../doc/learn/cmsis-overview.md)。
+[`modules/f103-blink`](../../modules/f103-blink) 使用**手写**精简版 `startup_stm32f103xb.s` 与 `system_stm32f10x.c`，不链接 HAL，不依赖本目录构建。此处固件包供 **CMSIS-Device** 层对照（启动文件、设备头文件、SystemInit 模板）。
+
+**CMSIS-Core** 与 **CMSIS-Device F1** 为独立 submodule：[`cmsis-core`](../../vendor-pack/cmsis-core.embed-dev-lab.md)（`v5.4.0_cm3`）、[`cmsis-device-f1`](../../vendor-pack/cmsis-device-f1.embed-dev-lab.md)（`v4.3.3`），与 CubeF1 包内 `Drivers/CMSIS/` 同源代际，便于分层查阅。
+
+CMSIS 分层、ST 组件仓库与手写兼容边界见 [`doc/learn/cmsis-overview.md`](../../doc/learn/cmsis-overview.md)、[`doc/learn/stm32-cmsis-component-repos.md`](../../doc/learn/stm32-cmsis-component-repos.md)。

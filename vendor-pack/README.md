@@ -6,9 +6,21 @@
 
 | 子目录 | 内容 | Git |
 |--------|------|-----|
+| `cmsis-core/` | ST CMSIS-Core（**submodule**，`v5.4.0_cm3`） | [cmsis-core.embed-dev-lab.md](cmsis-core.embed-dev-lab.md) |
+| `cmsis-device-f1/` | ST CMSIS-Device F1（**submodule**，`v4.3.3`） | [cmsis-device-f1.embed-dev-lab.md](cmsis-device-f1.embed-dev-lab.md) |
 | `STLink/STLink/USBDriver/` | ST-Link WinUSB 驱动（probe-rs 需要） | 可提交 |
 | `STM32F103C8T6核心板/` | 核心板 MDK 例程、PCB 等 | 忽略（体积大，仅本地） |
-| `STM32CubeF1/` | ST 官方 F1 固件包（CMSIS/HAL/例程） | 仅 README 提交；ZIP 与解压目录忽略 |
+| `STM32CubeF1/` | ST 官方 F1 固件包（CMSIS Device/HAL/例程） | 仅 README 提交；ZIP 与解压目录忽略 |
+
+## 获取 CMSIS 子模块（Core + Device F1）
+
+```bash
+git clone --recursive <repo-url>     # 首次推荐
+./scripts/fetch-cmsis.sh
+./scripts/fetch-cmsis.sh --verify-only
+```
+
+说明：[cmsis-core.embed-dev-lab.md](cmsis-core.embed-dev-lab.md) · [cmsis-device-f1.embed-dev-lab.md](cmsis-device-f1.embed-dev-lab.md) · [ST CMSIS 组件仓库归纳](../doc/learn/stm32-cmsis-component-repos.md)
 
 ## 获取 STM32CubeF1
 

@@ -91,6 +91,9 @@ embed-dev-lab/
 │   ├── install-tools.sh            # 分 OS 安装入口
 │   ├── install-mcp-skills.sh       # embedded-debugger MCP + Skill
 │   ├── fetch-stm32f103-docs.sh     # 下载 DS5319 + RM0008 PDF
+│   ├── fetch-cmsis.sh              # 初始化 cmsis-core + cmsis-device-f1 submodule
+│   ├── fetch-cmsis-core.sh         # 兼容别名 → fetch-cmsis.sh
+│   ├── fetch-stm32cubef1.sh        # 获取 STM32CubeF1 固件包
 │   ├── env-check.sh                # 工具链与扩展校验
 │   ├── setup-path.sh               # User PATH + bashrc
 │   ├── setup-clangd.sh             # compile_commands + clangd
@@ -112,7 +115,11 @@ embed-dev-lab/
 │   └── skills/embed-dev-lab/       # Cursor Skill 注册
 ├── .vscode/                        # launch.json / tasks.json / extensions.json
 ├── AGENTS.md                       # Codex 等无 MCP Agent 的 Skill 摘要
-├── vendor-pack/                 # ST-Link WinUSB 驱动、核心板资料（gitignore）
+├── .gitmodules                     # cmsis-core / cmsis-device-f1 submodule
+├── vendor-pack/                    # ST-Link 驱动、CMSIS submodules、CubeF1 fetch
+│   ├── cmsis-core/                 # CMSIS-Core submodule v5.4.0_cm3
+│   ├── cmsis-device-f1/            # CMSIS-Device F1 submodule v4.3.3
+│   └── STM32CubeF1/                # F1 全包（fetch，可选）
 ├── .tools/                         # MCP cargo 构建缓存（gitignore）
 ├── PROJECT_MEMORY.md               # 维护速查（Agent / 维护者）
 └── README.md
@@ -139,6 +146,9 @@ embed-dev-lab/
 | [`install-tools.sh`](scripts/install-tools.sh) | 分 OS 安装（windows / linux / macos） | — |
 | [`install-mcp-skills.sh`](scripts/install-mcp-skills.sh) | embedded-debugger MCP + 项目 Skill | — |
 | [`fetch-stm32f103-docs.sh`](scripts/fetch-stm32f103-docs.sh) | 下载 DS5319 + RM0008 PDF | — |
+| [`fetch-cmsis.sh`](scripts/fetch-cmsis.sh) | 初始化 `cmsis-core` + `cmsis-device-f1` submodule | — |
+| [`fetch-cmsis-core.sh`](scripts/fetch-cmsis-core.sh) | 同上（兼容别名） | — |
+| [`fetch-stm32cubef1.sh`](scripts/fetch-stm32cubef1.sh) | 获取 STM32CubeF1 至 `vendor-pack/STM32CubeF1/` | — |
 
 **bootstrap 常用参数：**
 

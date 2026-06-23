@@ -80,7 +80,7 @@ Linux 配置 udev；macOS 跳过。
 
 PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
-若无闪烁：按板载 **RESET**；见 [modules-f103-blink.md](modules-f103-blink.md) 与 [probe-rs.md 排错](probe-rs.md#故障排查)。
+若无闪烁：按板载 **RESET**；见 [f103-blink 模块](modules/f103-blink.md) 与 [probe-rs.md 排错](probe-rs.md#故障排查)。
 
 ---
 
@@ -97,6 +97,6 @@ PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
 - [probe-rs 详细说明](probe-rs.md)
 - [脚本完整参考](scripts-reference.md)
-- [f103-blink 源码说明](modules-f103-blink.md)
+- [f103-blink 源码说明](modules/f103-blink.md)
 
 维护速查：[PROJECT_MEMORY.md](../PROJECT_MEMORY.md)

@@ -169,7 +169,7 @@ probe-rs chip info --chip STM32F103C8Tx
 | 设备管理器无 `VID_0483` | USB 线/Hub/供电 | 直连主板 USB 2.0；对照拔插 ST-Link |
 | `unexpected argument '--format'` | CLI 版本过新 | 改用 `--binary-format elf` |
 | 烧录成功 LED 不闪 | 未 build 最新 elf / 未 reset / SWD 或供电 | `build && flash`；按 RESET；查 SWD 与 3.3V |
-| 程序完全不运行 | PC13 未开 DBP | 见 [modules-f103-blink.md](modules-f103-blink.md) Backup 域说明 |
+| 程序完全不运行 | PC13 未开 DBP | 见 [f103-blink 模块](modules/f103-blink.md) Backup 域说明 |
 | IDE 找不到 probe-rs | PATH 未进 Cursor | `./scripts/setup-path.sh` 后重启 Cursor |
 
 ---

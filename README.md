@@ -36,7 +36,9 @@ flowchart TB
     Readme[README.md]
     DocIndex[doc/README.md]
   end
-  subgraph app [应用层 modules]
+  subgraph app [应用层]
+    ModulesDir[modules/]
+    DocModules[doc/modules/]
     F103[f103-blink]
   end
   subgraph build [构建层]
@@ -58,6 +60,8 @@ flowchart TB
     ProbeDoc[probe-rs.md]
   end
   Readme --> DocIndex
+  DocIndex --> DocModules
+  DocModules --> ModulesDir
   Bootstrap --> Install --> BuildSh --> F103
   Cmake --> BuildSh
   CursorMcp --> Skills
@@ -66,7 +70,7 @@ flowchart TB
 | 层级 | 路径 | 职责 |
 |------|------|------|
 | 入口 | [`README.md`](README.md)、[`doc/`](doc/) | 项目地图与人类文档 |
-| 应用 | [`modules/`](modules/) | 固件模块（当前 `f103-blink`） |
+| 应用 | [`modules/`](modules/)（源码）、[`doc/modules/`](doc/modules/)（说明） | 固件模块（当前 `f103-blink`） |
 | 构建 | [`cmake/`](cmake/)、[`scripts/build.sh`](scripts/build.sh) | 工具链、MCU 抽象、编译烧录 |
 | 环境 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) 等 | 安装工具、PATH、校验 |
 | Agent | [`.cursor/`](.cursor/)、[`skills/`](skills/)、[`AGENTS.md`](AGENTS.md) | MCP、Skill、无 MCP Agent 摘要 |
@@ -83,11 +87,16 @@ embed-dev-lab/
 │   ├── ide-debug.md                # IDE 扩展与调试
 │   ├── scripts-reference.md        # 脚本说明与自动化链路
 │   ├── mcp-skills.md               # MCP 与 Skill 安装
-│   ├── modules-f103-blink.md       # F103 demo 说明
+│   ├── modules/                    # 应用层固件说明（与 modules/<name>/ 对应）
+│   │   ├── README.md
+│   │   └── f103-blink.md
+│   ├── modules-f103-blink.md       # 重定向 stub → modules/f103-blink.md
+│   ├── learn/                      # 学习笔记（CMSIS、编译流程、NVIC 等）
 │   └── reference/stm32f103/        # ST 官方 PDF + 精选 MD
 ├── scripts/                        # 安装、PATH、构建、校验
 │   ├── bootstrap.sh                # 一键环境 + 编译
 │   ├── build.sh                    # 模块 configure / build / flash
+│   ├── build-flash.sh              # 一键 build + flash
 │   ├── install-tools.sh            # 分 OS 安装入口
 │   ├── install-mcp-skills.sh       # embedded-debugger MCP + Skill
 │   ├── fetch-stm32f103-docs.sh     # 下载 DS5319 + RM0008 PDF
@@ -104,6 +113,7 @@ embed-dev-lab/
 │   ├── toolchain-arm-none-eabi.cmake
 │   └── mcu-config.cmake            # embed_mcu_add_executable()
 ├── modules/
+│   ├── README.md                   # 应用层代码入口
 │   └── f103-blink/                 # STM32F103C8T6 PC13 闪烁
 │       ├── src/
 │       ├── startup/
@@ -119,6 +129,9 @@ embed-dev-lab/
 ├── vendor-pack/                    # ST-Link 驱动、CMSIS submodules、CubeF1 fetch
 │   ├── cmsis-core/                 # CMSIS-Core submodule cm3 / v5.6.0_cm3
 │   ├── cmsis-device-f1/            # CMSIS-Device F1 submodule v4.3.5
+│   ├── cmsis-core.embed-dev-lab.md
+│   ├── cmsis-device-f1.embed-dev-lab.md
+│   ├── stm32f1xx-hal-driver.embed-dev-lab.md
 │   └── STM32CubeF1/                # F1 全包（fetch，可选）
 ├── .tools/                         # MCP cargo 构建缓存（gitignore）
 ├── PROJECT_MEMORY.md               # 维护速查（Agent / 维护者）
@@ -374,7 +387,7 @@ probe-rs list
 | [doc/ide-debug.md](doc/ide-debug.md) | probe-rs-debugger 等扩展 |
 | [doc/scripts-reference.md](doc/scripts-reference.md) | 脚本完整参考 |
 | [doc/mcp-skills.md](doc/mcp-skills.md) | MCP 与 Skill 安装 |
-| [doc/modules-f103-blink.md](doc/modules-f103-blink.md) | F103 demo 模块 |
+| [doc/modules/f103-blink.md](doc/modules/f103-blink.md) | F103 demo 模块 |
 | [doc/learn/cmsis-overview.md](doc/learn/cmsis-overview.md) | CMSIS 分层、手写兼容边界、与 HAL 关系 |
 | [doc/learn/interrupt-vector-table-and-nvic.md](doc/learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、与 startup 关系 |
 | [doc/reference/stm32f103/](doc/reference/stm32f103/) | ST 官方 Datasheet / RM |

@@ -81,4 +81,4 @@ GPIOC_CRH    = ... PC13 推挽输出 ... // 4. 配置 PC13
 ## 延伸阅读
 
 - [rm0008-index.md](../rm0008-index.md) — §4 PWR、§5 BKP、§8 GPIO  
-- [modules-f103-blink.md](../../../modules-f103-blink.md) — 模块说明
+- [f103-blink 模块](../../../modules/f103-blink.md) — 模块说明

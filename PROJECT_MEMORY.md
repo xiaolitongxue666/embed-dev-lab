@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-23（CMSIS submodules）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-23（应用文档 doc/modules/）
 
 ## 快速路径
 
@@ -9,6 +9,8 @@
 | 一键环境 + 编译 | `./scripts/bootstrap.sh` |
 | F103 编译 | `./scripts/build.sh f103-blink build` |
 | F103 烧录 | `./scripts/build.sh f103-blink flash` |
+| 应用层文档 | `doc/modules/`（说明）· `modules/`（源码）· `modules/README.md` |
+| f103-blink 模块 | `doc/modules/f103-blink.md` |
 | 模块编译流程 | `doc/learn/f103-module-build-flow.md` |
 | 链接器 map 文件 | `doc/learn/linker-map-file.md` |
 | ST 官方文档 fetch | `./scripts/fetch-stm32f103-docs.sh` |
@@ -46,7 +48,7 @@
 13. **vendor-pack**：ST-Link 驱动 + **CMSIS submodules**（core + device-f1）+ 核心板例程 + STM32CubeF1 fetch（可选）。
 14. **fetch-cmsis.sh**：`git submodule update --init`；Core 分支 **`cm3`** / tag **`v5.6.0_cm3`**，Device **`v4.3.5`**；`.gitmodules` 声明 `branch = cm3`；首次 `git clone --recursive`。
 15. **fetch-stm32cubef1.sh**：优先 `archives/*.zip` 解压，否则 `git clone --recursive v1.8.6`；**勿用 GitHub「Download ZIP」**（缺 submodule）。
-16. **用户文档**：`doc/` 中文；学习笔记含 CMSIS 6 概述、ST 组件仓库归纳、中断/NVIC、编译流程、map 文件。
+16. **用户文档**：`doc/` 中文；**应用层** `doc/modules/`；学习笔记含 CMSIS、ST 仓库归纳、中断/NVIC、编译流程、map。
 17. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线 SWDIO/SWCLK/GND/3.3V。
 18. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`。
 19. **调试**：Cursor Run →「F103 Probe-rs Debug」；`.vscode/launch.json` 已配置。
@@ -55,11 +57,13 @@
 22. **MCP/Skill**：`install-mcp-skills.sh` 构建 embedded-debugger-mcp → `.cursor/mcp.json` + `skills/embed-dev-lab`；`--global` 合并多 Agent；Codex 无 MCP。
 23. **实机验证**（2026-06-11）：ST-Link V2 + SWD + 3.3V，PC13 LED 闪烁（Backup 域 DBP 修复后）；embedded-debugger MCP 通过。
 24. **Cursor 终端**：工作区 `.vscode/settings.json` 声明 `defaultProfile: Git Bash`。
+25. **应用层分工**：源码 `modules/<name>/`；人类说明 `doc/modules/<name>.md`；旧路径 `doc/modules-f103-blink.md` 为重定向 stub。
 
 ## 问题 ↔ 解法
 
 | 问题 | 解法 |
 |------|------|
+| 找不到模块文档 | `doc/modules/README.md`；源码入口 `modules/README.md` |
 | `probe-rs list` 为空 | Windows：`stlink-winusb-windows.sh --install` 或 Zadig WinUSB |
 | 烧录成功但 PC13 不闪 | PWR+DBP；先 `build` 再 `flash`；`probe-rs reset` |
 | 程序卡死、无任何 IO | HSE 超时逻辑已在 `system_stm32f10x.c` |

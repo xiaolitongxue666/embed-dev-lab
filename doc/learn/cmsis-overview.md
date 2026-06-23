@@ -264,7 +264,7 @@ embed-dev-lab 选择 **「自写 CMSIS 兼容底层 + 纯寄存器开发」**：
 - [stm32f1xx-hal-driver 参考说明](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)
 - [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) — 向量表、NVIC、与 startup / CMSIS 边界
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — startup、RCC、HSE/HSERDY、SystemInit 调用链、ARM 汇编与 x86 对比（Q5/Q9–Q12）
-- [f103-blink 模块说明](../modules-f103-blink.md)
+- [f103-blink 模块说明](../modules/f103-blink.md)
 - [Datasheet 与 Reference Manual 怎么读？](datasheet-vs-reference-manual.md)
 - [STM32CubeF1 本地固件包](../../vendor-pack/STM32CubeF1/README.md)
 - [RCC：HSE → PLL → 72 MHz](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)

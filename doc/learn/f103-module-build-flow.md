@@ -380,7 +380,7 @@ C 中的 `delay()`、`gpio_configuration()` 等进入 `.text`，与 `Reset_Handl
 | `./scripts/build.sh f103-blink flash-openocd` | `.hex` | 须先 `build` |
 | IDE **F103 Probe-rs Debug**（F5） | `.elf` | 见 [ide-debug.md](../ide-debug.md) |
 
-`flash` **不会**自动编译；改源码后须先 `build`。详见 [f103-blink 模块说明](../modules-f103-blink.md) 与 [probe-rs.md](../probe-rs.md)。
+`flash` **不会**自动编译；改源码后须先 `build`。详见 [f103-blink 模块说明](../modules/f103-blink.md) 与 [probe-rs.md](../probe-rs.md)。
 
 ---
 
@@ -396,6 +396,6 @@ C 中的 `delay()`、`gpio_configuration()` 等进入 `.text`，与 `Reset_Handl
 
 - [链接器 Map 文件](linker-map-file.md) — map 是什么、核心内容、六大用途、生成方式
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — Reset_Handler、`SystemInit` 运行时行为（Q5/Q11/Q12）
-- [f103-blink 模块说明](../modules-f103-blink.md) — 硬件要点、PC13、构建命令
+- [f103-blink 模块说明](../modules/f103-blink.md) — 硬件要点、PC13、构建命令
 - [脚本参考](../scripts-reference.md) — `build.sh` action 与自动化链路
 - [CMSIS 标准与手写裸机边界](cmsis-overview.md) — startup 规范兼容判定

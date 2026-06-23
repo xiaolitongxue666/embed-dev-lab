@@ -126,4 +126,4 @@ preLaunchTask "Build F103"
 
 - [probe-rs CLI 与驱动](probe-rs.md)
 - [脚本参考](scripts-reference.md)
-- [f103-blink 模块](modules-f103-blink.md)
+- [f103-blink 模块](modules/f103-blink.md)

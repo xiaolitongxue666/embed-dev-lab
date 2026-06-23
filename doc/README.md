@@ -8,7 +8,7 @@
 2. [probe-rs 指南](probe-rs.md) — CLI、WinUSB、ST-Link、排错  
 3. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 4. [脚本参考](scripts-reference.md) — 全脚本与自动化链路  
-5. [f103-blink 模块](modules-f103-blink.md) — 源码与硬件要点  
+5. [f103-blink 模块](modules/f103-blink.md) — 源码与硬件要点  
 6. [f103-blink 编译流程](learn/f103-module-build-flow.md) — CMake、.c/.s 链接、startup 与链接脚本  
 7. [链接器 Map 文件](learn/linker-map-file.md) — 内存布局报告、段与符号、排查与优化  
 8. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008（fetch 脚本 + 精选 MD）  
@@ -18,6 +18,13 @@
 12. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表作用、NVIC 职责、与 CMSIS/HAL 关系  
 13. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
 
+## 应用层
+
+| 文档 | 内容 |
+|------|------|
+| [modules/README.md](modules/README.md) | 固件模块索引（与 `modules/` 目录对应） |
+| [modules/f103-blink.md](modules/f103-blink.md) | F103 PC13 demo |
+
 ## 文档列表
 
 | 文档 | 内容 |
@@ -26,7 +33,7 @@
 | [probe-rs.md](probe-rs.md) | probe-rs CLI 与驱动 |
 | [ide-debug.md](ide-debug.md) | Cursor/VS Code 插件与调试 |
 | [scripts-reference.md](scripts-reference.md) | scripts/ 脚本说明 |
-| [modules-f103-blink.md](modules-f103-blink.md) | F103 PC13 demo |
+| [modules/f103-blink.md](modules/f103-blink.md) | F103 PC13 demo |
 | [learn/f103-module-build-flow.md](learn/f103-module-build-flow.md) | CMake 构建、.c/.s 链接、startup 与链接脚本协作 |
 | [learn/linker-map-file.md](learn/linker-map-file.md) | 链接器 map：内存清单、段/符号、排查与优化、生成方式 |
 | [reference/stm32f103/](reference/stm32f103/README.md) | ST 官方 Datasheet / RM + 精选主题 |

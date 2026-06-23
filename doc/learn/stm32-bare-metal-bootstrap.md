@@ -103,6 +103,7 @@ HSE 启动失败时，本仓库 `set_sys_clock_to_72mhz()` 超时返回，继续
 - 标准 **CMSIS Device 包**启动流程，不是 CubeMX 逐行「生成」的逻辑。
 - 文件名：`stm32f103` 系列，`xB` = **medium-density**（C8/CB 等 64K/128K Flash 档）。
 - 职责：设栈 → 拷贝 `.data` → 清零 `.bss` → `SystemInit` → `main`。
+- 语言为 GNU GAS **ARM/Thumb 汇编**（非 x86）；与 PC 汇编差异见 [Q12](#q12startup_stm32f103xbs-是汇编写的吗和-x86-汇编有什么区别)。
 
 **与本仓库**
 
@@ -113,32 +114,13 @@ HSE 启动失败时，本仓库 `set_sys_clock_to_72mhz()` 超时返回，继续
 
 ## Q6：CMSIS 是什么？
 
-**CMSIS** = **C**ortex **M**icrocontroller **S**oftware **I**nterface **S**tandard（ARM 制定的 Cortex-M 软件接口标准）。
+**CMSIS** = **C**ortex **M**icrocontroller **S**oftware **I**nterface **S**tandard（ARM 制定的 Cortex-M 软件接口标准），分 **Core**（内核）、**Device**（芯片寄存器与启动）与可选扩展三层。
 
-```text
-应用代码 (main.c, 驱动...)
-    ↑
-CMSIS-Core     — ARM：NVIC、SysTick、内核寄存器
-    ↑
-CMSIS-Device   — 芯片厂：stm32f103xx.h、startup、SystemInit
-    ↑
-STM32F103 硬件
-```
-
-**CMSIS 设备支持包** = 某系列 MCU 的 Device 层：头文件、启动汇编、`system_*.c` 等。
-
-本仓库 **f103-blink 不链接 CMSIS 头文件**，但保留 `SystemInit` / 向量表等命名，以便与工具链和 ST 模板对照。
+本仓库 **f103-blink 不链接 CMSIS 头文件**，但保留 `SystemInit` / 向量表等命名，属于 CMSIS **规范兼容**实现。分层详解、手写边界判定、与 HAL 关系见 **[CMSIS 标准与手写裸机边界](cmsis-overview.md)**。
 
 ---
 
 ## Q7：ST CMSIS Device 包怎么获取？（官方途径）
-
-| 途径 | 说明 |
-|------|------|
-| [STM32CubeF1](https://www.st.com/en/embedded-software/stm32cubef1.html) | 官网 ZIP（可能需 ST 账号）；解压后含完整 CMSIS |
-| [GitHub STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) | `git clone --recursive`（勿用 GitHub「Download ZIP」，缺 submodule） |
-| [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) | 仅 Device 层，体积较小 |
-| STM32CubeMX / CubeIDE | 安装时自动下载 pack 到本地缓存 |
 
 本仓库脚本：
 
@@ -147,15 +129,16 @@ STM32F103 硬件
 ./scripts/fetch-stm32cubef1.sh --verify-only
 ```
 
-详见 [`vendor-pack/STM32CubeF1/README.md`](../../vendor-pack/STM32CubeF1/README.md)。
+官方途径（STM32CubeF1、cmsis-device-f1、CubeMX 缓存等）与仓库拆分说明见 **[cmsis-overview.md §2](cmsis-overview.md#2-stm32-生态中的落地形式)**；路径表见 [`vendor-pack/STM32CubeF1/README.md`](../../vendor-pack/STM32CubeF1/README.md)。
 
 ---
 
 ## Q8：和 STM32CubeMX 的关系？
 
-- **CubeMX** 常规生成 HAL 工程：`main.c`、`SystemClock_Config()`、外设 `MX_*_Init()` 等。
-- **`startup_*.s` / `system_*.c`** 通常来自 **CMSIS Device 包**，CubeMX 引用而非从零生成。
-- 裸机项目可手写精简版 startup/system（本仓库做法），用 Cube 包作对照即可。
+- CubeMX **生成**的主要是 HAL 层（`SystemClock_Config()`、`MX_*_Init()` 等）；**`startup_*.s` / `system_*.c`** 通常来自 CMSIS Device 包，CubeMX 引用而非从零生成。
+- 裸机可手写精简版 startup/system（本仓库做法），用 Cube 包作对照。
+
+CubeMX 与 CMSIS 的三类依赖（固定 / 随时钟变化 / 可选扩展）详见 **[cmsis-overview.md §3](cmsis-overview.md#3-cubemx-与-cmsis)**。
 
 ---
 
@@ -214,8 +197,84 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 
 ---
 
+## Q11：`SystemInit` 是怎么调用的？
+
+**要点**
+
+- **`main.c` 不调用** `SystemInit`；进入 `main()` 前，启动汇编已完成时钟初始化。
+- 上电/复位后，Cortex-M3 从 Flash 起始读**中断向量表**；第二项为 `Reset_Handler` 入口。向量表与 NVIC 概念见 **[中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)**。
+- `Reset_Handler` 完成 C 运行环境最小初始化后，用 `bl SystemInit` 跳转；链接阶段解析到 [`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) 中的同名函数。
+
+**调用链**
+
+```text
+复位 → 向量表 g_pfnVectors → Reset_Handler
+     → 设 MSP → 拷贝 .data → 清零 .bss → SystemInit → main
+```
+
+**与本仓库**
+
+| 位置 | 作用 |
+|------|------|
+| [`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) | 向量表第二项指向 `Reset_Handler`；第 90 行 `bl SystemInit` |
+| [`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) | `SystemInit()` 定义：RCC 复位默认化 + `set_sys_clock_to_72mhz()` |
+| [`main.c`](../../modules/f103-blink/src/main.c) | 注释说明时钟已在 startup 阶段完成；业务代码直接使用已配置好的主频 |
+
+`bl`（branch with link）等价于 x86 的 `call`：把返回地址写入 `lr`（r14），再跳转到 `SystemInit`。
+
+---
+
+## Q12：`startup_stm32f103xb.s` 是汇编写的吗？和 x86 汇编有什么区别？
+
+**要点**
+
+- 是**汇编源文件**（`.s`），由 **GNU 汇编器（GAS）** 按 **ARM/Thumb 统一语法**（`.syntax unified`）汇编，目标 CPU 为 **Cortex-M3**，不是 x86。
+- 职责：放置中断向量表；实现 `Reset_Handler`（栈、`.data`/`.bss`、调 `SystemInit`、调 `main`）。详见 [Q5](#q5startup_stm32f103xbs-是哪里来的)。
+
+**与常见 x86 汇编（PC）对比**
+
+| 维度 | 本仓库 ARM 启动代码 | 常见 x86 汇编 |
+|------|---------------------|---------------|
+| CPU 架构 | ARM Cortex-M3，RISC，Thumb 指令集 | x86/x64，CISC，变长指令 |
+| 运行环境 | 裸机，无 OS，上电从 Flash 向量表启动 | 多在 Linux/Windows 用户态或内核态 |
+| 寄存器 | `r0`–`r15`；`sp`=r13，`lr`=r14，`pc`=r15 | `eax/ebx/...` 或 `rax/rbx/...` |
+| 访存 | **Load/Store**：须 `ldr`/`str`，不能随意 `mov mem, mem` | 常可直接 `mov [addr], reg` |
+| 函数调用 | `bl SystemInit` | `call SystemInit` |
+| 语法风格 | GNU ARM：`.thumb`、`.word`、`ldr r0, =_estack` | Intel（`mov eax, ebx`）或 AT&T（`movl %ebx, %eax`） |
+| 启动职责 | 向量表、RAM 段初始化、跳 C 入口 | 通常由 Bootloader/BIOS/UEFI 与 crt0 完成 |
+
+**语法示例（本文件 vs x86 Intel 类比）**
+
+ARM Thumb（[`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s)）：
+
+```asm
+ldr r0, =_estack    /* 符号地址载入 r0 */
+mov sp, r0          /* 设主栈指针 MSP */
+bl SystemInit       /* 调用，返回地址进 lr */
+bl main
+```
+
+x86 Intel 风格（类比，非本工程）：
+
+```asm
+mov esp, offset _estack
+call SystemInit
+call main
+```
+
+**为何嵌入式常手写启动汇编**
+
+复位后硬件只认向量表（第一项栈顶、第二项 Reset 入口）；`.data`/`.bss` 须在 C 全局变量可用前初始化——这些步骤 C 尚不能完成。PC 程序很少手写启动文件，因链接器自带的 `crt0.o` 与 OS 加载器已代为处理。
+
+ST 官方 CMSIS 模板按工具链分 `gcc` / `iar` / `arm`（Keil）三版，向量表顺序与 Reset 流程一致，仅汇编语法不同。见 [cmsis-overview.md §2.1](cmsis-overview.md#21-官方仓库拆分)。
+
+---
+
 ## 延伸阅读
 
+- [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) — 向量表作用、NVIC 职责、与 CMSIS/HAL 关系
+- [f103-blink 编译流程](f103-module-build-flow.md) — CMake、.c/.s 链接、链接脚本与 startup 协作
+- [CMSIS 标准与手写裸机边界](cmsis-overview.md)
 - [Datasheet 与 Reference Manual 怎么读？](datasheet-vs-reference-manual.md)
 - [RCC：HSE → PLL → 72 MHz](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)
 - [f103-blink 模块说明](../modules-f103-blink.md)

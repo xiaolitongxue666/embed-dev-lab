@@ -57,6 +57,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 |------|------|
 | 快速上手 | `doc/getting-started.md` |
 | probe-rs | `doc/probe-rs.md` |
+| CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
 | 脚本 | `doc/scripts-reference.md` |
 | MCP/Skill | `doc/mcp-skills.md` |
 | ST 官方参考 | `doc/reference/stm32f103/` |

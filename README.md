@@ -365,6 +365,8 @@ probe-rs list
 | [doc/scripts-reference.md](doc/scripts-reference.md) | 脚本完整参考 |
 | [doc/mcp-skills.md](doc/mcp-skills.md) | MCP 与 Skill 安装 |
 | [doc/modules-f103-blink.md](doc/modules-f103-blink.md) | F103 demo 模块 |
+| [doc/learn/cmsis-overview.md](doc/learn/cmsis-overview.md) | CMSIS 分层、手写兼容边界、与 HAL 关系 |
+| [doc/learn/interrupt-vector-table-and-nvic.md](doc/learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、与 startup 关系 |
 | [doc/reference/stm32f103/](doc/reference/stm32f103/) | ST 官方 Datasheet / RM |
 
 ### PATH 说明（Windows）

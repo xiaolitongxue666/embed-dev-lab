@@ -33,4 +33,4 @@ ST 官方 **STM32Cube MCU Package for F1**，含 CMSIS-Core/Device、HAL/LL 驱�
 
 ## 与本仓库 demo 的关系
 
-[`modules/f103-blink`](../../modules/f103-blink) 使用**手写**精简版 `startup_stm32f103xb.s` 与 `system_stm32f10x.c`，不链接 HAL，不依赖本目录构建。此处固件包供**对照 ST 官方 CMSIS 模板**与后续模块参考。
+[`modules/f103-blink`](../../modules/f103-blink) 使用**手写**精简版 `startup_stm32f103xb.s` 与 `system_stm32f10x.c`，不链接 HAL，不依赖本目录构建。此处固件包供**对照 ST 官方 CMSIS 模板**与后续模块参考。CMSIS 分层与手写兼容边界见 [`doc/learn/cmsis-overview.md`](../../doc/learn/cmsis-overview.md)。

@@ -20,6 +20,8 @@ modules/f103-blink/
 
 ## 构建与烧录
 
+C 源文件（`src/`）与启动汇编（`startup/`）在 CMake 中列入同一 `SOURCES`，分别编译为 `.o` 后由链接脚本合并为单一 `.elf`；详见 [f103-blink 编译流程](learn/f103-module-build-flow.md)。
+
 ```bash
 ./scripts/build.sh f103-blink          # configure + build
 ./scripts/build.sh f103-blink build
@@ -61,9 +63,15 @@ build.sh flash          → probe-rs 读 .elf
 build.sh flash-openocd  → OpenOCD 读 .hex
 ```
 
-## 时钟
+## 启动与时钟
 
-`SystemInit()`（startup 在 `main` 前调用）尝试 **HSE 8 MHz × PLL9 → 72 MHz**。HSE 超时则保持复位默认 **HSI 8 MHz**，避免无晶振板卡死。
+上电后 [`startup/startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) 的 `Reset_Handler` 设栈、初始化 `.data`/`.bss`，再 `bl SystemInit`（**不在 `main.c` 中调用**），最后进入 `main`。调用链与汇编/x86 差异见 [裸机入门 Q11/Q12](learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)；向量表与 NVIC 见 [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md)。
+
+`SystemInit()`（[`src/system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c)）尝试 **HSE 8 MHz × PLL9 → 72 MHz**。HSE 超时则保持复位默认 **HSI 8 MHz**，避免无晶振板卡死。
+
+## CMSIS 兼容性
+
+本模块**不链接**官方 CMSIS 头文件与 HAL，但 startup / `SystemInit` 遵循 CMSIS 规范（向量表顺序、Reset 流程、标准接口名），属于 **CMSIS 生态兼容**的手写实现。概念说明与 ST 官方模板对照路径见 [CMSIS 标准与手写裸机边界](learn/cmsis-overview.md)；官方模板 fetch 后位于 `vendor-pack/STM32CubeF1/.../Templates/`。
 
 ## PC13 与 Backup 域
 

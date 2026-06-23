@@ -106,6 +106,8 @@ flash  → probe-rs 烧录 .elf
 flash-openocd → OpenOCD 烧录 .hex
 ```
 
+CMake / 链接细节见 [f103-blink 编译流程](learn/f103-module-build-flow.md)。
+
 ---
 
 ### install-tools.sh — 分 OS 安装

@@ -1,6 +1,6 @@
-# ST CMSIS 组件仓库归纳
+# ST F1 软件仓库归纳
 
-整理 STM32Cube 生态下 **CMSIS 相关 MCU Component** 仓库的职责、层级关系与版本配对规则。与 [CMSIS 标准与手写裸机边界](cmsis-overview.md) 对照阅读。
+整理 STM32Cube 生态下 **F1 系列**相关 Git 仓库：CMSIS 组件、HAL 驱动、全量固件包。与 [CMSIS 标准与手写裸机边界](cmsis-overview.md) 对照阅读。
 
 官方 CMSIS 6 总览：[CMSIS Introduction](https://arm-software.github.io/CMSIS_6/latest/General/index.html)
 
@@ -33,6 +33,9 @@ flowchart TB
     DevH5[cmsis-device-h5]
     DevH7[cmsis-device-h7]
   end
+  subgraph stHal [ST F1 驱动]
+    HAL[stm32f1xx-hal-driver]
+  end
   subgraph stMw [ST 中间件]
     RtosTx[stm32-mw-cmsis-rtos-tx]
   end
@@ -41,7 +44,9 @@ flowchart TB
   end
   CMSIS6 --> STCore
   STCore --> DevF1
+  DevF1 --> HAL
   DevF1 --> CubeF1
+  HAL --> CubeF1
   RtosTx --> CubeF1
 ```
 
@@ -58,6 +63,8 @@ flowchart TB
 | [cmsis-device-u5](https://github.com/STMicroelectronics/cmsis-device-u5) | **Device** | U5 系列（含 TrustZone 等）设备描述与启动模板 | STM32U5 | 同上 |
 | [cmsis-device-h5](https://github.com/STMicroelectronics/cmsis-device-h5) | **Device** | H5 系列设备描述与启动模板 | STM32H5 | 同上 |
 | [cmsis-device-h7](https://github.com/STMicroelectronics/cmsis-device-h7) | **Device** | H7 高性能/双核系列设备描述与启动模板 | STM32H7 | 同上 |
+| [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | **HAL/LL** | F1 外设 HAL + LL 驱动（`stm32f1xx_hal_*.c`、`stm32f1xx_ll_*.h`）；Cube 内路径 `Drivers/STM32F1xx_HAL_Driver/` | STM32F1 | **参考 repo**；说明见 [`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)；本仓库未 submodule |
+| [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) | **MCU Package** | **全家桶**：CMSIS + HAL/LL + Middleware + BSP + Projects + Utilities；自身亦为 **submodule 聚合仓库** | STM32F1 | 本地 [`fetch-stm32cubef1.sh`](../../scripts/fetch-stm32cubef1.sh) → [`vendor-pack/STM32CubeF1/`](../../vendor-pack/STM32CubeF1/README.md)（可选，不全量进库） |
 | [stm32-mw-cmsis-rtos-tx](https://github.com/STMicroelectronics/stm32-mw-cmsis-rtos-tx) | **Middleware** | **CMSIS-RTOS v2** API 对 **Azure RTOS ThreadX** 的封装适配层（**非** FreeRTOS 封装） | 全系列通用中间件组件 | 可选；当前 [`f103-blink`](../../modules/f103-blink/) 未使用 |
 
 ### 2.1 cmsis-core 要点
@@ -73,7 +80,21 @@ flowchart TB
 - **不提供**外设业务 API（那是 HAL/LL 层）。
 - 启动文件按工具链分目录：`gcc` / `iar` / `arm`（Keil MDK），向量表顺序一致，汇编语法不同。
 
-### 2.3 stm32-mw-cmsis-rtos-tx 要点
+### 2.3 stm32f1xx-hal-driver 要点
+
+- F1 系列 **HAL + LL** 独立组件仓库，从 [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) 单体包中拆分。
+- **须与 CMSIS-Core、CMSIS-Device 版本成对**（三者 + Cube 包版本见下表）。
+- 提供 `HAL_GPIO_WritePin()` 等功能 API 与 `LL_GPIO_*` 底层接口；依赖 Device 头文件，不替代 CMSIS 层。
+- 本仓库 [`f103-blink`](../../modules/f103-blink/) 不链接 HAL；仅作文档参考。
+
+### 2.4 STM32CubeF1 要点
+
+- ST 官方 [**MCU Package**](https://github.com/STMicroelectronics/STM32CubeF1)（F1 全家桶）：CMSIS、HAL/LL、Middleware、板级 BSP、例程工程。
+- GitHub 仓库通过 **`.gitmodules` + submodule** 聚合各 Component；须 `git clone --recursive`，**勿用「Download ZIP」**。
+- 目标版本 **v1.8.6**（与 [`fetch-stm32cubef1.sh`](../../scripts/fetch-stm32cubef1.sh) 一致）；GitHub `master` 可能领先 st.com（rolling release）。
+- 部分 Middleware（如 STemWin）因 license 在 GitHub 上不全，需从 [st.com](https://www.st.com/en/embedded-software/stm32cubef1.html) 下载完整 ZIP。
+
+### 2.5 stm32-mw-cmsis-rtos-tx 要点
 
 - 属于 STM32Cube **Middleware** 组件，不是 Core/Device 层。
 - 在 ThreadX 之上实现 [CMSIS-RTOS2](https://arm-software.github.io/CMSIS_6/latest/RTOS2/index.html) 标准 API，便于中间件与工具链以统一 RTOS 接口集成。
@@ -83,17 +104,24 @@ flowchart TB
 
 ## 3. 版本配对规则
 
-**CMSIS-Core 与 CMSIS-Device 版本必须成对使用。** 各 `cmsis-device-*` 仓库 README / Release Notes 提供与 Core tag 的对应表。
+**CMSIS-Core、CMSIS-Device、HAL 三者须成对使用。** 各组件 README / Release Notes 提供对应表。
 
-### 3.1 F1 示例（本仓库相关）
+### 3.1 F1 示例（本仓库 · STM32F103C8T6）
 
-摘自 [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) 兼容表（节选）：
+| 组件 | 推荐 tag | 上游仓库 |
+|------|----------|----------|
+| CMSIS-Core | 分支 `cm3` · `v5.6.0_cm3` | [cmsis-core](https://github.com/STMicroelectronics/cmsis-core) |
+| CMSIS-Device F1 | `v4.3.5` | [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) |
+| HAL Driver F1 | `v1.1.8`（与下表旧版配对；升级 HAL 时查 Release Note） | [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) |
+| MCU Package | `v1.8.6` | [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) |
 
-| CMSIS Device F1 | CMSIS Core（ST tag） | 完整 MCU Package |
-|-----------------|----------------------|------------------|
-| v4.3.1 – v4.3.3 | v5.4.0_cm3 | STM32CubeF1 v1.8.0 – v1.8.4 |
+摘自 [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) / [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) 兼容表（节选）：
 
-本仓库 submodule 固定 **cmsis-core `v5.4.0_cm3`** + **cmsis-device-f1 `v4.3.3`**（与 [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) 兼容表一致）。可选再 fetch STM32CubeF1 全包获取 HAL/例程。
+| CMSIS Device F1 | CMSIS Core | HAL Driver F1 | STM32CubeF1 |
+|-----------------|------------|---------------|-------------|
+| v4.3.3 | v5.4.0_cm3 | v1.1.8 | v1.8.4 |
+
+本仓库 submodule：**cmsis-core `cm3` / `v5.6.0_cm3`** + **cmsis-device-f1 `v4.3.5`**。下表为 ST 文档记载的较早配对（HAL `v1.1.8` 仍引用该组合）：
 
 ### 3.2 其他系列
 
@@ -122,7 +150,8 @@ ST `cmsis-core` 在仓库根保留 **`Include/` 副本**，使旧工程与 Cube 
 |------|----------|------|
 | **Core** | submodule `vendor-pack/cmsis-core` | 对照 `core_cm3.h`、NVIC 内联函数、编译器头 |
 | **Device** | submodule `vendor-pack/cmsis-device-f1` | 对照官方 `startup_stm32f103xb.s`、`system_stm32f1xx.c`、`stm32f103xb.h` |
-| **HAL/全包** | `vendor-pack/STM32CubeF1/`（fetch 后，可选） | HAL、Middleware、例程 |
+| **HAL** | 参考 [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | 对照 `HAL_GPIO_*`、`HAL_RCC_*` 等（本 demo 未用） |
+| **全包** | `vendor-pack/STM32CubeF1/`（fetch 后，可选） | HAL、Middleware、BSP、例程 |
 | **应用** | [`modules/f103-blink`](../../modules/f103-blink/) | 手写 `startup` / `system_stm32f10x.c`，遵循 `SystemInit` 与向量表规范，**不参与 CMake 链接官方包** |
 
 详见 [CMSIS 标准与手写裸机边界](cmsis-overview.md) §4。
@@ -136,7 +165,10 @@ ST `cmsis-core` 在仓库根保留 **`Include/` 副本**，使旧工程与 Cube 
 ./scripts/fetch-cmsis.sh
 ./scripts/fetch-cmsis.sh --verify-only
 
-# HAL / 全包（可选）
+# HAL 组件（参考，未 submodule）
+# git clone https://github.com/STMicroelectronics/stm32f1xx-hal-driver.git
+
+# STM32CubeF1 全包（可选）
 ./scripts/fetch-stm32cubef1.sh
 ./scripts/fetch-stm32cubef1.sh --verify-only
 ```
@@ -151,5 +183,6 @@ ST `cmsis-core` 在仓库根保留 **`Include/` 副本**，使旧工程与 Cube 
 - [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)
 - [vendor-pack/cmsis-core.embed-dev-lab.md](../../vendor-pack/cmsis-core.embed-dev-lab.md)
 - [vendor-pack/cmsis-device-f1.embed-dev-lab.md](../../vendor-pack/cmsis-device-f1.embed-dev-lab.md)
-- [STM32CubeF1 本地固件包](../../vendor-pack/STM32CubeF1/README.md)
+- [vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)
+- [STM32CubeF1 上游仓库](https://github.com/STMicroelectronics/STM32CubeF1) · [本地说明](../../vendor-pack/STM32CubeF1/README.md)
 - [ARM CMSIS 6 官方文档](https://arm-software.github.io/CMSIS_6/latest/General/index.html)

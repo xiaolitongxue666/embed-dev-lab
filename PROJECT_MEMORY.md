@@ -14,9 +14,11 @@
 | ST 官方文档 fetch | `./scripts/fetch-stm32f103-docs.sh` |
 | STM32CubeF1 fetch | `./scripts/fetch-stm32cubef1.sh` |
 | ST 官方参考（PDF+MD） | `doc/reference/stm32f103/` |
-| CMSIS submodules | `vendor-pack/cmsis-core`（`v5.4.0_cm3`）+ `cmsis-device-f1`（`v4.3.3`）；`./scripts/fetch-cmsis.sh` |
+| CMSIS submodules | `cmsis-core`（`cm3` / `v5.6.0_cm3`）+ `cmsis-device-f1`（`v4.3.5`）；`./scripts/fetch-cmsis.sh` |
 | CMSIS 标准与手写边界 | `doc/learn/cmsis-overview.md` |
-| ST CMSIS 组件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |
+| ST F1 软件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |
+| STM32CubeF1 参考 | https://github.com/STMicroelectronics/STM32CubeF1 · `vendor-pack/STM32CubeF1/README.md` |
+| HAL 参考 | https://github.com/STMicroelectronics/stm32f1xx-hal-driver · `vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md` |
 | 中断向量表与 NVIC | `doc/learn/interrupt-vector-table-and-nvic.md` |
 | DS5319 / RM0008 分工 | `doc/learn/datasheet-vs-reference-manual.md` |
 | 厂商本地资料 | `vendor-pack/`（驱动 / CMSIS submodules / CubeF1 fetch） |
@@ -38,11 +40,11 @@
 7. **ST-Link WinUSB**：Windows 上 probe-rs 需 Debug 接口 WinUSB；bundled 路径 `vendor-pack/STLink/.../USBDriver/`，脚本 `stlink-winusb-windows.sh`。
 8. **f103-blink 时钟**：`system_stm32f10x.c` 手写寄存器版（非 CubeMX）；HSE→72MHz，HSE 超时保持 HSI。
 9. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
-10. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md` + `doc/learn/stm32-cmsis-component-repos.md`；**submodule** `cmsis-core`（`v5.4.0_cm3`）+ `cmsis-device-f1`（`v4.3.3`）；f103-blink 不链接官方包（兼容≠调用）。
+10. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md` + `doc/learn/stm32-cmsis-component-repos.md`；**submodule** `cmsis-core`（`cm3`/`v5.6.0_cm3`）+ `cmsis-device-f1`（`v4.3.5`）；F103C8T6；f103-blink 不链接官方包。
 11. **flash 前需 build**：`build.sh f103-blink flash` 不自动编译。
 12. **ST 官方 PDF+MD**：`doc/reference/stm32f103/`；**DS5319 定约束/时钟树，RM0008 写寄存器**（改 `system_stm32f10x.c` 以 RM §6 RCC 为主）；详见 `doc/learn/datasheet-vs-reference-manual.md`；fetch + topic 页码以本地 PDF Rev 为准。
 13. **vendor-pack**：ST-Link 驱动 + **CMSIS submodules**（core + device-f1）+ 核心板例程 + STM32CubeF1 fetch（可选）。
-14. **fetch-cmsis.sh**：`git submodule update --init` core + device-f1；tag **`v5.4.0_cm3`** / **`v4.3.3`** 成对；`fetch-cmsis-core.sh` 为别名；首次 `git clone --recursive`。
+14. **fetch-cmsis.sh**：`git submodule update --init`；Core 分支 **`cm3`** / tag **`v5.6.0_cm3`**，Device **`v4.3.5`**；`.gitmodules` 声明 `branch = cm3`；首次 `git clone --recursive`。
 15. **fetch-stm32cubef1.sh**：优先 `archives/*.zip` 解压，否则 `git clone --recursive v1.8.6`；**勿用 GitHub「Download ZIP」**（缺 submodule）。
 16. **用户文档**：`doc/` 中文；学习笔记含 CMSIS 6 概述、ST 组件仓库归纳、中断/NVIC、编译流程、map 文件。
 17. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线 SWDIO/SWCLK/GND/3.3V。

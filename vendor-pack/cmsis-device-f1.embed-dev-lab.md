@@ -2,15 +2,16 @@
 
 本目录 [`cmsis-device-f1/`](cmsis-device-f1/) 为 **git submodule**，指向 ST 维护的 [STMicroelectronics/cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1)。
 
+目标芯片：**STM32F103C8T6**（Medium-density **F103xB**；与 [`f103-blink`](../modules/f103-blink/) 的 `startup_stm32f103xb.s` 同系列）。
+
 ## 固定版本
 
 | 项 | 值 |
 |----|-----|
-| Tag | **`v4.3.3`** |
-| 配对 Core | [`cmsis-core`](cmsis-core/) **`v5.4.0_cm3`** |
-| 适用系列 | STM32F1 |
+| Tag | **`v4.3.5`**（F1 Device 最新发布 tag；勿跟踪 `master`） |
+| 配对 Core | [`cmsis-core`](cmsis-core/) 分支 **`cm3`** / **`v5.6.0_cm3`** |
 
-> CMSIS-Core 与 CMSIS-Device **须成对升级**；兼容表见 [cmsis-device-f1 README](https://github.com/STMicroelectronics/cmsis-device-f1#compatibility-information) 与 [ST CMSIS 组件仓库归纳](../doc/learn/stm32-cmsis-component-repos.md)。
+> CMSIS-Core 与 CMSIS-Device **须成对升级**；ST 官方表见 [cmsis-device-f1 README](https://github.com/STMicroelectronics/cmsis-device-f1#compatibility-information) 与 [ST F1 软件仓库归纳](../doc/learn/stm32-cmsis-component-repos.md)。
 
 ## 关键路径（submodule 内）
 

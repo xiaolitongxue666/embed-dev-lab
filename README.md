@@ -117,8 +117,8 @@ embed-dev-lab/
 ├── AGENTS.md                       # Codex 等无 MCP Agent 的 Skill 摘要
 ├── .gitmodules                     # cmsis-core / cmsis-device-f1 submodule
 ├── vendor-pack/                    # ST-Link 驱动、CMSIS submodules、CubeF1 fetch
-│   ├── cmsis-core/                 # CMSIS-Core submodule v5.4.0_cm3
-│   ├── cmsis-device-f1/            # CMSIS-Device F1 submodule v4.3.3
+│   ├── cmsis-core/                 # CMSIS-Core submodule cm3 / v5.6.0_cm3
+│   ├── cmsis-device-f1/            # CMSIS-Device F1 submodule v4.3.5
 │   └── STM32CubeF1/                # F1 全包（fetch，可选）
 ├── .tools/                         # MCP cargo 构建缓存（gitignore）
 ├── PROJECT_MEMORY.md               # 维护速查（Agent / 维护者）

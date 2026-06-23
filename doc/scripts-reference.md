@@ -199,8 +199,8 @@ CMake / 链接细节见 [f103-blink 编译流程](learn/f103-module-build-flow.m
 
 | 路径 | Tag | 层 |
 |------|-----|-----|
-| `vendor-pack/cmsis-core/` | `v5.4.0_cm3` | CMSIS-Core（Cortex-M3） |
-| `vendor-pack/cmsis-device-f1/` | `v4.3.3` | CMSIS-Device F1（与 Core 成对） |
+| `vendor-pack/cmsis-core/` | 分支 `cm3` · `v5.6.0_cm3` | CMSIS-Core（Cortex-M3，F103C8T6） |
+| `vendor-pack/cmsis-device-f1/` | `v4.3.5` | CMSIS-Device F1（F103xB） |
 
 ```bash
 git clone --recursive <repo-url>
@@ -217,7 +217,8 @@ git clone --recursive <repo-url>
 
 ### fetch-stm32cubef1.sh — STM32CubeF1 固件包
 
-获取 ST **STM32CubeF1**（CMSIS/HAL/例程）至 `vendor-pack/STM32CubeF1/`。  
+获取 ST [**STM32CubeF1**](https://github.com/STMicroelectronics/STM32CubeF1) MCU Package（CMSIS/HAL/Middleware/例程）至 `vendor-pack/STM32CubeF1/`。  
+HAL 独立上游：[stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver)（见 [`stm32f1xx-hal-driver.embed-dev-lab.md`](../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)）。  
 GitHub「Download ZIP」不含 submodule；请用 **ST 官网 ZIP** 或脚本的 **`--clone`**。
 
 ```bash

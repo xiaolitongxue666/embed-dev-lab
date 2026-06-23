@@ -91,8 +91,8 @@ dkms.conf
 #
 # 目录说明：
 #   vendor-pack/STLink/              ST-Link WinUSB 驱动（脚本依赖 USBDriver/，可提交）
-#   vendor-pack/cmsis-core/          CMSIS-Core git submodule（v5.4.0_cm3，随仓库提交指针）
-#   vendor-pack/cmsis-device-f1/     CMSIS-Device F1 git submodule（v4.3.3，与 Core 成对）
+#   vendor-pack/cmsis-core/          CMSIS-Core git submodule（cm3 / v5.6.0_cm3，随仓库提交指针）
+#   vendor-pack/cmsis-device-f1/     CMSIS-Device F1 git submodule（v4.3.5，与 Core 成对）
 #   vendor-pack/cmsis-*.embed-dev-lab.md  子模块说明（可提交，勿放入 submodule 目录内）
 #   vendor-pack/STM32F103C8T6核心板/  核心板 MDK 例程、PCB 等参考（~360MB，仅本地）
 #   vendor-pack/STM32CubeF1/         ST 官方 F1 全包（fetch 脚本，仅 README 提交；HAL/例程可选）

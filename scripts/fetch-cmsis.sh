@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # 初始化 / 更新 vendor-pack CMSIS git submodules（cmsis-core + cmsis-device-f1）
+# 目标：STM32F103C8T6（Cortex-M3，f103-blink 使用 startup_stm32f103xb.s）
 # 用法: ./scripts/fetch-cmsis.sh [--verify-only]
 # 首次 clone 本仓库请用: git clone --recursive
 # -----------------------------------------------------------------------------
@@ -13,8 +14,9 @@ source "$ROOT/scripts/lib/common.sh"
 
 CMSIS_CORE_DIR="$ROOT/vendor-pack/cmsis-core"
 CMSIS_DEVICE_F1_DIR="$ROOT/vendor-pack/cmsis-device-f1"
-CMSIS_CORE_TAG="v5.4.0_cm3"
-CMSIS_DEVICE_F1_TAG="v4.3.3"
+CMSIS_CORE_BRANCH="cm3"
+CMSIS_CORE_TAG="v5.6.0_cm3"
+CMSIS_DEVICE_F1_TAG="v4.3.5"
 REL_CORE_HEADER="Include/core_cm3.h"
 REL_DEVICE_HEADER="Include/stm32f103xb.h"
 REL_STARTUP="Source/Templates/gcc/startup_stm32f103xb.s"
@@ -26,9 +28,9 @@ usage() {
   cat <<EOF
 Usage: ./scripts/fetch-cmsis.sh [options]
 
-Initialize or update ST CMSIS git submodules:
-  vendor-pack/cmsis-core/        tag ${CMSIS_CORE_TAG} (Cortex-M3)
-  vendor-pack/cmsis-device-f1/   tag ${CMSIS_DEVICE_F1_TAG} (paired with Core)
+Initialize or update ST CMSIS git submodules for STM32F103C8T6 (Cortex-M3):
+  vendor-pack/cmsis-core/        branch ${CMSIS_CORE_BRANCH} (${CMSIS_CORE_TAG})
+  vendor-pack/cmsis-device-f1/   tag ${CMSIS_DEVICE_F1_TAG}
 
 Options:
   --verify-only    Check key CMSIS paths exist (no fetch)
@@ -80,14 +82,28 @@ verify_layout() {
   verify_device_f1
 }
 
-checkout_submodule_tag() {
+checkout_core() {
+  [[ -d "$CMSIS_CORE_DIR/.git" ]] || return 0
+  log_info "Checking out cmsis-core branch ${CMSIS_CORE_BRANCH} ..."
+  git -C "$CMSIS_CORE_DIR" fetch origin "$CMSIS_CORE_BRANCH"
+  git -C "$CMSIS_CORE_DIR" checkout "$CMSIS_CORE_BRANCH"
+  local current_tag
+  current_tag="$(git -C "$CMSIS_CORE_DIR" describe --tags --exact-match 2>/dev/null || true)"
+  if [[ "$current_tag" != "$CMSIS_CORE_TAG" ]]; then
+    log_info "Pinning cmsis-core to tag ${CMSIS_CORE_TAG} ..."
+    git -C "$CMSIS_CORE_DIR" fetch --tags origin
+    git -C "$CMSIS_CORE_DIR" checkout "$CMSIS_CORE_TAG"
+  fi
+}
+
+checkout_device_f1() {
   local dir="$1"
   local tag="$2"
   [[ -d "$dir/.git" ]] || return 0
   local current_tag
   current_tag="$(git -C "$dir" describe --tags --exact-match 2>/dev/null || true)"
   if [[ "$current_tag" != "$tag" ]]; then
-    log_info "Checking out ${dir##*/} tag ${tag} ..."
+    log_info "Checking out cmsis-device-f1 tag ${tag} ..."
     git -C "$dir" fetch --tags origin
     git -C "$dir" checkout "$tag"
   fi
@@ -114,8 +130,8 @@ git -C "$ROOT" submodule update --init --recursive \
   vendor-pack/cmsis-core \
   vendor-pack/cmsis-device-f1
 
-checkout_submodule_tag "$CMSIS_CORE_DIR" "$CMSIS_CORE_TAG"
-checkout_submodule_tag "$CMSIS_DEVICE_F1_DIR" "$CMSIS_DEVICE_F1_TAG"
+checkout_core
+checkout_device_f1 "$CMSIS_DEVICE_F1_DIR" "$CMSIS_DEVICE_F1_TAG"
 
 verify_layout
-log_ok "CMSIS submodules ready (core ${CMSIS_CORE_TAG}, device-f1 ${CMSIS_DEVICE_F1_TAG})"
+log_ok "CMSIS submodules ready (core ${CMSIS_CORE_BRANCH}/${CMSIS_CORE_TAG}, device-f1 ${CMSIS_DEVICE_F1_TAG})"

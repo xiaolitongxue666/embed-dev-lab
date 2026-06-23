@@ -24,6 +24,7 @@ modules/f103-blink/
 ./scripts/build.sh f103-blink          # configure + build
 ./scripts/build.sh f103-blink build
 ./scripts/build.sh f103-blink flash
+./scripts/build-flash.sh               # 一键 build + flash（编译失败暂停）
 ```
 
 产物：

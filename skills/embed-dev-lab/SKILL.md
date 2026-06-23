@@ -15,6 +15,7 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 ```bash
 ./scripts/build.sh f103-blink build
 ./scripts/build.sh f103-blink flash    # 不自动 compile，改代码后先 build
+./scripts/build-flash.sh               # 一键 build + flash；编译失败暂停
 ```
 
 | 项 | 值 |

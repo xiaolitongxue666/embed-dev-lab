@@ -67,7 +67,26 @@ flowchart TB
 ./scripts/build.sh f103-blink build
 ./scripts/build.sh f103-blink flash
 ./scripts/build.sh f103-blink build && ./scripts/build.sh f103-blink flash
+./scripts/build-flash.sh f103-blink   # 同上；编译失败时暂停
 ```
+
+---
+
+### build-flash.sh — 一键编译并烧录
+
+依次执行 `build.sh build` → `build.sh flash`。编译失败时 **ninja/gcc 报错原样输出**，并在交互终端 **暂停等待 Enter**。
+
+```bash
+./scripts/build-flash.sh              # 默认 f103-blink
+./scripts/build-flash.sh f103-blink
+```
+
+| 步骤 | 行为 |
+|------|------|
+| build 失败 | 打印编译错误，`Press Enter to exit...`，exit 1 |
+| build 成功 | probe-rs download + reset |
+
+---
 
 F103 chip：`STM32F103C8Tx`。ELF：`modules/<module>/build/<module>.elf`。
 

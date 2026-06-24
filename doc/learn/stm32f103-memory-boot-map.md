@@ -150,7 +150,7 @@ Main Flash 物理上从 **`0x08000000`** 开始；**不是**「在 `0x0000` 段�
 
 ## 6. F103C8 Main Flash 链接布局（f103-manual-reg）
 
-[`STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) 将 **64 KB Flash** 与 **20 KB SRAM** 排布如下：
+[`STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) 用 GNU ld 的 `MEMORY` 声明 **64 KB Flash**（`0x08000000`）与 **20 KB SRAM**（`0x20000000`），再用 `SECTIONS` 把各 `.o` 的输入段合并为输出段并映射到上述区域。`MEMORY` 定义「容器」，`SECTIONS` 定义「各段怎么排、VMA/LMA 各在哪」—— 命令语义与逐段对照见 [从零手写 §2.1](f103-manual-build-from-scratch.md#21-gnu-ld-脚本结构entry--memory--sections)。排布结果如下：
 
 ```text
 Flash 物理 0x08000000          SRAM 物理 0x20000000

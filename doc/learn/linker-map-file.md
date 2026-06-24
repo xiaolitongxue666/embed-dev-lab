@@ -28,7 +28,7 @@ projects/f103-manual-reg/build/f103-manual-reg.map
 
 ### 1. 内存区域总览
 
-展示链接脚本 `MEMORY` 定义的所有存储区域（Flash、RAM、CCM 等）的起始地址、总大小、属性，是评估芯片资源是否够用的直观依据。
+展示链接脚本 `MEMORY` 定义的所有存储区域（Flash、RAM、CCM 等）的起始地址、总大小、属性，是评估芯片资源是否够用的直观依据。各输出段的地址与大小则由 `SECTIONS` 决定，并在 map 的 **`Linker script and memory map`** 一节逐项列出；`MEMORY` / `SECTIONS` 语义见 [从零手写 §2.1](f103-manual-build-from-scratch.md#21-gnu-ld-脚本结构entry--memory--sections)。
 
 本仓库 `f103-manual-reg.map` 示例：
 

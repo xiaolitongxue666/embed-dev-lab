@@ -137,6 +137,34 @@ projects/f103-manual-reg/
 | 栈顶 `_estack` | `0x20005000`（RAM 末尾，满递减栈） |
 | 向量表段 | `KEEP(*(.isr_vector))` 置于 Flash 最前 |
 
+#### 2.1 GNU ld 脚本结构（ENTRY / MEMORY / SECTIONS）
+
+链接脚本使用 **GNU ld** 语法（不是 C）。常见顶层命令自上而下为：
+
+| 命令 | 作用 |
+|------|------|
+| `ENTRY(...)` | 程序入口符号；本仓库为 `Reset_Handler` |
+| `MEMORY { ... }` | 定义物理存储区域：基址、容量、访问属性（`rx` / `rwx`） |
+| `SECTIONS { ... }` | 将各 `.o` 的**输入段**合并为**输出段**，并映射到 `MEMORY` 区域 |
+
+**`MEMORY` 与 `SECTIONS` 的分工**：`MEMORY` 回答「有哪些内存、门牌号在哪、多大」；`SECTIONS` 回答「程序各段怎么排、放进哪块内存」。没有 `SECTIONS`，链接器不知道 `.text`、`.data`、`.bss` 该进 Flash 还是 RAM，也无法生成 `_sdata`、`_edata` 等 startup 依赖的符号。
+
+本仓库 [`SECTIONS`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) 块中，每个 `.段名 : { ... } > 区域` 的含义：
+
+1. **输出段名**（如 `.text`、`.data`）—— 最终 ELF 里的段
+2. **花括号内** —— 从哪些输入段收集内容，例如 `*(.text)` 表示所有 `.o` 里的 `.text`
+3. **`> FLASH` / `> RAM`** —— 该段的 **VMA**（运行时地址）
+4. **`AT > FLASH`**（仅 `.data`）—— 该段的 **LMA**（烧录镜像在 Flash 中的存放地址）
+
+| 输出段 | VMA | LMA | 说明 |
+|--------|-----|-----|------|
+| `.isr_vector` | Flash | Flash | 向量表必须在 Flash 物理起始 |
+| `.text` | Flash | Flash | 代码与只读常量（XIP） |
+| `.data` | RAM | Flash | 已初始化全局变量；`_sidata = LOADADDR(.data)` 供 startup 拷贝 |
+| `.bss` | RAM | — | 未初始化全局变量；startup 清零，不占 Flash 镜像 |
+
+链接命令行上 `.obj` 的先后顺序**不决定** Flash 里段布局 —— 向量表仍在最前，因为 `SECTIONS` 先把 `*(.isr_vector)` 收进独立输出段。详见 [f103-module-build-flow.md §3.2](f103-module-build-flow.md#32-目标文件链接顺序)。
+
 **参照**：CMSIS [`STM32F103XB_FLASH.ld`](../../vendor-pack/cmsis-device-f1/Source/Templates/gcc/linker/STM32F103XB_FLASH.ld)，改 Flash 为 64K；链接脚本与 startup 的「契约」关系见 [f103-module-build-flow.md §4.1](f103-module-build-flow.md#41-链接脚本与-startup-协作)。
 
 ### 阶段 3：启动汇编

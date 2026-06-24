@@ -7,6 +7,10 @@
 | 整理日期 | 2026-06-11 |
 | 源码 | [`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../../projects/f103-manual-reg/src/system_stm32f1xx.c) |
 
+## RCC 概述
+
+**RCC**（Reset and Clock Control，复位与时钟控制）是管理全芯片时钟与外设门控的 ST 外设；时钟是单片机的「心跳」，RCC 寄存器负责源选择、倍频、分频与 **APB1ENR/APB2ENR** 等外设时钟开关。概念说明见 [裸机入门 Q3](../../../../learn/stm32-bare-metal-bootstrap.md#q3rcc-寄存器是什么)。
+
 ## 目标配置（f103-manual-reg）
 
 | 项目 | 值 |

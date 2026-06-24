@@ -66,12 +66,24 @@ projects/f103-manual-reg/        可构建 demo：手写 startup / system / GPIO
 
 **RCC** = **R**eset and **C**lock **C**ontrol（复位与时钟控制）。
 
-芯片的「时钟配电箱」：决定 CPU、AHB/APB 总线及各外设时钟频率与来源。
+RCC 是 STM32 片上的一路 **ST 外设**（基址 `0x40021000`，见 RM0008 memory map），配套一整套 **RCC 寄存器**，用来管理：
+
+| 职责 | 说明 | 本仓库涉及 |
+|------|------|------------|
+| 系统时钟源与倍频 | HSE / HSI / PLL、SYSCLK 切换 | [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) |
+| 总线分频 | AHB、APB1、APB2 相对 HCLK 的分频 | 同上 |
+| **外设时钟门控** | 各模块时钟使能（未开时钟则 MMIO 无效） | [`main.c`](../../projects/f103-manual-reg/src/main.c) 中 `RCC_APB1ENR` / `RCC_APB2ENR` |
+| 复位相关控制 | 部分外设/域的复位与释放 | 间接（如先开 PWR 时钟再配 Backup 域） |
+
+时钟是单片机的 **「心跳」**——CPU 指令节拍、外设采样与通信都依赖它。RCC 寄存器就是控制心跳的 **开关、分频器、切换器**；也可记作芯片的 **「时钟配电箱」**：决定电从哪来（HSE/HSI/PLL）、主频多少、分到哪条总线、哪路外设有没有电。
+
+寄存器摘录与 72 MHz 配置流程见 [RCC：HSE → PLL → 72 MHz](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)；MMIO 写 RCC 的地址语义见 [MMIO 基础](stm32f103-mmio-basics.md)。
 
 | 寄存器 | 基址 + 偏移 | 作用 |
 |--------|-------------|------|
 | `RCC_CR` | `0x40021000` | 开关 HSE/HSI/PLL，读就绪标志 |
 | `RCC_CFGR` | `0x40021004` | 系统时钟源、PLL 倍频、总线分频 |
+| `RCC_APB1ENR` / `RCC_APB2ENR` | `+0x1C` / `+0x18` | 外设时钟使能（门控） |
 | `FLASH_ACR` | `0x40022000` | 与主频相关的 Flash 等待周期 |
 
 ---

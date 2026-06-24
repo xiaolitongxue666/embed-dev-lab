@@ -171,6 +171,8 @@ Flash 物理 0x08000000          SRAM 物理 0x20000000
 | `.data` | **SRAM** | **Flash** | 已初始化全局变量 |
 | `.bss` | SRAM | — | 未初始化全局变量 |
 
+VMA/LMA 逐段语义、ld 语法、`LOADADDR`/`AT > FLASH` 与 startup 拷贝关系见 **[链接脚本 VMA 与 LMA](linker-vma-lma.md)**。
+
 ### 6.1 主栈：满递减与 `_estack`
 
 Cortex-M3 主栈为 **满递减栈（full descending）**：「向下增长」指 **SP 向低地址减小**，不是从 `0x20005000` 往上加。

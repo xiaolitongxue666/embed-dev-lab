@@ -58,10 +58,10 @@ Reset_Handler:
     ldr r0, =_estack
     mov sp, r0                 /* MSP = RAM 上界；栈向低地址增长（push 减 SP） */
 
-    /* 将 .data 从 Flash 拷贝到 RAM */
-    ldr r0, =_sdata
-    ldr r1, =_edata
-    ldr r2, =_sidata
+    /* .data：LMA（Flash/_sidata）→ VMA（RAM/_sdata.._edata）搬运，见 doc/learn/linker-vma-lma.md §4.1 */
+    ldr r0, =_sdata                      /* 拷贝目标：.data 在 RAM 的 VMA 起始 */
+    ldr r1, =_edata                      /* 拷贝目标：.data 在 RAM 的 VMA 结束（不含） */
+    ldr r2, =_sidata                     /* 拷贝源：.data 初值在 Flash 的 LMA 起始 */
     movs r3, #0
     b LoopCopyDataInit
 
@@ -75,9 +75,9 @@ LoopCopyDataInit:
     cmp r4, r1
     bcc CopyDataInit
 
-    /* 清零 .bss */
-    ldr r2, =_sbss
-    ldr r4, =_ebss
+    /* .bss：仅 VMA，无 LMA；将 _sbss.._ebss 清零，见 doc/learn/linker-vma-lma.md §4.2 */
+    ldr r2, =_sbss                       /* .bss 在 RAM 的 VMA 起始 */
+    ldr r4, =_ebss                       /* .bss 在 RAM 的 VMA 结束（不含） */
     movs r3, #0
     b LoopFillZerobss
 

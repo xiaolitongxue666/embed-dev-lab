@@ -165,6 +165,8 @@ projects/f103-manual-reg/
 
 链接命令行上 `.obj` 的先后顺序**不决定** Flash 里段布局 —— 向量表仍在最前，因为 `SECTIONS` 先把 `KEEP(*(.isr_vector))` 收进独立输出段。详见 [f103-module-build-flow.md §3.2](f103-module-build-flow.md#32-目标文件链接顺序)。
 
+**VMA / LMA 详解**（逐段对照本仓库 `.ld` 与 startup）：见 **[linker-vma-lma.md](linker-vma-lma.md)**。
+
 #### 2.2 `ALIGN` 与 `KEEP`（`.isr_vector` 段常用）
 
 | 写法 | 含义 |

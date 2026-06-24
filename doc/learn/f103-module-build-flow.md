@@ -335,7 +335,7 @@ flowchart TB
 
 ### 4.1 链接脚本与 startup 协作
 
-[`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) 用 GNU ld 的 `MEMORY` 定义 Flash/RAM 边界，用 `SECTIONS` 规定输出段布局与段符号；[`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 在 `Reset_Handler` 中使用这些符号。`SECTIONS` 是 ld 的段布局命令（非 C 关键字），负责把各 `.o` 的输入段合并并映射到 `MEMORY` 区域 —— 详见 [从零手写 §2.1](f103-manual-build-from-scratch.md#21-gnu-ld-脚本结构entry--memory--sections) 与 [内存映射 §6](stm32f103-memory-boot-map.md#6-f103c8-main-flash-链接布局f103-manual-reg)。
+[`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) 用 GNU ld 的 `MEMORY` 定义 Flash/RAM 边界，用 `SECTIONS` 规定输出段布局与段符号；[`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 在 `Reset_Handler` 中使用这些符号。VMA/LMA 逐段说明见 **[linker-vma-lma.md](linker-vma-lma.md)**；`SECTIONS`/`ALIGN`/`KEEP` 见 [从零手写 §2.1–§2.2](f103-manual-build-from-scratch.md#21-gnu-ld-脚本结构entry--memory--sections)。
 
 链接脚本使用 Main Flash **物理**基址 `0x08000000`；复位时 CPU 经逻辑 `0x00000000` 别名读到同一向量表（BOOT 与 memory map 见 [内存映射与启动流程](stm32f103-memory-boot-map.md)）。
 

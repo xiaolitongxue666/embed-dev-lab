@@ -40,7 +40,7 @@ RAM              0x20000000         0x00005000         xrw
 
 ### 2. 段（Section）分布详情
 
-逐个列出各段的：起始地址、占用大小、归属存储区、来自哪个目标文件/库。
+逐个列出各段的：起始地址、占用大小、归属存储区、来自哪个目标文件/库。map 中同一输出段常同时标注 **VMA**（运行地址）与 **LMA**（烧录地址）：`.text` 二者相同；`.data` VMA 在 RAM、LMA 在 Flash；`.bss` 仅 VMA。语义详解见 [linker-vma-lma.md](linker-vma-lma.md)。
 
 常见段：
 
@@ -152,3 +152,4 @@ target_link_options(${target_name}.elf PRIVATE
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — `.data`/`.bss` 运行时语义
 - [STM32F103 内存映射与启动流程](stm32f103-memory-boot-map.md) — BOOT 重映射、Flash/SRAM 分工、复位加载
 - [f103-manual-reg 链接脚本](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) — `MEMORY` / `SECTIONS` 定义
+- [链接脚本 VMA 与 LMA](linker-vma-lma.md) — VMA/LMA 逐段对照与 map 验证

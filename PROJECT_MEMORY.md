@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（ALIGN / KEEP 链接脚本语义）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（linker VMA/LMA 文档）
 
 ## 快速路径
 
@@ -18,6 +18,7 @@
 | F103 内存映射与启动 | `doc/learn/stm32f103-memory-boot-map.md` |
 | F103 MMIO 基础 | `doc/learn/stm32f103-mmio-basics.md` |
 | 链接器 map 文件 | `doc/learn/linker-map-file.md` |
+| 链接脚本 VMA/LMA | `doc/learn/linker-vma-lma.md` |
 | ST 官方文档 fetch | `./scripts/fetch-stm32f103-docs.sh` |
 | STM32CubeF1 fetch | `./scripts/fetch-stm32cubef1.sh` |
 | ST 官方参考（PDF+MD） | `doc/reference/stm32f103/` |
@@ -46,7 +47,7 @@
 6. **烧录后复位**：`scripts/build.sh` 的 `flash` 在 download 后执行 `probe-rs reset`，避免目标停在调试态。
 7. **ST-Link WinUSB**：Windows 上 probe-rs 需 Debug 接口 WinUSB；bundled 路径 `vendor-pack/STLink/.../USBDriver/`，脚本 `stlink-winusb-windows.sh`。
 8. **projects 布局**：固件小工程在 `projects/<name>/`，与 `doc/projects/<name>.md` 一一对应；`f103-manual-reg`（全手写寄存器）与 `f103-cmsis-hal`（CMSIS+HAL 占位）彼此独立。
-9. **f103-manual-reg 文档链**：`f103-manual-build-from-scratch.md`（从零写文件顺序、CMSIS 对照、**GNU ld `ENTRY`/`MEMORY`/`SECTIONS` §2.1**）；`f103-module-build-flow.md`（CMake 编译链接）；`stm32f103-memory-boot-map.md`（BOOT/Flash/SRAM）；`stm32f103-mmio-basics.md`（MMIO、PC13）；`linker-map-file.md`（map 与段布局）；链接脚本 `STM32F103C8_FLASH.ld` 为 CMSIS xB 模板改 64K Flash，行内注释指向 §2.1。
+9. **f103-manual-reg 文档链**：`linker-vma-lma.md`（**VMA/LMA 权威**）；`f103-manual-build-from-scratch.md`（从零顺序、GNU ld §2.1–§2.2）；`f103-module-build-flow.md`（CMake/map）；`stm32f103-memory-boot-map.md`（BOOT/Flash/SRAM）；`linker-map-file.md`；链接脚本 `STM32F103C8_FLASH.ld` 行内注释与 startup 协作。
 10. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
 11. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md`；submodule `cmsis-core` + `cmsis-device-f1` 供对照；f103-manual-reg **不** `#include` 官方 Device 头。
 12. **flash 前需 build**：`build.sh … flash` 不自动编译；`build-flash.sh` 只调 `build` 不调 `configure`。
@@ -85,8 +86,8 @@
 | 外设地址在 `.data` 吗 / memory map 映 RAM？ | 否；MMIO 写外设硬件；见 `stm32f103-mmio-basics.md` |
 | NVIC 和 GPIO 一样吗？ | NVIC 在 PPB `0xE000xxxx`（ARM）；GPIO/RCC 在 `0x40000000`（ST）；见 memory-boot-map §2.1 |
 | 链接脚本 / `.ld` 从哪来 | CMSIS `STM32F103XB_FLASH.ld` 改 64K（无 x8 专用模板）；见 `f103-manual-build-from-scratch.md` §3.3 |
-| `SECTIONS` / `MEMORY` / VMA·LMA | GNU ld 语法（非 C）；`MEMORY` 定义区域、`SECTIONS` 合并输入段并映射；权威 §2.1，交叉引用 `linker-map-file.md`、`memory-boot-map` §6、`.ld` 行内注释 |
-| `ALIGN` / `KEEP` | `. = ALIGN(4)` 对齐位置计数器；`KEEP(*(.isr_vector))` 强制保留向量表段（防 `--gc-sections`）；见 `f103-manual-build-from-scratch.md` §2.2 |
+| `SECTIONS` / `MEMORY` / VMA·LMA | GNU ld：`> RAM`/`> FLASH`=VMA，`AT>FLASH`=LMA；`.data` 分离、startup 拷贝；权威 **`linker-vma-lma.md`** |
+| `ALIGN` / `KEEP` | 见 `f103-manual-build-from-scratch.md` §2.2 |
 | `_estack` / 栈「向下增长」 | 满递减栈：`_estack=0x20005000` 为 RAM **上界**；push 时 SP **减小**（非增大）；见 `memory-boot-map` §6.1 |
 | 链接命令行 `.obj` 顺序 vs Flash 段布局 | **无关** — 段布局由 `SECTIONS` 决定（如 `.isr_vector` 固定最前）；见 `f103-module-build-flow.md` §3.2 |
 | 手册地址与代码 `0x400xxxxx` | 裸机无 MMU，总线实地址 = RM0008；MMIO 见 `stm32f103-mmio-basics.md` |

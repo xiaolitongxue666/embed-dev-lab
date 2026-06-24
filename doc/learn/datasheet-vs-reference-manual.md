@@ -1,6 +1,6 @@
 # Datasheet 与 Reference Manual 怎么读？
 
-整理自开发问答：两份 ST 官方 PDF 各管什么、改 `system_stm32f10x.c` 该看哪本。
+整理自开发问答：两份 ST 官方 PDF 各管什么、改 `system_stm32f1xx.c` 该看哪本。
 
 本地 PDF 与章节目录：[DS5319 索引](../reference/stm32f103/md/datasheet-index.md) · [RM0008 索引](../reference/stm32f103/md/rm0008-index.md)
 
@@ -30,11 +30,11 @@
 
 ---
 
-## Q：要自己编写 / 修改 `system_stm32f10x.c` 需要看哪个？
+## Q：要自己编写 / 修改 `system_stm32f1xx.c` 需要看哪个？
 
 **以 RM0008 为主，Datasheet 为辅，两者结合用。**
 
-[`modules/f103-blink/src/system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) 做的事很集中：配置 **RCC** 与 **Flash 等待周期**，把系统时钟升到 72 MHz。
+[`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 做的事很集中：配置 **RCC** 与 **Flash 等待周期**，把系统时钟升到 72 MHz。
 
 ### 必须看 RM0008（写代码的直接依据）
 
@@ -56,11 +56,11 @@
 | HSE 电气特性 | §5.3.6、§5.3.8 | 确认板载 8 MHz 晶振、启动时间量级 |
 | 内存映射摘要 | §4 Memory mapping | 核对基址（细节仍以 RM 为准） |
 
-**只看 Datasheet 写不出完整的 `system_stm32f10x.c`**：它有框图和上限，但没有 RCC 每一位的编码表。
+**只看 Datasheet 写不出完整的 `system_stm32f1xx.c`**：它有框图和上限，但没有 RCC 每一位的编码表。
 
 ---
 
-## 推荐阅读顺序（针对改 `system_stm32f10x.c`）
+## 推荐阅读顺序（针对改 `system_stm32f1xx.c`）
 
 ```text
 1. Datasheet §2.3.7 时钟树
@@ -74,7 +74,7 @@
 
 4. （可选）对照本仓库精选 MD
    doc/reference/stm32f103/md/topics/rcc-clock-hse-pll.md
-   → 已与 system_stm32f10x.c 逐位核对
+   → 已与 system_stm32f1xx.c 逐位核对
 ```
 
 ---
@@ -83,7 +83,7 @@
 
 | 场景 | 看哪本 |
 |------|--------|
-| 改 `system_stm32f10x.c` 寄存器位、配置顺序 | **RM0008（主）** |
+| 改 `system_stm32f1xx.c` 寄存器位、配置顺序 | **RM0008（主）** |
 | 确认 72 MHz、8 MHz 晶振、APB1 分频是否合理 | **Datasheet（辅）** |
 | 实际开发 | **两者结合**：DS 定方案，RM 写代码 |
 | 改 GPIO / PWR / 其他外设 | 同样：**DS 定约束，RM 写寄存器** |

@@ -13,8 +13,8 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 ## 构建与烧录（CLI 保持英文输出）
 
 ```bash
-./scripts/build.sh f103-blink build
-./scripts/build.sh f103-blink flash    # 不自动 compile，改代码后先 build
+./scripts/build.sh f103-manual-reg build
+./scripts/build.sh f103-manual-reg flash    # 不自动 compile，改代码后先 build
 ./scripts/build-flash.sh               # 一键 build + flash；编译失败暂停
 ```
 
@@ -22,7 +22,7 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 |----|-----|
 | probe-rs chip | `STM32F103C8Tx` |
 | download 格式 | `--binary-format elf`（勿用废弃的 `--format`） |
-| 产物 | `modules/f103-blink/build/f103-blink.elf` |
+| 产物 | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
 
 一键环境：`./scripts/bootstrap.sh`（默认不含 MCP；加 `--with-mcp` 安装 embedded-debugger）。
 
@@ -56,7 +56,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 | 文档 | 路径 |
 |------|------|
 | 快速上手 | `doc/getting-started.md` |
-| 应用层模块 | `doc/modules/` · `modules/README.md` |
+| 应用层模块 | `doc/projects/` · `projects/README.md` |
 | probe-rs | `doc/probe-rs.md` |
 | CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
 | ST F1 软件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |

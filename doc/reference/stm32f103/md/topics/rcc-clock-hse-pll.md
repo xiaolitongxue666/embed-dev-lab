@@ -5,9 +5,9 @@
 | 来源 | RM0008 §6 RCC；DS5319 §2.3.7 / §5.3.6–5.3.8 |
 | PDF 页码 | RM0008 p.74–86, 97–98；DS5319 p.15, 50, 56 |
 | 整理日期 | 2026-06-11 |
-| 源码 | [`modules/f103-blink/src/system_stm32f10x.c`](../../../modules/f103-blink/src/system_stm32f10x.c) |
+| 源码 | [`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../../projects/f103-manual-reg/src/system_stm32f1xx.c) |
 
-## 目标配置（f103-blink）
+## 目标配置（f103-manual-reg）
 
 | 项目 | 值 |
 |------|-----|
@@ -18,9 +18,9 @@
 | APB1 | HCLK/2 = 36 MHz（APB1 最高 36 MHz） |
 | Flash 等待 | 2 wait states（64 MHz < SYSCLK ≤ 72 MHz） |
 
-DS5319：medium-density 最高 **72 MHz**；无 HSE 或启动失败时保持 **HSI 8 MHz**（`set_sys_clock_to_72mhz` 带超时返回）。
+DS5319：medium-density 最高 **72 MHz**；无 HSE 或启动失败时保持 **HSI 8 MHz**（`SetSysClockTo72` 带超时返回）。
 
-## 流程（与 system_stm32f10x.c 对应）
+## 流程（与 system_stm32f1xx.c 对应）
 
 1. **HSEON**，轮询 **HSERDY**（超时 `HSE_STARTUP_TIMEOUT`）
 2. **FLASH_ACR**：预取使能 + **LATENCY=2**
@@ -58,7 +58,7 @@ DS5319：medium-density 最高 **72 MHz**；无 HSE 或启动失败时保持 **H
 
 ## 代码常量核对
 
-| 检查项 | 手册 | `system_stm32f10x.c` | 结果 |
+| 检查项 | 手册 | `system_stm32f1xx.c` | 结果 |
 |--------|------|----------------------|------|
 | `RCC_BASE` | `0x40021000` | `0x40021000U` | OK |
 | `FLASH_BASE` | `0x40022000` | `0x40022000U` | OK |

@@ -7,7 +7,7 @@
 ```text
 doc/reference/stm32f103/   ST 官方 PDF + 精选 MD（权威寄存器摘录）
 vendor-pack/               本地厂商包：驱动、板级例程、STM32CubeF1
-modules/f103-blink/        可构建 demo：手写 startup / system / GPIO
+projects/f103-manual-reg/        可构建 demo：手写 startup / system / GPIO
 ```
 
 | 位置 | 内容 | 是否提交 Git |
@@ -19,17 +19,17 @@ modules/f103-blink/        可构建 demo：手写 startup / system / GPIO
 
 ---
 
-## Q1：`system_stm32f10x.c` 是怎么来的？
+## Q1：`system_stm32f1xx.c` 是怎么来的？
 
 **要点**
 
 - 本仓库版本**不是** STM32CubeMX 生成的。
 - 对齐厂商裸机例程「核心板测试程序(PC13闪烁)」中的 `SetSysClockTo72`，并去掉 HAL/CMSIS 依赖，只保留 `SystemInit()` 与 RCC/FLASH 寄存器操作。
-- 由 [`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) 在 `main` 之前调用。
+- 由 [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 在 `main` 之前调用。
 
 **与本仓库**
 
-- 源码：[`modules/f103-blink/src/system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c)
+- 源码：[`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c)
 - 寄存器核对：[`doc/reference/stm32f103/md/topics/rcc-clock-hse-pll.md`](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)
 
 ---
@@ -56,7 +56,7 @@ modules/f103-blink/        可构建 demo：手写 startup / system / GPIO
 
 | 来源 | 典型产物 |
 |------|----------|
-| ST CMSIS Device 包 | `system_stm32f10x.c` 模板（多 `#define` 选时钟方案） |
+| ST CMSIS Device 包 | `system_stm32f1xx.c` 模板（多 `#define` 选时钟方案） |
 | CubeMX + HAL | `main.c` 里 `SystemClock_Config()`（HAL_RCC_*） |
 | 裸机 / 厂商例程 | 精简版 `SystemInit`，直接写寄存器（本仓库） |
 
@@ -90,7 +90,7 @@ HSE 8 MHz → PLL ×9 → SYSCLK 72 MHz
                     → APB1 = HCLK/2 = 36 MHz（APB1 上限 36 MHz）
 ```
 
-HSE 启动失败时，本仓库 `set_sys_clock_to_72mhz()` 超时返回，继续使用复位默认 **HSI 8 MHz**，避免无晶振板卡死。
+HSE 启动失败时，本仓库 `SetSysClockTo72()` 超时返回，继续使用复位默认 **HSI 8 MHz**，避免无晶振板卡死。
 
 轮询 `HSERDY` 的原因与代码位置见 [Q9](#q9为什么需要轮询-hserdy)。
 
@@ -107,7 +107,7 @@ HSE 启动失败时，本仓库 `set_sys_clock_to_72mhz()` 超时返回，继续
 
 **与本仓库**
 
-- 源码：[`modules/f103-blink/startup/startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s)
+- 源码：[`projects/f103-manual-reg/startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s)
 - ST 官方模板（fetch 后）：`vendor-pack/STM32CubeF1/.../Templates/gcc/startup_stm32f103xb.s`
 
 ---
@@ -116,7 +116,7 @@ HSE 启动失败时，本仓库 `set_sys_clock_to_72mhz()` 超时返回，继续
 
 **CMSIS** = **C**ortex **M**icrocontroller **S**oftware **I**nterface **S**tandard（ARM 制定的 Cortex-M 软件接口标准），分 **Core**（内核）、**Device**（芯片寄存器与启动）与可选扩展三层。
 
-本仓库 **f103-blink 不链接 CMSIS 头文件**，但保留 `SystemInit` / 向量表等命名，属于 CMSIS **规范兼容**实现。分层详解、手写边界判定、与 HAL 关系见 **[CMSIS 标准与手写裸机边界](cmsis-overview.md)**。
+本仓库 **f103-manual-reg 不链接 CMSIS 头文件**，但保留 `SystemInit` / 向量表等命名，属于 CMSIS **规范兼容**实现。分层详解、手写边界判定、与 HAL 关系见 **[CMSIS 标准与手写裸机边界](cmsis-overview.md)**。
 
 ---
 
@@ -144,7 +144,7 @@ CubeMX 与 CMSIS 的三类依赖（固定 / 随时钟变化 / 可选扩展）详
 
 ## Q9：为什么需要轮询 `HSERDY`？
 
-[`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) 中：
+[`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 中：
 
 ```c
 #define HSE_STARTUP_TIMEOUT 0x0500U   /* 与 CMSIS 一致，1280 次循环 */
@@ -181,15 +181,15 @@ HSEON → 轮询 HSERDY（计数 < HSE_STARTUP_TIMEOUT）
 
 ---
 
-## Q10：f103-blink 代码里有体现吗？
+## Q10：f103-manual-reg 代码里有体现吗？
 
-**有。** 逻辑在 `system_stm32f10x.c`；`main.c` 不重复实现 HSE 等待，但会间接受时钟影响。
+**有。** 逻辑在 `system_stm32f1xx.c`；`main.c` 不重复实现 HSE 等待，但会间接受时钟影响。
 
 | 位置 | 体现 |
 |------|------|
-| [`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) | `HSE_STARTUP_TIMEOUT`、轮询 `HSERDY`、超时 `return`；文件头 `@note` 说明 HSE 失败保持 HSI |
-| [`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) | `Reset_Handler` 在 `main` 前 `bl SystemInit` |
-| [`main.c`](../../modules/f103-blink/src/main.c) | 注释指向 `system_stm32f10x.c`；`delay()` 按 CPU 主频忙等，**不区分** 72 MHz / 8 MHz |
+| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `HSE_STARTUP_TIMEOUT`、轮询 `HSERDY`、超时 `return`；文件头 `@note` 说明 HSE 失败保持 HSI |
+| [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | `Reset_Handler` 在 `main` 前 `bl SystemInit` |
+| [`main.c`](../../projects/f103-manual-reg/src/main.c) | 注释指向 `system_stm32f1xx.c`；`delay()` 按 CPU 主频忙等，**不区分** 72 MHz / 8 MHz |
 
 HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：同一延时约慢 9 倍，LED 仍闪，符合「超时退回 HSI、main 照常跑」的设计。
 
@@ -203,7 +203,7 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 
 - **`main.c` 不调用** `SystemInit`；进入 `main()` 前，启动汇编已完成时钟初始化。
 - 上电/复位后，Cortex-M3 从 Flash 起始读**中断向量表**；第二项为 `Reset_Handler` 入口。向量表与 NVIC 概念见 **[中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)**。
-- `Reset_Handler` 完成 C 运行环境最小初始化后，用 `bl SystemInit` 跳转；链接阶段解析到 [`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) 中的同名函数。
+- `Reset_Handler` 完成 C 运行环境最小初始化后，用 `bl SystemInit` 跳转；链接阶段解析到 [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 中的同名函数。
 
 **调用链**
 
@@ -216,9 +216,9 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 
 | 位置 | 作用 |
 |------|------|
-| [`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) | 向量表第二项指向 `Reset_Handler`；第 90 行 `bl SystemInit` |
-| [`system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c) | `SystemInit()` 定义：RCC 复位默认化 + `set_sys_clock_to_72mhz()` |
-| [`main.c`](../../modules/f103-blink/src/main.c) | 注释说明时钟已在 startup 阶段完成；业务代码直接使用已配置好的主频 |
+| [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表第二项指向 `Reset_Handler`；第 90 行 `bl SystemInit` |
+| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()` 定义：RCC 复位默认化 + `SetSysClockTo72()` |
+| [`main.c`](../../projects/f103-manual-reg/src/main.c) | 注释说明时钟已在 startup 阶段完成；业务代码直接使用已配置好的主频 |
 
 `bl`（branch with link）等价于 x86 的 `call`：把返回地址写入 `lr`（r14），再跳转到 `SystemInit`。
 
@@ -245,7 +245,7 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 
 **语法示例（本文件 vs x86 Intel 类比）**
 
-ARM Thumb（[`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s)）：
+ARM Thumb（[`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s)）：
 
 ```asm
 ldr r0, =_estack    /* 符号地址载入 r0 */
@@ -273,9 +273,9 @@ ST 官方 CMSIS 模板按工具链分 `gcc` / `iar` / `arm`（Keil）三版，�
 ## 延伸阅读
 
 - [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) — 向量表作用、NVIC 职责、与 CMSIS/HAL 关系
-- [f103-blink 编译流程](f103-module-build-flow.md) — CMake、.c/.s 链接、链接脚本与 startup 协作
+- [f103-manual-reg 编译流程](f103-module-build-flow.md) — CMake、.c/.s 链接、链接脚本与 startup 协作
 - [CMSIS 标准与手写裸机边界](cmsis-overview.md)
 - [Datasheet 与 Reference Manual 怎么读？](datasheet-vs-reference-manual.md)
 - [RCC：HSE → PLL → 72 MHz](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)
-- [f103-blink 模块说明](../modules/f103-blink.md)
+- [f103-manual-reg 模块说明](../projects/f103-manual-reg.md)
 - [脚本：fetch-stm32cubef1.sh](../scripts-reference.md#fetch-stm32cubef1sh--stm32cubef1-固件包)

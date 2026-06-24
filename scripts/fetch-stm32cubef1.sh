@@ -22,7 +22,7 @@ CUBE_GIT_TAG="v${CUBE_VERSION}"
 CUBE_GIT_URL="https://github.com/STMicroelectronics/STM32CubeF1.git"
 
 REL_STARTUP="Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/gcc/startup_stm32f103xb.s"
-REL_SYSTEM_LEGACY="Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f10x.c"
+REL_SYSTEM_LEGACY="Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c"
 REL_SYSTEM="Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c"
 
 FROM_ZIP=""

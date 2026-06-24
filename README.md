@@ -3,7 +3,7 @@
 *Cross-platform embedded lab: CMake + Ninja + ARM GCC + probe-rs*
 
 跨平台嵌入式开发实验框架：**CMake + Ninja + ARM GCC + probe-rs**（主）/ OpenOCD（备选）。  
-Demo 目标：**STM32F103C8T6** PC13 LED 闪烁（[`modules/f103-blink`](modules/f103-blink/)）。
+Demo 目标：**STM32F103C8T6** PC13 LED 闪烁（[`projects/f103-manual-reg`](projects/f103-manual-reg/)）。
 
 **详细文档** → [`doc/README.md`](doc/README.md)
 
@@ -19,7 +19,7 @@ Demo 目标：**STM32F103C8T6** PC13 LED 闪烁（[`modules/f103-blink`](modules
 probe-rs list
 
 # 3. 编译 + 烧录
-./scripts/build.sh f103-blink build && ./scripts/build.sh f103-blink flash
+./scripts/build.sh f103-manual-reg build && ./scripts/build.sh f103-manual-reg flash
 ```
 
 完整步骤：[doc/getting-started.md](doc/getting-started.md)
@@ -37,9 +37,10 @@ flowchart TB
     DocIndex[doc/README.md]
   end
   subgraph app [应用层]
-    ModulesDir[modules/]
-    DocModules[doc/modules/]
-    F103[f103-blink]
+    ProjectsDir[projects/]
+    DocProjects[doc/projects/]
+    F103[f103-manual-reg]
+    HalStub[f103-cmsis-hal]
   end
   subgraph build [构建层]
     Cmake[cmake/]
@@ -60,8 +61,8 @@ flowchart TB
     ProbeDoc[probe-rs.md]
   end
   Readme --> DocIndex
-  DocIndex --> DocModules
-  DocModules --> ModulesDir
+  DocIndex --> DocProjects
+  DocProjects --> ProjectsDir
   Bootstrap --> Install --> BuildSh --> F103
   Cmake --> BuildSh
   CursorMcp --> Skills
@@ -70,7 +71,7 @@ flowchart TB
 | 层级 | 路径 | 职责 |
 |------|------|------|
 | 入口 | [`README.md`](README.md)、[`doc/`](doc/) | 项目地图与人类文档 |
-| 应用 | [`modules/`](modules/)（源码）、[`doc/modules/`](doc/modules/)（说明） | 固件模块（当前 `f103-blink`） |
+| 应用 | [`projects/`](projects/)（源码）、[`doc/projects/`](doc/projects/)（说明） | 固件小工程（`f103-manual-reg`、`f103-cmsis-hal` 占位） |
 | 构建 | [`cmake/`](cmake/)、[`scripts/build.sh`](scripts/build.sh) | 工具链、MCU 抽象、编译烧录 |
 | 环境 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) 等 | 安装工具、PATH、校验 |
 | Agent | [`.cursor/`](.cursor/)、[`skills/`](skills/)、[`AGENTS.md`](AGENTS.md) | MCP、Skill、无 MCP Agent 摘要 |
@@ -87,10 +88,11 @@ embed-dev-lab/
 │   ├── ide-debug.md                # IDE 扩展与调试
 │   ├── scripts-reference.md        # 脚本说明与自动化链路
 │   ├── mcp-skills.md               # MCP 与 Skill 安装
-│   ├── modules/                    # 应用层固件说明（与 modules/<name>/ 对应）
+│   ├── projects/                   # 应用层固件说明（与 projects/<name>/ 对应）
 │   │   ├── README.md
-│   │   └── f103-blink.md
-│   ├── modules-f103-blink.md       # 重定向 stub → modules/f103-blink.md
+│   │   ├── f103-manual-reg.md
+│   │   └── f103-cmsis-hal.md
+│   ├── modules-f103-blink.md       # 重定向 stub → projects/f103-manual-reg.md
 │   ├── learn/                      # 学习笔记（CMSIS、编译流程、NVIC 等）
 │   └── reference/stm32f103/        # ST 官方 PDF + 精选 MD
 ├── scripts/                        # 安装、PATH、构建、校验
@@ -112,12 +114,13 @@ embed-dev-lab/
 ├── cmake/
 │   ├── toolchain-arm-none-eabi.cmake
 │   └── mcu-config.cmake            # embed_mcu_add_executable()
-├── modules/
-│   ├── README.md                   # 应用层代码入口
-│   └── f103-blink/                 # STM32F103C8T6 PC13 闪烁
-│       ├── src/
-│       ├── startup/
-│       └── linker/
+├── projects/
+│   ├── README.md                   # 固件小工程索引
+│   ├── f103-manual-reg/            # 全手写寄存器 PC13 闪烁
+│   │   ├── src/
+│   │   ├── startup/
+│   │   └── linker/
+│   └── f103-cmsis-hal/             # CMSIS+HAL 占位（仅 README）
 ├── skills/
 │   └── embed-dev-lab/SKILL.md      # 项目 Skill 源文件（可提交）
 ├── .cursor/
@@ -170,17 +173,17 @@ embed-dev-lab/
 ./scripts/bootstrap.sh --install-only        # 只安装，不编译
 ./scripts/bootstrap.sh --skip-extensions     # 不装 IDE 扩展
 ./scripts/bootstrap.sh --with-mcp            # 额外安装 MCP + Skill
-./scripts/bootstrap.sh --module f103-blink   # 指定模块（默认 f103-blink）
+./scripts/bootstrap.sh --module f103-manual-reg   # 指定模块（默认 f103-manual-reg）
 ```
 
 **build.sh 动作：**
 
 ```bash
-./scripts/build.sh f103-blink              # configure + build（默认 all）
-./scripts/build.sh f103-blink build
-./scripts/build.sh f103-blink flash        # probe-rs download + reset
-./scripts/build.sh f103-blink flash-openocd
-./scripts/build.sh f103-blink clean
+./scripts/build.sh f103-manual-reg              # configure + build（默认 all）
+./scripts/build.sh f103-manual-reg build
+./scripts/build.sh f103-manual-reg flash        # probe-rs download + reset
+./scripts/build.sh f103-manual-reg flash-openocd
+./scripts/build.sh f103-manual-reg clean
 ```
 
 ### 2.3 辅助脚本
@@ -210,8 +213,8 @@ embed-dev-lab/
 ./scripts/bootstrap.sh
 ./scripts/install/stlink-winusb-windows.sh --check-only   # Windows
 probe-rs list
-./scripts/build.sh f103-blink build
-./scripts/build.sh f103-blink flash
+./scripts/build.sh f103-manual-reg build
+./scripts/build.sh f103-manual-reg flash
 ```
 
 → 接线与验证：[doc/getting-started.md](doc/getting-started.md)
@@ -219,7 +222,7 @@ probe-rs list
 **B. 日常改代码 → 烧录**
 
 ```bash
-./scripts/build.sh f103-blink build && ./scripts/build.sh f103-blink flash
+./scripts/build.sh f103-manual-reg build && ./scripts/build.sh f103-manual-reg flash
 ```
 
 **C. 工具已装好，只编译**
@@ -227,13 +230,13 @@ probe-rs list
 ```bash
 ./scripts/bootstrap.sh --build-only --skip-extensions
 # 或
-./scripts/build.sh f103-blink build
+./scripts/build.sh f103-manual-reg build
 ```
 
 **D. 仅烧录已有 ELF**
 
 ```bash
-./scripts/build.sh f103-blink flash
+./scripts/build.sh f103-manual-reg flash
 ```
 
 **E. 环境 / 驱动排错**
@@ -274,15 +277,15 @@ probe-rs list
 |------|-----|
 | probe-rs chip | `STM32F103C8Tx` |
 | CLI 烧录格式 | `--binary-format elf`（勿用废弃的 `--format`） |
-| ELF 产物 | `modules/f103-blink/build/f103-blink.elf` |
-| HEX 产物 | `modules/f103-blink/build/f103-blink.hex`（build 时 objcopy 自动生成） |
+| ELF 产物 | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| HEX 产物 | `projects/f103-manual-reg/build/f103-manual-reg.hex`（build 时 objcopy 自动生成） |
 
 ### 3.1.1 构建产物与 ELF→HEX
 
 ```text
-./scripts/build.sh f103-blink build
-  → Ninja 链接 → f103-blink.elf
-  → POST_BUILD arm-none-eabi-objcopy -O ihex → f103-blink.hex
+./scripts/build.sh f103-manual-reg build
+  → Ninja 链接 → f103-manual-reg.elf
+  → POST_BUILD arm-none-eabi-objcopy -O ihex → f103-manual-reg.hex
 ```
 
 | 烧录方式 | 使用文件 | 入口 |
@@ -387,7 +390,7 @@ probe-rs list
 | [doc/ide-debug.md](doc/ide-debug.md) | probe-rs-debugger 等扩展 |
 | [doc/scripts-reference.md](doc/scripts-reference.md) | 脚本完整参考 |
 | [doc/mcp-skills.md](doc/mcp-skills.md) | MCP 与 Skill 安装 |
-| [doc/modules/f103-blink.md](doc/modules/f103-blink.md) | F103 demo 模块 |
+| [doc/projects/f103-manual-reg.md](doc/projects/f103-manual-reg.md) | F103 demo 模块 |
 | [doc/learn/cmsis-overview.md](doc/learn/cmsis-overview.md) | CMSIS 分层、手写兼容边界、与 HAL 关系 |
 | [doc/learn/interrupt-vector-table-and-nvic.md](doc/learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、与 startup 关系 |
 | [doc/reference/stm32f103/](doc/reference/stm32f103/) | ST 官方 Datasheet / RM |
@@ -399,7 +402,7 @@ Cursor 扩展若找不到工具：运行 `./scripts/setup-path.sh` 并 **重启 
 
 ### 新增模块
 
-1. 在 `modules/<name>/` 添加 `CMakeLists.txt`、`CMakePresets.json`、源码  
+1. 在 `projects/<name>/` 添加 `CMakeLists.txt`、`CMakePresets.json`、源码  
 2. 使用 `embed_mcu_add_executable()`（[`cmake/mcu-config.cmake`](cmake/mcu-config.cmake)）  
 3. `./scripts/build.sh <name>`
 

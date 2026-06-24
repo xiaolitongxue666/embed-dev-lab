@@ -1,6 +1,6 @@
 # STM32F103 官方参考文档
 
-ST 官方 **Datasheet（DS5319）** 与 **Reference Manual（RM0008）**，供 `modules/f103-blink` 及后续 F103 模块查阅。
+ST 官方 **Datasheet（DS5319）** 与 **Reference Manual（RM0008）**，供 `projects/f103-manual-reg` 及后续 F103 模块查阅。
 
 ## 与 vendor-pack 的区别
 
@@ -41,7 +41,7 @@ PDF **不提交 Git**（见根目录 `.gitignore`）。首次使用或更新文�
 
 ## Markdown 精选
 
-[`md/`](md/) 目录含章节目录索引与 **f103-blink 相关主题** 摘录（附 PDF 页码，已与源码寄存器核对）：
+[`md/`](md/) 目录含章节目录索引与 **f103-manual-reg 相关主题** 摘录（附 PDF 页码，已与源码寄存器核对）：
 
 | 文档 | 内容 |
 |------|------|

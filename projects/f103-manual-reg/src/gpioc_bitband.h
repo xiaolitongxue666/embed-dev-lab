@@ -1,14 +1,14 @@
 /**
- * @file    gpio_like51.h
- * @brief   GPIO 位带别名访问（类似 51 单片机 Px.y 单 bit 操作）
+ * @file    gpioc_bitband.h
+ * @brief   GPIOC ODR 位带别名访问（寄存器直写）
  *
  * @ref     核心板测试程序(PC13闪烁)/USER/GPIOLIKE51.h
  * @note    Cortex-M3 支持位带：对别名区单 bit 读写等效于原寄存器原子位操作。
  *          本头文件仅封装 GPIOC 的 ODR 输出位带。
  */
 
-#ifndef GPIO_LIKE51_H
-#define GPIO_LIKE51_H
+#ifndef GPIOC_BITBAND_H
+#define GPIOC_BITBAND_H
 
 /* -------------------------------------------------------------------------- */
 /* 位带地址计算（参见 ARM Cortex-M3 技术参考手册 — 位带章节）                 */
@@ -32,9 +32,9 @@
 /* GPIOC 输出                                                                   */
 /* -------------------------------------------------------------------------- */
 
-#define GPIOC_BASE_REG 0x40011000U
+#define GPIOC_BASE 0x40011000U
 /** @brief GPIOC ODR 寄存器偏移 +12 → 0x4001100C */
-#define GPIOC_ODR_ADDR (GPIOC_BASE_REG + 12U)
+#define GPIOC_ODR_ADDR (GPIOC_BASE + 12U)
 
 /**
  * @brief  GPIOC 端口第 n 脚输出（位带）
@@ -42,4 +42,4 @@
  */
 #define PCout(n) BIT_ADDR(GPIOC_ODR_ADDR, (n))
 
-#endif /* GPIO_LIKE51_H */
+#endif /* GPIOC_BITBAND_H */

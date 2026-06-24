@@ -123,10 +123,10 @@ probe-rs list
 
 ### 烧录 ELF
 
-与 `scripts/build.sh f103-blink flash` 等价：
+与 `scripts/build.sh f103-manual-reg flash` 等价：
 
 ```bash
-probe-rs download --chip STM32F103C8Tx --binary-format elf modules/f103-blink/build/f103-blink.elf
+probe-rs download --chip STM32F103C8Tx --binary-format elf projects/f103-manual-reg/build/f103-manual-reg.elf
 probe-rs reset --chip STM32F103C8Tx
 ```
 
@@ -141,8 +141,8 @@ probe-rs chip info --chip STM32F103C8Tx
 ### 一键脚本烧录
 
 ```bash
-./scripts/build.sh f103-blink build
-./scripts/build.sh f103-blink flash
+./scripts/build.sh f103-manual-reg build
+./scripts/build.sh f103-manual-reg flash
 ```
 
 `flash` **不会**自动编译；修改源码后须先 `build`。
@@ -157,7 +157,7 @@ probe-rs chip info --chip STM32F103C8Tx
 | `.elf` | Ninja 链接产物；**probe-rs 与本项目主烧录路径使用 ELF** |
 | `.hex` | `build` 时由 [`cmake/mcu-config.cmake`](../cmake/mcu-config.cmake) POST_BUILD 调用 `arm-none-eabi-objcopy -O ihex` 自动生成 |
 | `.bin` | 当前工程**不生成** |
-| OpenOCD | `./scripts/build.sh f103-blink flash-openocd` 烧录 **`.hex`**，须先 `build` |
+| OpenOCD | `./scripts/build.sh f103-manual-reg flash-openocd` 烧录 **`.hex`**，须先 `build` |
 
 ---
 
@@ -169,7 +169,7 @@ probe-rs chip info --chip STM32F103C8Tx
 | 设备管理器无 `VID_0483` | USB 线/Hub/供电 | 直连主板 USB 2.0；对照拔插 ST-Link |
 | `unexpected argument '--format'` | CLI 版本过新 | 改用 `--binary-format elf` |
 | 烧录成功 LED 不闪 | 未 build 最新 elf / 未 reset / SWD 或供电 | `build && flash`；按 RESET；查 SWD 与 3.3V |
-| 程序完全不运行 | PC13 未开 DBP | 见 [f103-blink 模块](modules/f103-blink.md) Backup 域说明 |
+| 程序完全不运行 | PC13 未开 DBP | 见 [f103-manual-reg 模块](projects/f103-manual-reg.md) Backup 域说明 |
 | IDE 找不到 probe-rs | PATH 未进 Cursor | `./scripts/setup-path.sh` 后重启 Cursor |
 
 ---

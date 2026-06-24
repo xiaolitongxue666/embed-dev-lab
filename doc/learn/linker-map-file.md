@@ -1,6 +1,6 @@
 # 链接器 Map 文件
 
-整理自嵌入式开发中的 map 文件概念与用法。本仓库 [`f103-blink`](../../modules/f103-blink/) 的实例解读见 [f103-blink 编译流程 §3.2](f103-module-build-flow.md#32-目标文件链接顺序)（含 `f103-blink.map` 链接顺序精读）。
+整理自嵌入式开发中的 map 文件概念与用法。本仓库 [`f103-manual-reg`](../../projects/f103-manual-reg/) 的实例解读见 [f103-manual-reg 编译流程 §3.2](f103-module-build-flow.md#32-目标文件链接顺序)（含 `f103-manual-reg.map` 链接顺序精读）。
 
 ---
 
@@ -10,12 +10,12 @@
 
 它相当于程序编译链接后的「完整内存清单」：链接器按照链接脚本，把所有目标文件（`.o` / `.obj`）、库文件的代码和数据分配到 Flash、RAM 的具体地址后，会把整个分配过程和结果全部记录在 map 文件中。它本身**不会被烧录到芯片里**，仅用于开发者分析程序。
 
-结合本仓库手写启动文件的场景：汇编里处理的 `.data`、`.bss` 段，它们在 Flash 中的存储位置（LMA）、在 RAM 中的运行地址（VMA）、各自占用的字节数，都会在 map 文件里体现，可直接验证启动逻辑与 [`stm32f103c8.ld`](../../modules/f103-blink/linker/stm32f103c8.ld) 是否匹配。
+结合本仓库手写启动文件的场景：汇编里处理的 `.data`、`.bss` 段，它们在 Flash 中的存储位置（LMA）、在 RAM 中的运行地址（VMA）、各自占用的字节数，都会在 map 文件里体现，可直接验证启动逻辑与 [`STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) 是否匹配。
 
-**本仓库路径**（须先 `./scripts/build.sh f103-blink build`）：
+**本仓库路径**（须先 `./scripts/build.sh f103-manual-reg build`）：
 
 ```text
-modules/f103-blink/build/f103-blink.map
+projects/f103-manual-reg/build/f103-manual-reg.map
 ```
 
 `build/` 在 `.gitignore` 中，未编译时不存在。
@@ -30,7 +30,7 @@ modules/f103-blink/build/f103-blink.map
 
 展示链接脚本 `MEMORY` 定义的所有存储区域（Flash、RAM、CCM 等）的起始地址、总大小、属性，是评估芯片资源是否够用的直观依据。
 
-本仓库 `f103-blink.map` 示例：
+本仓库 `f103-manual-reg.map` 示例：
 
 ```text
 Name             Origin             Length             Attributes
@@ -134,7 +134,7 @@ target_link_options(${target_name}.elf PRIVATE
 )
 ```
 
-执行 `./scripts/build.sh f103-blink build` 后，与 `.elf` 同目录生成 `f103-blink.map`。新增模块沿用同一函数即可自动产出 `<module>.map`。
+执行 `./scripts/build.sh f103-manual-reg build` 后，与 `.elf` 同目录生成 `f103-manual-reg.map`。新增模块沿用同一函数即可自动产出 `<module>.map`。
 
 ### 其他工具链
 
@@ -148,6 +148,6 @@ target_link_options(${target_name}.elf PRIVATE
 
 ## 延伸阅读
 
-- [f103-blink 编译流程](f103-module-build-flow.md) — CMake 构建、`f103-blink.map` 链接顺序与段布局精读
+- [f103-manual-reg 编译流程](f103-module-build-flow.md) — CMake 构建、`f103-manual-reg.map` 链接顺序与段布局精读
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — `.data`/`.bss` 运行时语义
-- [f103-blink 链接脚本](../../modules/f103-blink/linker/stm32f103c8.ld) — `MEMORY` / `SECTIONS` 定义
+- [f103-manual-reg 链接脚本](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) — `MEMORY` / `SECTIONS` 定义

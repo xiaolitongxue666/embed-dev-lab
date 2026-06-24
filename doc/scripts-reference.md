@@ -10,7 +10,7 @@ flowchart TB
         B1[install-tools.sh] --> B2[setup-path 内嵌刷新]
         B2 --> B3[install-extensions.sh 可选]
         B3 --> B4[env-check.sh --tools-only]
-        B4 --> B5["build.sh f103-blink"]
+        B4 --> B5["build.sh f103-manual-reg"]
         B5 --> B6[setup-clangd.sh]
     end
 
@@ -19,7 +19,7 @@ flowchart TB
     end
 
     subgraph ide_flow [IDE F5 调试]
-        I1[Task Build F103] --> I2[build.sh f103-blink]
+        I1[Task Build F103] --> I2[build.sh f103-manual-reg]
         I2 --> I3[probe-rs-debugger flash+debug]
     end
 ```
@@ -33,11 +33,11 @@ flowchart TB
 **不含烧录。**
 
 ```bash
-./scripts/bootstrap.sh                    # 安装 + 扩展 + 编译 f103-blink + clangd
+./scripts/bootstrap.sh                    # 安装 + 扩展 + 编译 f103-manual-reg + clangd
 ./scripts/bootstrap.sh --build-only       # 跳过安装，仅 PATH + 编译
 ./scripts/bootstrap.sh --install-only     # 仅安装，不编译
 ./scripts/bootstrap.sh --skip-extensions  # 不装 IDE 扩展
-./scripts/bootstrap.sh --module other     # 指定模块（默认 f103-blink）
+./scripts/bootstrap.sh --module other     # 指定模块（默认 f103-manual-reg）
 ./scripts/bootstrap.sh --no-proxy         # 禁用默认代理 7890
 ```
 
@@ -63,11 +63,11 @@ flowchart TB
 示例：
 
 ```bash
-./scripts/build.sh f103-blink
-./scripts/build.sh f103-blink build
-./scripts/build.sh f103-blink flash
-./scripts/build.sh f103-blink build && ./scripts/build.sh f103-blink flash
-./scripts/build-flash.sh f103-blink   # 同上；编译失败时暂停
+./scripts/build.sh f103-manual-reg
+./scripts/build.sh f103-manual-reg build
+./scripts/build.sh f103-manual-reg flash
+./scripts/build.sh f103-manual-reg build && ./scripts/build.sh f103-manual-reg flash
+./scripts/build-flash.sh f103-manual-reg   # 同上；编译失败时暂停
 ```
 
 ---
@@ -77,8 +77,8 @@ flowchart TB
 依次执行 `build.sh build` → `build.sh flash`。编译失败时 **ninja/gcc 报错原样输出**，并在交互终端 **暂停等待 Enter**。
 
 ```bash
-./scripts/build-flash.sh              # 默认 f103-blink
-./scripts/build-flash.sh f103-blink
+./scripts/build-flash.sh              # 默认 f103-manual-reg
+./scripts/build-flash.sh f103-manual-reg
 ```
 
 | 步骤 | 行为 |
@@ -88,7 +88,7 @@ flowchart TB
 
 ---
 
-F103 chip：`STM32F103C8Tx`。ELF：`modules/<module>/build/<module>.elf`。
+F103 chip：`STM32F103C8Tx`。ELF：`projects/<project>/build/<project>.elf`。
 
 #### 构建产物与格式转换
 
@@ -106,7 +106,7 @@ flash  → probe-rs 烧录 .elf
 flash-openocd → OpenOCD 烧录 .hex
 ```
 
-CMake / 链接细节见 [f103-blink 编译流程](learn/f103-module-build-flow.md)。
+CMake / 链接细节见 [f103-manual-reg 编译流程](learn/f103-module-build-flow.md)。
 
 ---
 
@@ -162,7 +162,7 @@ CMake / 链接细节见 [f103-blink 编译流程](learn/f103-module-build-flow.m
 | 目标 | 做法 |
 |------|------|
 | 自动装环境 + **编译** | `./scripts/bootstrap.sh` |
-| CLI **编译 + 烧录** | `build.sh f103-blink build && build.sh f103-blink flash` |
+| CLI **编译 + 烧录** | `build.sh f103-manual-reg build && build.sh f103-manual-reg flash` |
 | Task **编译 + 烧录** | Run Task → **Build and Flash F103** |
 | IDE **编译 + 烧录 + 调试** | F5 → **F103 Probe-rs Debug** |
 
@@ -230,7 +230,7 @@ GitHub「Download ZIP」不含 submodule；请用 **ST 官网 ZIP** 或脚本的
 ```
 
 - 默认：若 `archives/*.zip` 存在则解压，否则 `git clone --recursive` v1.8.6  
-- 验证：`Drivers/CMSIS/.../startup_stm32f103xb.s` 与 `system_stm32f1xx.c`（旧版为 `system_stm32f10x.c`）  
+- 验证：`Drivers/CMSIS/.../startup_stm32f103xb.s` 与 `system_stm32f1xx.c`（旧版为 `system_stm32f1xx.c`）  
 - 详见 [vendor-pack/STM32CubeF1/README.md](../vendor-pack/STM32CubeF1/README.md)
 
 ---

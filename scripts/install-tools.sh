@@ -92,7 +92,7 @@ else
 === Next steps ===
 1. Close and reopen Windows Terminal / Cursor terminal tabs
 2. Run: ./scripts/env-check.sh
-3. Run: ./scripts/build.sh f103-blink
+3. Run: ./scripts/build.sh f103-manual-reg
 
 EOF
 fi

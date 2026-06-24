@@ -6,7 +6,7 @@
 | 版本 | Rev 9（本地 PDF）；寄存器与 Rev 21 一致 |
 | PDF 页码 | 54–55, 62–65, 138, 142 |
 | 整理日期 | 2026-06-11 |
-| 源码 | [`modules/f103-blink/src/main.c`](../../../modules/f103-blink/src/main.c) |
+| 源码 | [`projects/f103-manual-reg/src/main.c`](../../../projects/f103-manual-reg/src/main.c) |
 
 ## 背景
 
@@ -19,9 +19,9 @@ RM0008 §4.1.2（PDF p.54–55）：
 
 > Due to the fact that the switch only sinks a limited amount of current (3 mA), the use of GPIOs **PC13 to PC15 in output mode is restricted**: the speed has to be limited to **2 MHz** with a maximum load of 30 pF …
 
-厂商例程与 `f103-blink` 使用 **50 MHz 推挽** 在多数 C8 核心板上仍可工作；若需严格符合手册，可将 PC13 配置为 2 MHz 输出。
+厂商例程与 `f103-manual-reg` 使用 **50 MHz 推挽** 在多数 C8 核心板上仍可工作；若需严格符合手册，可将 PC13 配置为 2 MHz 输出。
 
-## 初始化顺序（f103-blink）
+## 初始化顺序（f103-manual-reg）
 
 ```c
 RCC_APB1ENR |= RCC_APB1ENR_PWREN;   // 1. 开启 PWR 时钟
@@ -63,7 +63,7 @@ GPIOC_CRH    = ... PC13 推挽输出 ... // 4. 配置 PC13
 - `PCout(13) = 0` → 亮  
 - `PCout(13) = 1` → 灭  
 
-位带宏见 [`gpio_like51.h`](../../../modules/f103-blink/src/gpio_like51.h)（`GPIOC_ODR` @ `0x4001100C`）。
+位带宏见 [`gpioc_bitband.h`](../../../projects/f103-manual-reg/src/gpioc_bitband.h)（`GPIOC_ODR` @ `0x4001100C`）。
 
 ## 核对表（与 main.c 一致）
 
@@ -81,4 +81,4 @@ GPIOC_CRH    = ... PC13 推挽输出 ... // 4. 配置 PC13
 ## 延伸阅读
 
 - [rm0008-index.md](../rm0008-index.md) — §4 PWR、§5 BKP、§8 GPIO  
-- [f103-blink 模块](../../../modules/f103-blink.md) — 模块说明
+- [f103-manual-reg 模块](../../../projects/f103-manual-reg.md) — 模块说明

@@ -23,7 +23,7 @@ require_bash
 require_git_bash_on_windows
 detect_os
 
-MODULE="f103-blink"
+MODULE="f103-manual-reg"
 DO_INSTALL=true
 DO_BUILD=true
 WITH_EXTENSIONS=true
@@ -46,7 +46,7 @@ Options:
   --with-mcp          Install embedded-debugger MCP + project Skill (requires Rust/cargo)
   --strict-extensions Fail bootstrap if required extensions missing (default: on; alias)
   --strict-env        env-check must pass extensions section too
-  --module <name>     Module to build (default: f103-blink)
+  --module <name>     Module to build (default: f103-manual-reg)
   --proxy <url>       HTTP proxy for downloads (default: http://127.0.0.1:7890)
   --no-proxy          Disable proxy even if default is set
   -h, --help          Show this help
@@ -247,7 +247,7 @@ fi
 
 log_ok "Bootstrap complete"
 if is_true "$DO_BUILD"; then
-  log_info "Output: modules/$MODULE/build/${MODULE}.elf"
+  log_info "Output: projects/$MODULE/build/${MODULE}.elf"
   log_info "Debug in Cursor: Run -> F103 Probe-rs Debug"
 fi
 if is_true "$DO_INSTALL"; then

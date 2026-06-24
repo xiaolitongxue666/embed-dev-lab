@@ -23,7 +23,7 @@
 .word _ebss      /* .bss 结束地址 */
 
 /* -------------------------------------------------------------------------- */
-/* 中断向量表（位于 Flash 起始，见 linker/stm32f103c8.ld .isr_vector）        */
+/* 中断向量表（位于 Flash 起始，见 linker/STM32F103C8_FLASH.ld .isr_vector）        */
 /* -------------------------------------------------------------------------- */
 .section .isr_vector,"a",%progbits
 .type g_pfnVectors, %object
@@ -87,7 +87,7 @@ LoopFillZerobss:
     cmp r2, r4
     bcc FillZerobss
 
-    bl SystemInit              /* 系统时钟（system_stm32f10x.c） */
+    bl SystemInit              /* 系统时钟（system_stm32f1xx.c） */
     bl main
     b .                        /* main 不应返回；若返回则死循环 */
 

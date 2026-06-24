@@ -3,7 +3,7 @@
 本目录 **不是** RM0008 / DS5319 的全文转换，而是：
 
 1. **目录索引**（`datasheet-index.md`、`rm0008-index.md`）— 仅列章节与 PDF 页码  
-2. **主题摘录**（`topics/*.md`）— 与 [`modules/f103-blink`](../../../modules/f103-blink) 直接相关的寄存器与流程
+2. **主题摘录**（`topics/*.md`）— 与 [`projects/f103-manual-reg`](../../../projects/f103-manual-reg) 直接相关的寄存器与流程
 
 ## 页码引用约定
 

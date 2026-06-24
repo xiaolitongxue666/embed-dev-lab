@@ -8,8 +8,8 @@
 2. [probe-rs 指南](probe-rs.md) — CLI、WinUSB、ST-Link、排错  
 3. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 4. [脚本参考](scripts-reference.md) — 全脚本与自动化链路  
-5. [f103-blink 模块](modules/f103-blink.md) — 源码与硬件要点  
-6. [f103-blink 编译流程](learn/f103-module-build-flow.md) — CMake、.c/.s 链接、startup 与链接脚本  
+5. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
+6. [f103-manual-reg 编译流程](learn/f103-module-build-flow.md) — CMake、.c/.s 链接、startup 与链接脚本  
 7. [链接器 Map 文件](learn/linker-map-file.md) — 内存布局报告、段与符号、排查与优化  
 8. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008（fetch 脚本 + 精选 MD）  
 9. [STM32 裸机入门笔记](learn/stm32-bare-metal-bootstrap.md) — startup、SystemInit 调用链、ARM 汇编与 x86 对比、RCC、HSE/HSERDY、CMSIS、资料分工  
@@ -22,8 +22,9 @@
 
 | 文档 | 内容 |
 |------|------|
-| [modules/README.md](modules/README.md) | 固件模块索引（与 `modules/` 目录对应） |
-| [modules/f103-blink.md](modules/f103-blink.md) | F103 PC13 demo |
+| [projects/README.md](projects/README.md) | 固件小工程索引（与 `projects/` 目录对应） |
+| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 PC13 全手写寄存器 demo |
+| [projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md) | CMSIS+HAL 占位 |
 
 ## 文档列表
 
@@ -33,7 +34,8 @@
 | [probe-rs.md](probe-rs.md) | probe-rs CLI 与驱动 |
 | [ide-debug.md](ide-debug.md) | Cursor/VS Code 插件与调试 |
 | [scripts-reference.md](scripts-reference.md) | scripts/ 脚本说明 |
-| [modules/f103-blink.md](modules/f103-blink.md) | F103 PC13 demo |
+| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 PC13 全手写寄存器 demo |
+| [projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md) | CMSIS+HAL 占位 |
 | [learn/f103-module-build-flow.md](learn/f103-module-build-flow.md) | CMake 构建、.c/.s 链接、startup 与链接脚本协作 |
 | [learn/linker-map-file.md](learn/linker-map-file.md) | 链接器 map：内存清单、段/符号、排查与优化、生成方式 |
 | [reference/stm32f103/](reference/stm32f103/README.md) | ST 官方 Datasheet / RM + 精选主题 |

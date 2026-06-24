@@ -4,7 +4,7 @@
 # 用法: ./scripts/build.sh <module> [configure|build|flash|flash-openocd|clean|all]
 # 注意: flash 不自动 compile；改代码后须先 build
 #
-# 构建产物（modules/<module>/build/）:
+# 构建产物（projects/<module>/build/）:
 #   <module>.elf  — Ninja 链接输出；probe-rs / IDE F5 直接烧录此文件
 #   <module>.hex  — build 时 POST_BUILD 由 arm-none-eabi-objcopy 自动生成（见 mcu-config.cmake）
 #   不生成 .bin
@@ -37,10 +37,10 @@ usage() {
 Usage: ./scripts/build.sh <module> [configure|build|flash|flash-openocd|clean|all]
 
 Examples:
-  ./scripts/build.sh f103-blink
-  ./scripts/build.sh f103-blink flash
-  ./scripts/build.sh f103-blink flash-openocd
-  ./scripts/build.sh f103-blink clean
+  ./scripts/build.sh f103-manual-reg
+  ./scripts/build.sh f103-manual-reg flash
+  ./scripts/build.sh f103-manual-reg flash-openocd
+  ./scripts/build.sh f103-manual-reg clean
 EOF
 }
 
@@ -52,7 +52,7 @@ fi
 MODULE="$1"
 ACTION="${2:-all}"
 
-MODULE_DIR="$ROOT/modules/$MODULE"
+MODULE_DIR="$ROOT/projects/$MODULE"
 BUILD_DIR="$MODULE_DIR/build"
 ELF="$BUILD_DIR/${MODULE}.elf"
 HEX="$BUILD_DIR/${MODULE}.hex"

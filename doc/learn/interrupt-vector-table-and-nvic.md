@@ -1,6 +1,6 @@
 # 中断向量表与 NVIC
 
-整理自 embed-dev-lab 开发过程中的问答，说明 Cortex-M3 上 **中断向量表** 与 **NVIC** 的概念、作用及与本仓库 [`f103-blink`](../../modules/f103-blink/) startup 的对应关系。启动流程与 `Reset_Handler` 调用链见 [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md)；链接阶段向量表如何落到 Flash 起始见 [f103-blink 编译流程](f103-module-build-flow.md)。
+整理自 embed-dev-lab 开发过程中的问答，说明 Cortex-M3 上 **中断向量表** 与 **NVIC** 的概念、作用及与本仓库 [`f103-manual-reg`](../../projects/f103-manual-reg/) startup 的对应关系。启动流程与 `Reset_Handler` 调用链见 [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md)；链接阶段向量表如何落到 Flash 起始见 [f103-manual-reg 编译流程](f103-module-build-flow.md)。
 
 ---
 
@@ -14,9 +14,9 @@
 
 中断向量表（Cortex-M 文档中常称 **Exception and Interrupt Vector Table**）是一张 **函数指针数组**：每个元素是一个 32 位地址，指向某类异常或中断发生时要执行的代码入口。
 
-在本仓库中，表名为 `g_pfnVectors`，由 [`startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) 定义，链接脚本将其放入 `.isr_vector` 段，固定在 Flash 起始 `0x08000000`：
+在本仓库中，表名为 `g_pfnVectors`，由 [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 定义，链接脚本将其放入 `.isr_vector` 段，固定在 Flash 起始 `0x08000000`：
 
-```31:47:modules/f103-blink/startup/startup_stm32f103xb.s
+```31:47:projects/f103-manual-reg/startup/startup_stm32f103xb.s
 g_pfnVectors:
     .word _estack              /* 0  初始主栈顶 */
     .word Reset_Handler        /* 1  复位 */
@@ -40,16 +40,16 @@ g_pfnVectors:
 
 CMakeLists 注释中的「向量表」即指这张表：
 
-```15:18:modules/f103-blink/CMakeLists.txt
+```15:18:projects/f103-manual-reg/CMakeLists.txt
 set(F103_SOURCES
     src/main.c                  # 应用入口与 GPIO 闪烁
-    src/system_stm32f10x.c      # SystemInit / 72 MHz 时钟
+    src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
     startup/startup_stm32f103xb.s # 向量表、.data/.bss、跳转 main
 ```
 
 链接脚本要求向量表必须位于 Flash 最前：
 
-```24:30:modules/f103-blink/linker/stm32f103c8.ld
+```24:30:projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld
     /* 中断向量表必须位于 Flash 起始 */
     .isr_vector :
     {
@@ -76,7 +76,7 @@ Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定
 
 **第三作用**：提供 **默认兜底**。startup 里未单独实现的 handler 均为弱符号，最终指向 `Default_Handler` 死循环，避免跳转到随机地址：
 
-```104:121:modules/f103-blink/startup/startup_stm32f103xb.s
+```104:121:projects/f103-manual-reg/startup/startup_stm32f103xb.s
 .weak NMI_Handler
 .thumb_set NMI_Handler, Default_Handler
 ...
@@ -104,7 +104,7 @@ Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定
 
 ### 本仓库向量表的范围
 
-当前 f103-blink **仅列出 Cortex-M3 内核的 16 个系统异常**（索引 0–15）。完整 ST 官方 startup 还会在索引 16 之后继续放置 **片上外设中断**（如 `TIM2_IRQHandler`、`USART1_IRQHandler`），数量由芯片型号决定。f103-blink 只做 LED 闪烁、暂不使用外设中断，精简表已够用；一旦启用 USART 或定时器中断，需补全对应 IRQ 项并实现 handler。见 [CMSIS 概述 — startup 实例对照](cmsis-overview.md#42-本仓库实例对照)。
+当前 f103-manual-reg **仅列出 Cortex-M3 内核的 16 个系统异常**（索引 0–15）。完整 ST 官方 startup 还会在索引 16 之后继续放置 **片上外设中断**（如 `TIM2_IRQHandler`、`USART1_IRQHandler`），数量由芯片型号决定。f103-manual-reg 只做 LED 闪烁、暂不使用外设中断，精简表已够用；一旦启用 USART 或定时器中断，需补全对应 IRQ 项并实现 handler。见 [CMSIS 概述 — startup 实例对照](cmsis-overview.md#42-本仓库实例对照)。
 
 ---
 
@@ -212,7 +212,7 @@ NVIC 属于 Cortex-M 内核外设，其寄存器定义与标准操作函数归�
    - `SCB->VTOR` — 向量表偏移（SCB 与 NVIC 配合）
 
 3. **与纯寄存器开发的关系**  
-   本仓库 f103-blink **不链接** CMSIS 头文件，但 startup / `SystemInit` 遵循向量表顺序与 Reset 流程等 CMSIS 规范。需要中断时可不调用 CMSIS 函数，直接操作 NVIC 寄存器（如 `NVIC->ISER`、`NVIC->IP`），原理与手写 RCC、GPIO 相同；CMSIS 只是把寄存器操作封装成通用接口。
+   本仓库 f103-manual-reg **不链接** CMSIS 头文件，但 startup / `SystemInit` 遵循向量表顺序与 Reset 流程等 CMSIS 规范。需要中断时可不调用 CMSIS 函数，直接操作 NVIC 寄存器（如 `NVIC->ISER`、`NVIC->IP`），原理与手写 RCC、GPIO 相同；CMSIS 只是把寄存器操作封装成通用接口。
 
 ---
 
@@ -233,4 +233,4 @@ NVIC 属于 Cortex-M 内核外设，其寄存器定义与标准操作函数归�
 | CMSIS 分层与手写边界 | [cmsis-overview.md](cmsis-overview.md) |
 | Flash / RAM 内存映射 | [memory-map-medium-density.md](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
 | RM0008 NVIC 章节 | [rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§9 Nested vectored interrupt controller） |
-| 本模块 startup 源码 | [`modules/f103-blink/startup/startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s) |
+| 本模块 startup 源码 | [`projects/f103-manual-reg/startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) |

@@ -1,5 +1,5 @@
 /**
- * @file    stm32f103c8.ld
+ * @file    STM32F103C8_FLASH.ld
  * @brief   STM32F103C8T6 链接脚本
  *
  * @memory 64 KB Flash @ 0x0800_0000，20 KB SRAM @ 0x2000_0000

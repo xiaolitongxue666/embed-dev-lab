@@ -33,7 +33,7 @@ cd embed-dev-lab
 ./scripts/bootstrap.sh
 ```
 
-等价于：安装工具 → 配置 PATH → 安装扩展 → 校验 → 编译 `f103-blink` → 配置 clangd。
+等价于：安装工具 → 配置 PATH → 安装扩展 → 校验 → 编译 `f103-manual-reg` → 配置 clangd。
 
 若工具已装好：
 
@@ -70,8 +70,8 @@ Linux 配置 udev；macOS 跳过。
 ## 步骤 5：编译 + 烧录
 
 ```bash
-./scripts/build.sh f103-blink build
-./scripts/build.sh f103-blink flash
+./scripts/build.sh f103-manual-reg build
+./scripts/build.sh f103-manual-reg flash
 ```
 
 或 Run Task → **Build and Flash F103**。
@@ -80,7 +80,7 @@ Linux 配置 udev；macOS 跳过。
 
 PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
-若无闪烁：按板载 **RESET**；见 [f103-blink 模块](modules/f103-blink.md) 与 [probe-rs.md 排错](probe-rs.md#故障排查)。
+若无闪烁：按板载 **RESET**；见 [f103-manual-reg 模块](projects/f103-manual-reg.md) 与 [probe-rs.md 排错](probe-rs.md#故障排查)。
 
 ---
 
@@ -97,6 +97,6 @@ PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
 - [probe-rs 详细说明](probe-rs.md)
 - [脚本完整参考](scripts-reference.md)
-- [f103-blink 源码说明](modules/f103-blink.md)
+- [f103-manual-reg 源码说明](projects/f103-manual-reg.md)
 
 维护速查：[PROJECT_MEMORY.md](../PROJECT_MEMORY.md)

@@ -30,8 +30,8 @@ temp_args.json
 ERROR.md
 
 # --- 应用层文档（可提交）---
-#   doc/modules/                     固件模块说明（与 modules/<name>/ 对应）
-#   modules/README.md                应用层代码入口说明
+#   doc/projects/                    固件小工程说明（与 projects/<name>/ 对应）
+#   projects/README.md               应用层代码入口说明
 
 # --- OS 残留 ---
 .DS_Store

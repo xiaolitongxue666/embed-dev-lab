@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # 初始化 / 更新 vendor-pack CMSIS git submodules（cmsis-core + cmsis-device-f1）
-# 目标：STM32F103C8T6（Cortex-M3，f103-blink 使用 startup_stm32f103xb.s）
+# 目标：STM32F103C8T6（Cortex-M3，f103-manual-reg 使用 startup_stm32f103xb.s）
 # 用法: ./scripts/fetch-cmsis.sh [--verify-only]
 # 首次 clone 本仓库请用: git clone --recursive
 # -----------------------------------------------------------------------------

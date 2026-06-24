@@ -4,7 +4,7 @@
     {
       "label": "Build F103",
       "type": "shell",
-      "command": "./scripts/build.sh f103-blink",
+      "command": "./scripts/build.sh f103-manual-reg",
       "options": {
         "cwd": "${workspaceFolder}",
         "shell": {
@@ -21,7 +21,7 @@
     {
       "label": "Build and Flash F103",
       "type": "shell",
-      "command": "./scripts/build.sh f103-blink build && ./scripts/build.sh f103-blink flash",
+      "command": "./scripts/build.sh f103-manual-reg build && ./scripts/build.sh f103-manual-reg flash",
       "options": {
         "cwd": "${workspaceFolder}",
         "shell": {
@@ -34,7 +34,7 @@
     {
       "label": "Flash OpenOCD",
       "type": "shell",
-      "command": "./scripts/build.sh f103-blink flash-openocd",
+      "command": "./scripts/build.sh f103-manual-reg flash-openocd",
       "options": {
         "cwd": "${workspaceFolder}",
         "shell": {

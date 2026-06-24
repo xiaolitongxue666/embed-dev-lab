@@ -65,7 +65,7 @@ flowchart TB
 | [cmsis-device-h7](https://github.com/STMicroelectronics/cmsis-device-h7) | **Device** | H7 高性能/双核系列设备描述与启动模板 | STM32H7 | 同上 |
 | [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | **HAL/LL** | F1 外设 HAL + LL 驱动（`stm32f1xx_hal_*.c`、`stm32f1xx_ll_*.h`）；Cube 内路径 `Drivers/STM32F1xx_HAL_Driver/` | STM32F1 | **参考 repo**；说明见 [`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)；本仓库未 submodule |
 | [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) | **MCU Package** | **全家桶**：CMSIS + HAL/LL + Middleware + BSP + Projects + Utilities；自身亦为 **submodule 聚合仓库** | STM32F1 | 本地 [`fetch-stm32cubef1.sh`](../../scripts/fetch-stm32cubef1.sh) → [`vendor-pack/STM32CubeF1/`](../../vendor-pack/STM32CubeF1/README.md)（可选，不全量进库） |
-| [stm32-mw-cmsis-rtos-tx](https://github.com/STMicroelectronics/stm32-mw-cmsis-rtos-tx) | **Middleware** | **CMSIS-RTOS v2** API 对 **Azure RTOS ThreadX** 的封装适配层（**非** FreeRTOS 封装） | 全系列通用中间件组件 | 可选；当前 [`f103-blink`](../../modules/f103-blink/) 未使用 |
+| [stm32-mw-cmsis-rtos-tx](https://github.com/STMicroelectronics/stm32-mw-cmsis-rtos-tx) | **Middleware** | **CMSIS-RTOS v2** API 对 **Azure RTOS ThreadX** 的封装适配层（**非** FreeRTOS 封装） | 全系列通用中间件组件 | 可选；当前 [`f103-manual-reg`](../../projects/f103-manual-reg/) 未使用 |
 
 ### 2.1 cmsis-core 要点
 
@@ -85,7 +85,7 @@ flowchart TB
 - F1 系列 **HAL + LL** 独立组件仓库，从 [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) 单体包中拆分。
 - **须与 CMSIS-Core、CMSIS-Device 版本成对**（三者 + Cube 包版本见下表）。
 - 提供 `HAL_GPIO_WritePin()` 等功能 API 与 `LL_GPIO_*` 底层接口；依赖 Device 头文件，不替代 CMSIS 层。
-- 本仓库 [`f103-blink`](../../modules/f103-blink/) 不链接 HAL；仅作文档参考。
+- 本仓库 [`f103-manual-reg`](../../projects/f103-manual-reg/) 不链接 HAL；仅作文档参考。
 
 ### 2.4 STM32CubeF1 要点
 
@@ -152,7 +152,7 @@ ST `cmsis-core` 在仓库根保留 **`Include/` 副本**，使旧工程与 Cube 
 | **Device** | submodule `vendor-pack/cmsis-device-f1` | 对照官方 `startup_stm32f103xb.s`、`system_stm32f1xx.c`、`stm32f103xb.h` |
 | **HAL** | 参考 [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | 对照 `HAL_GPIO_*`、`HAL_RCC_*` 等（本 demo 未用） |
 | **全包** | `vendor-pack/STM32CubeF1/`（fetch 后，可选） | HAL、Middleware、BSP、例程 |
-| **应用** | [`modules/f103-blink`](../../modules/f103-blink/) | 手写 `startup` / `system_stm32f10x.c`，遵循 `SystemInit` 与向量表规范，**不参与 CMake 链接官方包** |
+| **应用** | [`projects/f103-manual-reg`](../../projects/f103-manual-reg/) | 手写 `startup` / `system_stm32f1xx.c`，遵循 `SystemInit` 与向量表规范，**不参与 CMake 链接官方包** |
 
 详见 [CMSIS 标准与手写裸机边界](cmsis-overview.md) §4。
 

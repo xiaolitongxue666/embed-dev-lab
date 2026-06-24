@@ -1,6 +1,6 @@
 # CMSIS 标准与手写裸机边界
 
-整理自 STM32 生态下 CMSIS 分层、CubeMX 落地、手写代码边界与 HAL 关系的系统梳理。与本仓库 [`f103-blink`](../../modules/f103-blink/) 手写 startup/system 对照阅读。
+整理自 STM32 生态下 CMSIS 分层、CubeMX 落地、手写代码边界与 HAL 关系的系统梳理。与本仓库 [`f103-manual-reg`](../../projects/f103-manual-reg/) 手写 startup/system 对照阅读。
 
 时钟与 HSE 轮询细节见 [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md)；NVIC 与向量表专题见 [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)；官方模板路径见 [`vendor-pack/STM32CubeF1/README.md`](../../vendor-pack/STM32CubeF1/README.md)。
 
@@ -107,7 +107,7 @@ git clone --recursive <repo-url>          # 首次推荐
 | 文件 | 路径 |
 |------|------|
 | GCC startup | `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/gcc/startup_stm32f103xb.s` |
-| SystemInit 模板 | `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c`（旧包可能为 `system_stm32f10x.c`） |
+| SystemInit 模板 | `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c`（旧包可能为 `system_stm32f1xx.c`） |
 | 设备头文件 | `Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h` |
 
 详见 [`vendor-pack/STM32CubeF1/README.md`](../../vendor-pack/STM32CubeF1/README.md)、[`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md) 与 [脚本参考](../scripts-reference.md#fetch-stm32cubef1sh--stm32cubef1-固件包)。
@@ -144,7 +144,7 @@ CubeMX **常规生成**的是 HAL 层内容：`main.c`、`SystemClock_Config()`�
 
 ### 4.2 本仓库实例对照
 
-#### 实例 1：`system_stm32f10x.c`
+#### 实例 1：`system_stm32f1xx.c`
 
 | 特征 | 说明 |
 |------|------|
@@ -157,7 +157,7 @@ CubeMX **常规生成**的是 HAL 层内容：`main.c`、`SystemClock_Config()`�
 | 狭义 | **未依赖**官方 CMSIS 代码 |
 | 广义 | **符合** CMSIS 接口规范，可替换官方对应文件 |
 
-源码：[`modules/f103-blink/src/system_stm32f10x.c`](../../modules/f103-blink/src/system_stm32f10x.c)
+源码：[`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c)
 
 #### 实例 2：`startup_stm32f103xb.s`
 
@@ -173,7 +173,7 @@ CubeMX **常规生成**的是 HAL 层内容：`main.c`、`SystemClock_Config()`�
 | 狭义 | **未复用**官方 CMSIS 启动文件源码 |
 | 广义 | **100% 遵循** CMSIS-Core 启动规范 |
 
-源码：[`modules/f103-blink/startup/startup_stm32f103xb.s`](../../modules/f103-blink/startup/startup_stm32f103xb.s)  
+源码：[`projects/f103-manual-reg/startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s)  
 ST 官方对照（fetch 后）：`vendor-pack/STM32CubeF1/.../Templates/gcc/startup_stm32f103xb.s`
 
 ### 4.3 什么才算「完全脱离 CMSIS」
@@ -233,7 +233,7 @@ flowchart BT
 
 embed-dev-lab 选择 **「自写 CMSIS 兼容底层 + 纯寄存器开发」**：
 
-- [`f103-blink`](../../modules/f103-blink/) **不链接**官方 CMSIS 头文件与 HAL，不参与 `vendor-pack` 构建
+- [`f103-manual-reg`](../../projects/f103-manual-reg/) **不链接**官方 CMSIS 头文件与 HAL，不参与 `vendor-pack` 构建
 - 保留 `SystemInit`、向量表命名与 Reset 流程，便于与 ST 模板和工具链对照
 - `vendor-pack/cmsis-core/`、`cmsis-device-f1/` 为 **submodule**；HAL 参考 [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver)；全包可选 [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) fetch
 
@@ -244,7 +244,7 @@ embed-dev-lab 选择 **「自写 CMSIS 兼容底层 + 纯寄存器开发」**：
 | 标准 ST 生态 | 官方 CMSIS + HAL/LL + CubeMX |
 | 轻量化裸机（本仓库） | 手写兼容 startup/system + 寄存器直接操作 |
 
-若后续需要「官方 CMSIS + HAL」实验，建议作为**独立新模块**（如 `modules/f103-hal-blink`），与当前 demo 解耦。
+若后续需要「官方 CMSIS + HAL」实验，见占位工程 [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/README.md)，与 [`f103-manual-reg`](../../projects/f103-manual-reg/) 并列、彼此独立。
 
 ---
 
@@ -264,7 +264,7 @@ embed-dev-lab 选择 **「自写 CMSIS 兼容底层 + 纯寄存器开发」**：
 - [stm32f1xx-hal-driver 参考说明](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)
 - [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) — 向量表、NVIC、与 startup / CMSIS 边界
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — startup、RCC、HSE/HSERDY、SystemInit 调用链、ARM 汇编与 x86 对比（Q5/Q9–Q12）
-- [f103-blink 模块说明](../modules/f103-blink.md)
+- [f103-manual-reg 模块说明](../projects/f103-manual-reg.md)
 - [Datasheet 与 Reference Manual 怎么读？](datasheet-vs-reference-manual.md)
 - [STM32CubeF1 本地固件包](../../vendor-pack/STM32CubeF1/README.md)
 - [RCC：HSE → PLL → 72 MHz](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)

@@ -20,11 +20,11 @@ HAL 全包内路径（fetch 后）：`Drivers/STM32F1xx_HAL_Driver/`
 
 ## 与本仓库 demo 的关系
 
-[`modules/f103-blink`](../modules/f103-blink/)（STM32F103C8T6）**不链接** HAL，采用纯寄存器实现。若后续做 HAL 实验，建议：
+[`projects/f103-manual-reg`](../projects/f103-manual-reg/)（STM32F103C8T6）**不链接** HAL，采用纯寄存器实现。若后续做 HAL 实验，建议：
 
 1. 单独 clone 本仓库，或
 2. 使用 `fetch-stm32cubef1.sh` 获取全包，或
-3. 新建独立模块（如 `modules/f103-hal-blink`），与现有 demo 解耦
+3. 见占位工程 [`projects/f103-cmsis-hal`](../../projects/f103-cmsis-hal/README.md)，与 `f103-manual-reg` 解耦
 
 ## 获取
 

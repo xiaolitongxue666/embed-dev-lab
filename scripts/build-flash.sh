@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # 一键编译并烧录（build + flash）
 # 用法: ./scripts/build-flash.sh [module]
-# 默认 module: f103-blink
+# 默认 module: f103-manual-reg
 # 编译失败时保留 ninja/gcc 报错输出，并暂停等待按键（交互终端）
 # -----------------------------------------------------------------------------
 
@@ -17,18 +17,18 @@ source "$ROOT/scripts/lib/os-detect.sh"
 require_bash
 require_git_bash_on_windows
 
-MODULE="f103-blink"
+MODULE="f103-manual-reg"
 
 usage() {
   cat <<EOF
 Usage: ./scripts/build-flash.sh [module]
 
-Build then flash via probe-rs. Default module: f103-blink.
+Build then flash via probe-rs. Default module: f103-manual-reg.
 On build failure, compiler errors are shown and the script pauses.
 
 Examples:
   ./scripts/build-flash.sh
-  ./scripts/build-flash.sh f103-blink
+  ./scripts/build-flash.sh f103-manual-reg
 EOF
 }
 

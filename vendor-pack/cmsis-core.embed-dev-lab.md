@@ -1,6 +1,6 @@
 # CMSIS 子模块（embed-dev-lab）
 
-本仓库将 ST **CMSIS-Core** 与 **CMSIS-Device F1** 作为 **git submodule** 纳入 `vendor-pack/`，版本成对固定，供对照官方模板；**不参与** [`f103-blink`](../modules/f103-blink/) 构建链接。
+本仓库将 ST **CMSIS-Core** 与 **CMSIS-Device F1** 作为 **git submodule** 纳入 `vendor-pack/`，版本成对固定，供对照官方模板；**不参与** [`f103-manual-reg`](../projects/f103-manual-reg/) 构建链接。
 
 目标芯片：**STM32F103C8T6**（Cortex-M3，F103xB，`startup_stm32f103xb.s`）。
 
@@ -65,4 +65,4 @@ git add vendor-pack/cmsis-core
 
 ## 与本仓库 demo 的关系
 
-[`modules/f103-blink`](../modules/f103-blink/) **不链接**本 submodule；此处仅供对照官方 `core_cm3.h`、NVIC API 与编译器头文件。Device 层见 [`cmsis-device-f1`](cmsis-device-f1.embed-dev-lab.md)。
+[`projects/f103-manual-reg`](../projects/f103-manual-reg/) **不链接**本 submodule；此处仅供对照官方 `core_cm3.h`、NVIC API 与编译器头文件。Device 层见 [`cmsis-device-f1`](cmsis-device-f1.embed-dev-lab.md)。

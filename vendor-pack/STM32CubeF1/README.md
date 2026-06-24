@@ -36,12 +36,12 @@ ST 官方 [**STM32CubeF1 MCU Package**](https://github.com/STMicroelectronics/ST
 | 文件 | 路径 |
 |------|------|
 | GCC startup | `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/gcc/startup_stm32f103xb.s` |
-| SystemInit 模板 | `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c`（旧包可能为 `system_stm32f10x.c`） |
+| SystemInit 模板 | `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c`（旧包可能为 `system_stm32f1xx.c`） |
 | 设备头文件 | `Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h` |
 
 ## 与本仓库 demo 的关系
 
-[`modules/f103-blink`](../../modules/f103-blink) 使用**手写**精简版 `startup_stm32f103xb.s` 与 `system_stm32f10x.c`，不链接 HAL，不依赖本目录构建。此处固件包供 **CMSIS-Device** 层对照（启动文件、设备头文件、SystemInit 模板）。
+[`projects/f103-manual-reg`](../../projects/f103-manual-reg) 使用**手写**精简版 `startup_stm32f103xb.s` 与 `system_stm32f1xx.c`，不链接 HAL，不依赖本目录构建。此处固件包供 **CMSIS-Device** 层对照（启动文件、设备头文件、SystemInit 模板）。
 
 **CMSIS-Core** 与 **CMSIS-Device F1** 为独立 submodule：[`cmsis-core`](../../vendor-pack/cmsis-core.embed-dev-lab.md)（`cm3` / `v5.6.0_cm3`）、[`cmsis-device-f1`](../../vendor-pack/cmsis-device-f1.embed-dev-lab.md)（`v4.3.5`），与 CubeF1 包内 `Drivers/CMSIS/` 同源代际，便于分层查阅。
 

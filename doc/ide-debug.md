@@ -43,9 +43,9 @@
 
 ```text
 preLaunchTask "Build F103"
-  → ./scripts/build.sh f103-blink    # 自动 configure + build
+  → ./scripts/build.sh f103-manual-reg    # 自动 configure + build
   → probe-rs-debugger launch
-  → flashingConfig: 烧录 f103-blink.elf
+  → flashingConfig: 烧录 f103-manual-reg.elf
   → haltAfterReset + connectUnderReset: 复位后停于 main
 ```
 
@@ -60,7 +60,7 @@ preLaunchTask "Build F103"
 | `preLaunchTask` | `Build F103` | 调试前自动编译 |
 | `flashingConfig.flashingEnabled` | `true` | 启动时烧录 |
 | `flashingConfig.formatOptions.binaryFormat` | `elf` | ELF 格式 |
-| `coreConfigs[0].programBinary` | `modules/f103-blink/build/f103-blink.elf` | 程序文件 |
+| `coreConfigs[0].programBinary` | `projects/f103-manual-reg/build/f103-manual-reg.elf` | 程序文件 |
 | `connectUnderReset` | `true` | 在复位下连接 |
 
 ### 与 CLI 的差异
@@ -79,9 +79,9 @@ preLaunchTask "Build F103"
 
 | Task 标签 | 命令 | 用途 |
 |-----------|------|------|
-| **Build F103** | `./scripts/build.sh f103-blink` | 默认构建任务（Ctrl+Shift+B） |
+| **Build F103** | `./scripts/build.sh f103-manual-reg` | 默认构建任务（Ctrl+Shift+B） |
 | **Build and Flash F103** | `build` + `flash` | 编译并烧录，不进入调试 |
-| **Flash OpenOCD** | `./scripts/build.sh f103-blink flash-openocd` | OpenOCD 烧录 |
+| **Flash OpenOCD** | `./scripts/build.sh f103-manual-reg flash-openocd` | OpenOCD 烧录 |
 | **Env Check** | `./scripts/env-check.sh` | 环境校验 |
 
 运行 Task：Terminal → Run Task…
@@ -115,7 +115,7 @@ preLaunchTask "Build F103"
 |------|------|
 | 扩展未安装 / bootstrap 报 extension failed | 运行 `./scripts/install-extensions.sh`；必需扩展失败时 bootstrap 会退出；无 GUI 环境用 `--skip-extensions` |
 | F5 提示找不到 probe-rs | User PATH 添加 cargo/WinGet 路径；重启 Cursor |
-| 调试前 build 失败 | 终端单独运行 `./scripts/build.sh f103-blink` 看错误 |
+| 调试前 build 失败 | 终端单独运行 `./scripts/build.sh f103-manual-reg` 看错误 |
 | 烧录后无断点停住 | 确认 `haltAfterReset: true`；检查 SWD |
 | OpenOCD 报找不到 hex | 须先 `build` 生成 `.hex`（objcopy POST_BUILD）；probe-rs 路径用 `.elf` |
 | Git Bash 路径错误 | 工作区已设 profile 名；User settings 中配置实际 bash 路径 |
@@ -126,4 +126,4 @@ preLaunchTask "Build F103"
 
 - [probe-rs CLI 与驱动](probe-rs.md)
 - [脚本参考](scripts-reference.md)
-- [f103-blink 模块](modules/f103-blink.md)
+- [f103-manual-reg 模块](projects/f103-manual-reg.md)

@@ -1,5 +1,5 @@
 /**
- * @file    system_stm32f10x.c
+ * @file    system_stm32f1xx.c
  * @brief   系统时钟初始化（SystemInit）
  *
  * @target  STM32F103C8T6
@@ -8,6 +8,8 @@
  * @note    由 startup_stm32f103xb.s 在 main 之前调用。
  *          HSE 8 MHz × PLL9 → SYSCLK 72 MHz；HSE 超时则保持复位默认 HSI 8 MHz。
  */
+
+#include "system_stm32f1xx.h"
 
 /* -------------------------------------------------------------------------- */
 /* 寄存器基地址                                                               */
@@ -54,13 +56,13 @@
  *
  * @note   若板上无 8 MHz 晶振或 HSE 失败，直接返回，继续使用 HSI 8 MHz
  */
-static void set_sys_clock_to_72mhz(void)
+static void SetSysClockTo72(void)
 {
-    unsigned int startup = 0;
+    unsigned int startup_counter = 0;
 
     RCC_CR |= RCC_CR_HSEON;
-    while (!(RCC_CR & RCC_CR_HSERDY) && startup < HSE_STARTUP_TIMEOUT) {
-        startup++;
+    while (!(RCC_CR & RCC_CR_HSERDY) && startup_counter < HSE_STARTUP_TIMEOUT) {
+        startup_counter++;
     }
 
     if (!(RCC_CR & RCC_CR_HSERDY)) {
@@ -91,7 +93,7 @@ static void set_sys_clock_to_72mhz(void)
 /**
  * @brief  复位后时钟与向量表默认化，并尝试升频至 72 MHz
  *
- * 先将 RCC 恢复至数据手册规定的复位状态，再调用 set_sys_clock_to_72mhz。
+ * 先将 RCC 恢复至数据手册规定的复位状态，再调用 SetSysClockTo72。
  * 与 ST CMSIS SystemInit 前半段行为一致。
  */
 void SystemInit(void)
@@ -102,5 +104,5 @@ void SystemInit(void)
     RCC_CR &= ~RCC_CR_HSEBYP;
     RCC_CFGR &= 0xFF80FFFFU;
 
-    set_sys_clock_to_72mhz();
+    SetSysClockTo72();
 }

@@ -5,11 +5,11 @@
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
  * @ref     vendor-pack/.../核心板测试程序(PC13闪烁)/USER/main.c
  *
- * @note    本模块无串口/printf；若后续添加日志，输出语言统一为英文。
- *          时钟初始化见 system_stm32f10x.c（Reset_Handler 中 SystemInit 调用）。
+ * @note    本模块无串口/printf；若后续添加日志，输出语言统一为 English。
+ *          时钟初始化见 system_stm32f1xx.c（Reset_Handler 中 SystemInit 调用）。
  */
 
-#include "gpio_like51.h"
+#include "gpioc_bitband.h"
 
 /* -------------------------------------------------------------------------- */
 /* 外设基地址与寄存器映射（参考 RM0008）                                      */
@@ -70,7 +70,7 @@ static void delay(volatile unsigned int count)
  *
  * GPIO 模式对齐厂商例程：Out_PP + 50 MHz（CRH[23:20] = 0b0011）。
  */
-static void gpio_configuration(void)
+static void GPIOC_Init(void)
 {
     RCC_APB1ENR |= RCC_APB1ENR_PWREN;
     PWR_CR |= PWR_CR_DBP;
@@ -88,7 +88,7 @@ static void gpio_configuration(void)
 int main(void)
 {
     int count = 0;
-    gpio_configuration();
+    GPIOC_Init();
 
     for (;;) {
         PCout(LED_PIN) = 1;

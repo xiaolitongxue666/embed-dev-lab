@@ -2,7 +2,7 @@
 
 本目录 [`cmsis-device-f1/`](cmsis-device-f1/) 为 **git submodule**，指向 ST 维护的 [STMicroelectronics/cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1)。
 
-目标芯片：**STM32F103C8T6**（Medium-density **F103xB**；与 [`f103-blink`](../modules/f103-blink/) 的 `startup_stm32f103xb.s` 同系列）。
+目标芯片：**STM32F103C8T6**（Medium-density **F103xB**；与 [`f103-manual-reg`](../projects/f103-manual-reg/) 的 `startup_stm32f103xb.s` 同系列）。
 
 ## 固定版本
 
@@ -35,4 +35,4 @@ git clone --recursive <repo-url>
 
 ## 与本仓库 demo 的关系
 
-[`modules/f103-blink`](../modules/f103-blink/) **不链接**本 submodule；手写 `startup` / `system_stm32f10x.c` 可与此处官方模板对照。Core 头文件见 [`cmsis-core`](cmsis-core.embed-dev-lab.md)。
+[`projects/f103-manual-reg`](../projects/f103-manual-reg/) **不链接**本 submodule；手写 `startup` / `system_stm32f1xx.c` 可与此处官方模板对照。Core 头文件见 [`cmsis-core`](cmsis-core.embed-dev-lab.md)。

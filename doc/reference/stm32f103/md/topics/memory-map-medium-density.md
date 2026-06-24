@@ -5,7 +5,7 @@
 | 来源 | DS5319 §4 Memory mapping；RM0008 §2.3 Memory map |
 | PDF 页码 | DS5319 p.34；RM0008 p.41–44 |
 | 整理日期 | 2026-06-11 |
-| 源码 | [`modules/f103-blink/linker/stm32f103c8.ld`](../../../modules/f103-blink/linker/stm32f103c8.ld) |
+| 源码 | [`projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld`](../../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) |
 
 ## STM32F103C8T6 容量
 
@@ -16,7 +16,7 @@
 
 DS5319 Table 1 / Features：STM32F103**x8** = 64 KB Flash + 20 KB SRAM；**xB** = 128 KB Flash + 20 KB SRAM。
 
-## 链接脚本（f103-blink）
+## 链接脚本（f103-manual-reg）
 
 ```ld
 MEMORY
@@ -37,7 +37,7 @@ _estack = 0x20005000;   /* RAM 末尾，主栈顶 */
 
 ## 外设基地址（RM0008 Table 1, p.41–42）
 
-与 `f103-blink` 相关的条目：
+与 `f103-manual-reg` 相关的条目：
 
 | 边界地址 | 外设 |
 |----------|------|
@@ -56,18 +56,18 @@ _estack = 0x20005000;   /* RAM 末尾，主栈顶 */
 
 ## 位带（Bit banding）
 
-RM0008 §2.3.2（p.43）：SRAM 与 **外设** 均支持位带。`gpio_like51.h` 中 `PCout(n)` 通过 `GPIOC_ODR`（`0x4001100C`）的位带别名实现单 bit 读写。
+RM0008 §2.3.2（p.43）：SRAM 与 **外设** 均支持位带。`gpioc_bitband.h` 中 `PCout(n)` 通过 `GPIOC_ODR`（`0x4001100C`）的位带别名实现单 bit 读写。
 
 ## 核对表
 
-| 检查项 | DS5319 / RM0008 | `stm32f103c8.ld` / 源码 | 结果 |
+| 检查项 | DS5319 / RM0008 | `STM32F103C8_FLASH.ld` / 源码 | 结果 |
 |--------|-----------------|-------------------------|------|
 | Flash 大小 | 64 KB (x8) | `LENGTH = 64K` | OK |
 | SRAM 大小 | 20 KB | `LENGTH = 20K` | OK |
 | Flash 基址 | `0x08000000` | `ORIGIN = 0x08000000` | OK |
 | SRAM 基址 | `0x20000000` | `ORIGIN = 0x20000000` | OK |
 | 栈顶 | RAM 高地址 | `_estack = 0x20005000` | OK |
-| RCC 基址 | `0x40021000` | `system_stm32f10x.c` | OK |
+| RCC 基址 | `0x40021000` | `system_stm32f1xx.c` | OK |
 
 ## 延伸阅读
 

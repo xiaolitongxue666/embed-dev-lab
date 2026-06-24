@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 # 裸机 MCU 模块公共构建函数
-# 各 modules/<name>/CMakeLists.txt 通过 embed_mcu_add_executable 声明固件目标
+# 各 projects/<name>/CMakeLists.txt 通过 embed_mcu_add_executable 声明固件目标
 #
-# 构建产物（以 f103-blink 为例）:
+# 构建产物（以 f103-manual-reg 为例）:
 #   build 后 Ninja 链接 → <name>.elf
 #   POST_BUILD 自动     → <name>.hex（arm-none-eabi-objcopy -O ihex）
 #   当前不生成 .bin；烧录主路径 probe-rs 直接使用 .elf
@@ -70,7 +70,7 @@ function(embed_mcu_add_executable target_name)
     endif()
 
     # ELF → HEX：构建完成后由 objcopy 生成（OpenOCD flash-openocd 使用 .hex）
-    # 等价命令: arm-none-eabi-objcopy -O ihex f103-blink.elf f103-blink.hex
+    # 等价命令: arm-none-eabi-objcopy -O ihex f103-manual-reg.elf f103-manual-reg.hex
     add_custom_command(TARGET ${target_name}.elf POST_BUILD
         COMMAND "${_embed_objcopy}" -O ihex ${target_name}.elf ${target_name}.hex
         COMMENT "Generating ${target_name}.hex"

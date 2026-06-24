@@ -1,16 +1,18 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-23（应用文档 doc/modules/）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（projects 多工程 + manual-reg CMSIS 命名）
 
 ## 快速路径
 
 | 用途 | 路径 / 命令 |
 |------|-------------|
 | 一键环境 + 编译 | `./scripts/bootstrap.sh` |
-| F103 编译 | `./scripts/build.sh f103-blink build` |
-| F103 烧录 | `./scripts/build.sh f103-blink flash` |
-| 应用层文档 | `doc/modules/`（说明）· `modules/`（源码）· `modules/README.md` |
-| f103-blink 模块 | `doc/modules/f103-blink.md` |
+| F103 一键编译+烧录 | `./scripts/build-flash.sh f103-manual-reg` |
+| F103 编译 | `./scripts/build.sh f103-manual-reg build` |
+| F103 烧录 | `./scripts/build.sh f103-manual-reg flash` |
+| 应用层文档 | `doc/projects/`（说明）· `projects/`（源码）· `projects/README.md` |
+| f103-manual-reg | `doc/projects/f103-manual-reg.md` |
+| f103-cmsis-hal | 占位 · `projects/f103-cmsis-hal/README.md` |
 | 模块编译流程 | `doc/learn/f103-module-build-flow.md` |
 | 链接器 map 文件 | `doc/learn/linker-map-file.md` |
 | ST 官方文档 fetch | `./scripts/fetch-stm32f103-docs.sh` |
@@ -40,48 +42,45 @@
 5. **probe-rs 烧录 CLI**：`probe-rs download --chip STM32F103C8Tx --binary-format elf <elf>`；旧版 `--format` 已废弃。
 6. **烧录后复位**：`scripts/build.sh` 的 `flash` 在 download 后执行 `probe-rs reset`，避免目标停在调试态。
 7. **ST-Link WinUSB**：Windows 上 probe-rs 需 Debug 接口 WinUSB；bundled 路径 `vendor-pack/STLink/.../USBDriver/`，脚本 `stlink-winusb-windows.sh`。
-8. **f103-blink 时钟**：`system_stm32f10x.c` 手写寄存器版（非 CubeMX）；HSE→72MHz，HSE 超时保持 HSI。
-9. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
-10. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md` + `doc/learn/stm32-cmsis-component-repos.md`；**submodule** `cmsis-core`（`cm3`/`v5.6.0_cm3`）+ `cmsis-device-f1`（`v4.3.5`）；F103C8T6；f103-blink 不链接官方包。
-11. **flash 前需 build**：`build.sh f103-blink flash` 不自动编译。
-12. **ST 官方 PDF+MD**：`doc/reference/stm32f103/`；**DS5319 定约束/时钟树，RM0008 写寄存器**（改 `system_stm32f10x.c` 以 RM §6 RCC 为主）；详见 `doc/learn/datasheet-vs-reference-manual.md`；fetch + topic 页码以本地 PDF Rev 为准。
-13. **vendor-pack**：ST-Link 驱动 + **CMSIS submodules**（core + device-f1）+ 核心板例程 + STM32CubeF1 fetch（可选）。
-14. **fetch-cmsis.sh**：`git submodule update --init`；Core 分支 **`cm3`** / tag **`v5.6.0_cm3`**，Device **`v4.3.5`**；`.gitmodules` 声明 `branch = cm3`；首次 `git clone --recursive`。
-15. **fetch-stm32cubef1.sh**：优先 `archives/*.zip` 解压，否则 `git clone --recursive v1.8.6`；**勿用 GitHub「Download ZIP」**（缺 submodule）。
-16. **用户文档**：`doc/` 中文；**应用层** `doc/modules/`；学习笔记含 CMSIS、ST 仓库归纳、中断/NVIC、编译流程、map。
-17. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线 SWDIO/SWCLK/GND/3.3V。
-18. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`。
-19. **调试**：Cursor Run →「F103 Probe-rs Debug」；`.vscode/launch.json` 已配置。
-20. **f103-blink 注释**：源码中文；终端/CLI 输出保持英文。
-21. **`.gitignore`**：`STM32CubeF1/`（除 README）、核心板、PDF、`.tools/` 忽略；**CMSIS submodules 不忽略**。
-22. **MCP/Skill**：`install-mcp-skills.sh` 构建 embedded-debugger-mcp → `.cursor/mcp.json` + `skills/embed-dev-lab`；`--global` 合并多 Agent；Codex 无 MCP。
-23. **实机验证**（2026-06-11）：ST-Link V2 + SWD + 3.3V，PC13 LED 闪烁（Backup 域 DBP 修复后）；embedded-debugger MCP 通过。
-24. **Cursor 终端**：工作区 `.vscode/settings.json` 声明 `defaultProfile: Git Bash`。
-25. **应用层分工**：源码 `modules/<name>/`；人类说明 `doc/modules/<name>.md`；旧路径 `doc/modules-f103-blink.md` 为重定向 stub。
+8. **projects 布局**：固件小工程在 `projects/<name>/`，与 `doc/projects/<name>.md` 一一对应；`f103-manual-reg`（全手写寄存器）与 `f103-cmsis-hal`（CMSIS+HAL 占位）彼此独立。
+9. **f103-manual-reg 源码命名**（CMSIS 风格、不链接官方包）：`system_stm32f1xx.c/h`、`gpioc_bitband.h`、`linker/STM32F103C8_FLASH.ld`、`startup_stm32f103xb.s`；时钟 `SetSysClockTo72()`，GPIO `GPIOC_Init()`；HSE 超时保持 HSI。
+10. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
+11. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md`；submodule `cmsis-core` + `cmsis-device-f1` 供对照；f103-manual-reg **不** `#include` 官方 Device 头。
+12. **flash 前需 build**：`build.sh … flash` 不自动编译；`build-flash.sh` 只调 `build` 不调 `configure`。
+13. **ST 官方 PDF+MD**：改 `system_stm32f1xx.c` 以 RM0008 §6 RCC 为主；DS5319 定约束；见 `doc/learn/datasheet-vs-reference-manual.md`。
+14. **vendor-pack**：ST-Link 驱动 + CMSIS submodules + 核心板例程 + STM32CubeF1 fetch（可选）。
+15. **fetch-cmsis.sh**：Core 分支 **`cm3`** / **`v5.6.0_cm3`**，Device **`v4.3.5`**；首次 `git clone --recursive`。
+16. **fetch-stm32cubef1.sh**：优先 `archives/*.zip`；**勿用 GitHub「Download ZIP」**（缺 submodule）。
+17. **用户文档**：`doc/` 中文；应用层 `doc/projects/`；旧链 `doc/modules-f103-blink.md` 为重定向 stub。
+18. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线。
+19. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`（扫描 `projects/*/build/`）。
+20. **调试**：Cursor Run →「F103 Probe-rs Debug」；ELF 路径 `projects/f103-manual-reg/build/f103-manual-reg.elf`。
+21. **f103-manual-reg 注释**：源码中文；终端/CLI 输出保持英文。
+22. **`.gitignore`**：CubeF1 全包、核心板、PDF、`.tools/` 忽略；CMSIS submodules **不**忽略。
+23. **MCP/Skill**：`install-mcp-skills.sh` → `.cursor/mcp.json` + `skills/embed-dev-lab`；Codex 无 MCP。
+24. **实机验证**（2026-06-24）：`f103-manual-reg` 重命名后 build+flash 正常，PC13 闪烁。
+25. **Cursor 终端**：工作区 `.vscode/settings.json` 声明 `defaultProfile: Git Bash`。
 
 ## 问题 ↔ 解法
 
 | 问题 | 解法 |
 |------|------|
-| 找不到模块文档 | `doc/modules/README.md`；源码入口 `modules/README.md` |
+| 找不到工程文档 | `doc/projects/README.md`；源码 `projects/README.md` |
+| `clean` 后 `build-flash` 失败（build 目录不存在） | `build-flash` 不 configure；用 `./scripts/build.sh f103-manual-reg`（configure+build）再 flash |
 | `probe-rs list` 为空 | Windows：`stlink-winusb-windows.sh --install` 或 Zadig WinUSB |
 | 烧录成功但 PC13 不闪 | PWR+DBP；先 `build` 再 `flash`；`probe-rs reset` |
-| 程序卡死、无任何 IO | HSE 超时逻辑已在 `system_stm32f10x.c` |
+| 程序卡死、无任何 IO | HSE 超时逻辑在 `system_stm32f1xx.c` 的 `SetSysClockTo72()` |
 | `unexpected argument '--format'` | 改用 `--binary-format elf` |
-| ST PDF curl 超时/SSL 失败 | 浏览器保存至 `pdf/`；RM0008 可用 Keil 镜像；`--verify-only` |
-| RM0008 topic 页码对不上 | 核对本地 PDF 页脚 Rev（Rev 9 vs Rev 21） |
-| 改 system/外设不知看 DS 还是 RM | **DS5319 定方案与上限，RM0008 写寄存器**；F103 RCC 读 **§6**（非 §7）；见 `doc/learn/datasheet-vs-reference-manual.md` |
-| 手写 startup/system 算不算用 CMSIS | **狭义**未链接官方头文件；**广义**遵循 `SystemInit`/向量表即 CMSIS 兼容；见 `doc/learn/cmsis-overview.md` |
-| 向量表 / NVIC 是什么、起什么作用 | 复位读 Flash 起始表（MSP + Reset_Handler）；NVIC 查表响应中断；f103-blink 仅 16 项内核异常；见 `doc/learn/interrupt-vector-table-and-nvic.md` |
-| clone 后 CMSIS submodule 目录为空 | `git clone --recursive` 或 `./scripts/fetch-cmsis.sh` |
-| ST cmsis-core 与 ARM 仓库混淆 | ST 镜像：[STMicroelectronics/cmsis-core](https://github.com/STMicroelectronics/cmsis-core)；ARM 上游：[CMSIS_6](https://github.com/ARM-software/CMSIS_6)；见 `doc/learn/stm32-cmsis-component-repos.md` |
-| GitHub STM32CubeF1「Download ZIP」缺文件 | `git clone --recursive` 或 ST 官网 ZIP + `fetch-stm32cubef1.sh` |
-| fetch CubeF1 报缺 `system_stm32f10x.c` | 新版 CMSIS 为 `system_stm32f1xx.c`；脚本 `--verify-only` 已适配 |
-| 文档/脚本仍写 `install_packet` | 已更名为 **`vendor-pack/`** |
+| ST PDF curl 超时/SSL 失败 | 浏览器保存至 `pdf/`；`--verify-only` |
+| RM0008 topic 页码对不上 | 核对本地 PDF 页脚 Rev |
+| 改 system/外设不知看 DS 还是 RM | DS5319 定方案，RM0008 写寄存器；F103 RCC **§6** |
+| 手写 startup 算不算用 CMSIS | 未链接官方头文件；遵循 `SystemInit`/向量表即规范兼容 |
+| 向量表 / NVIC | f103-manual-reg 仅 16 项内核异常；见 `interrupt-vector-table-and-nvic.md` |
+| clone 后 CMSIS submodule 空 | `git clone --recursive` 或 `./scripts/fetch-cmsis.sh` |
+| GitHub CubeF1 ZIP 缺 CMSIS | `git clone --recursive` 或 `fetch-stm32cubef1.sh` |
+| 文档仍写 `modules/` 或 `f103-blink` | 已迁 `projects/f103-manual-reg`；stub 见 `doc/modules-f103-blink.md` |
 | bootstrap 慢 | `--build-only --skip-extensions` |
 | Cursor 找不到 cmake/clangd | `setup-path.sh`，重启 Cursor |
 | IDE clangd 报错 | 先 `build`，再 `setup-clangd.sh` |
-| MCP `cargo required` | 安装 Rust（rustup.rs），再 `./scripts/install-mcp-skills.sh` |
-| Cursor 无 embedded-debugger | 运行 install 脚本；MCP Connected；Reload Window 或新对话 |
-| Cursor Agent 调不到 MCP 工具 | 确认 MCP 已连接；非 Codex（Codex 无 MCP）；新开 Agent 对话 |
-| Windows Python 测 MCP 编码/启动失败 | `uv run python`；subprocess 直调 `.exe`；stdin/stdout UTF-8 字节流 |
+| MCP `cargo required` | 安装 Rust，再 `install-mcp-skills.sh` |
+| Cursor Agent 调不到 MCP | 确认 MCP 已连接；非 Codex；新开对话 |

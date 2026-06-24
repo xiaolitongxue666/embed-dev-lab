@@ -17,7 +17,7 @@
       },
       "coreConfigs": [
         {
-          "programBinary": "${workspaceFolder}/modules/f103-blink/build/f103-blink.elf"
+          "programBinary": "${workspaceFolder}/projects/f103-manual-reg/build/f103-manual-reg.elf"
         }
       ],
       "connectUnderReset": true
@@ -28,7 +28,7 @@
       "request": "launch",
       "servertype": "openocd",
       "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/modules/f103-blink/build/f103-blink.elf",
+      "executable": "${workspaceFolder}/projects/f103-manual-reg/build/f103-manual-reg.elf",
       "configFiles": [
         "interface/stlink.cfg",
         "target/stm32f1x.cfg"

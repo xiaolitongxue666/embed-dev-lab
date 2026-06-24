@@ -21,14 +21,14 @@ OUT="$ROOT/.vscode/settings.local.json"
 COMPILE_DB="$ROOT/compile_commands.json"
 TOOLCHAIN_BIN=""
 
-# 查找 compile_commands.json（根目录或 modules/*/build/）
+# 查找 compile_commands.json（根目录或 projects/*/build/）
 find_compile_commands() {
   if [[ -f "$COMPILE_DB" ]]; then
     printf '%s\n' "$COMPILE_DB"
     return 0
   fi
   local mod_db
-  for mod_db in "$ROOT"/modules/*/build/compile_commands.json; do
+  for mod_db in "$ROOT"/projects/*/build/compile_commands.json; do
     if [[ -f "$mod_db" ]]; then
       printf '%s\n' "$mod_db"
       return 0
@@ -38,7 +38,7 @@ find_compile_commands() {
 }
 
 if ! find_compile_commands >/dev/null; then
-  log_warn "compile_commands.json not found; run: ./scripts/build.sh f103-blink"
+  log_warn "compile_commands.json not found; run: ./scripts/build.sh f103-manual-reg"
   exit 0
 fi
 

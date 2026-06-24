@@ -47,5 +47,5 @@ git clone --recursive <repo-url>     # 首次推荐
 ## 相关文档
 
 - [probe-rs 与 WinUSB](../doc/probe-rs.md)
-- [f103-blink 模块](../doc/modules/f103-blink.md)
+- [f103-manual-reg 模块](../doc/projects/f103-manual-reg.md)
 - [STM32 裸机入门笔记](../doc/learn/stm32-bare-metal-bootstrap.md)

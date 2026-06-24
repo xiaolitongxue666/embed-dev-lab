@@ -63,12 +63,12 @@ set(F103_SOURCES
 
 ## 为什么需要？有什么作用
 
-Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定执行：
+Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定执行（Flash 启动时 CPU 读逻辑 **`0x00000000` / `0x00000004`**，别名到物理 **`0x08000000` / `0x08000004`**，见 [内存映射与启动流程](stm32f103-memory-boot-map.md)）：
 
 | 步骤 | 硬件行为 | 向量表对应项 |
 |------|----------|--------------|
-| 1 | 从 Flash 起始读第 1 个字 → 写入 **MSP**（主栈指针） | 索引 0：`_estack` |
-| 2 | 读第 2 个字 → 写入 **PC**（程序计数器），开始执行 | 索引 1：`Reset_Handler` |
+| 1 | 从向量表基址 **+0** 读第 1 个字 → 写入 **MSP**（主栈指针） | 索引 0：`_estack` |
+| 2 | 从向量表基址 **+4** 读第 2 个字 → 写入 **PC**（程序计数器），开始执行 | 索引 1：`Reset_Handler` |
 
 因此向量表的 **第一作用**：告诉 CPU 复位后栈在哪、代码从哪跑。没有它，CPU 既不知道栈指针，也不知道该跳转到哪里。
 
@@ -110,7 +110,7 @@ Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定
 
 ## NVIC 是什么
 
-**NVIC** 全称 **Nested Vectored Interrupt Controller（嵌套向量中断控制器）**，是 **Cortex-M 内核内置的硬件模块**，不是 STM32 等芯片厂商额外加的片上外设。所有 Cortex-M 系列内核都标配 NVIC，它是整个中断系统的核心调度中枢。
+**NVIC** 全称 **Nested Vectored Interrupt Controller（嵌套向量中断控制器）**，是 **Cortex-M 内核内置的硬件模块**，不是 STM32 等芯片厂商在 `0x40000000` 外设总线上实现的那种 GPIO/RCC 类外设。NVIC 的 control/status 寄存器位于 ARM **PPB（Private Peripheral Bus）** 区 **`0xE000xxxx`**，与 ST 外设地址段不同；SoC 分层见 [memory-boot-map §2.1](stm32f103-memory-boot-map.md#21-soc-分层cpu-内核-vs-st-外设-vs-ppb)、[MMIO 基础 §7](stm32f103-mmio-basics.md#7-ppb-与-st-外设与-mmio-的关系)。
 
 简单理解：
 
@@ -193,7 +193,7 @@ flowchart LR
 4. NVIC 硬件自动压栈保存现场，跳转到该函数执行
 5. 服务函数返回后，硬件出栈恢复现场，回到被打断处继续执行
 
-芯片复位后，NVIC 默认从 Flash 起始（本仓库 `0x08000000`）读表：第一项为初始栈顶，第二项为 `Reset_Handler` 地址——这也是向量表必须放在 Flash 最开头的根本原因。
+芯片复位后，CPU 从向量表基址（默认逻辑 `0x00000000`，Flash 启动时别名到物理 `0x08000000`）读表：第一项为初始栈顶，第二项为 `Reset_Handler` 地址——这也是向量表必须放在 Main Flash 最开头的根本原因。详见 [内存映射与启动流程](stm32f103-memory-boot-map.md)。
 
 ---
 
@@ -232,5 +232,7 @@ NVIC 属于 Cortex-M 内核外设，其寄存器定义与标准操作函数归�
 | 向量表在链接/map 中的位置 | [f103-module-build-flow.md](f103-module-build-flow.md) |
 | CMSIS 分层与手写边界 | [cmsis-overview.md](cmsis-overview.md) |
 | Flash / RAM 内存映射 | [memory-map-medium-density.md](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
+| 启动重映射、BOOT、完整加载流程 | [stm32f103-memory-boot-map.md](stm32f103-memory-boot-map.md) |
+| MMIO、PPB vs ST 外设 | [stm32f103-mmio-basics.md](stm32f103-mmio-basics.md) |
 | RM0008 NVIC 章节 | [rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§9 Nested vectored interrupt controller） |
 | 本模块 startup 源码 | [`projects/f103-manual-reg/startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) |

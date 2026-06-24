@@ -202,7 +202,7 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 **要点**
 
 - **`main.c` 不调用** `SystemInit`；进入 `main()` 前，启动汇编已完成时钟初始化。
-- 上电/复位后，Cortex-M3 从 Flash 起始读**中断向量表**；第二项为 `Reset_Handler` 入口。向量表与 NVIC 概念见 **[中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)**。
+- 上电/复位后，Cortex-M3 从向量表基址读**中断向量表**（Flash 启动：逻辑 `0x00000000/+4`，别名到物理 `0x08000000/+4`）；第二项为 `Reset_Handler` 入口。详见 **[内存映射与启动流程](stm32f103-memory-boot-map.md)** 与 **[中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)**。
 - `Reset_Handler` 完成 C 运行环境最小初始化后，用 `bl SystemInit` 跳转；链接阶段解析到 [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 中的同名函数。
 
 **调用链**
@@ -270,9 +270,47 @@ ST 官方 CMSIS 模板按工具链分 `gcc` / `iar` / `arm`（Keil）三版，�
 
 ---
 
+## Q13：为什么链接脚本用 `0x08000000`，复位却从 `0x00000000` 读向量表？
+
+**要点**
+
+- **链接脚本 / 烧录 / map** 使用 Main Flash **物理**基址 **`0x08000000`**（RM0008 memory map）。
+- **CPU 复位**按 ARM 规定从向量表基址 **+0 / +4** 读 MSP 与 PC；默认基址为逻辑 **`0x00000000`**。
+- Flash 启动（BOOT0=0）时，ST 将 **`0x00000000` 别名到 `0x08000000`**：读逻辑 `0x00000000` 与读物理 `0x08000000` **内容相同**，是地址转发，**不复制数据**。
+- 因此：向量表在 ELF 里位于 `0x08000000`；复位硬件从 `0x00000000` 入口读到同一张表。
+
+**与本仓库**
+
+- [`STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) — `ORIGIN = 0x08000000`
+- [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) — `g_pfnVectors` 链接到 Flash 物理起始
+
+完整 BOOT 表、System memory、Flash 段布局与启动流程见 **[STM32F103 内存映射与启动流程](stm32f103-memory-boot-map.md)**。
+
+---
+
+## Q14：外设寄存器地址从哪来？MMIO 与 `.data` 有何不同？
+
+**要点**
+
+- 外设 **基址 + 偏移** 来自 **RM0008 memory map**（Table 1）；本仓库用 `#define RCC_BASE 0x40021000U` 等照抄，编译后地址常量在 **Flash 指令**里，**不在 `.data` 段**。
+- **Memory-mapped I/O**：`RCC_APB2ENR |= …` 是对总线地址 **load/store**，硬件解码后写入 **外设寄存器（flip-flop）**，不是写 SRAM。
+- **Memory map** 是地址解码表，**不是**把外设「映进 RAM」；仅 `.data` 全局变量初值在启动时 Flash→SRAM 拷贝。
+- NVIC 等在内核 **PPB `0xE000xxxx`**，与 ST 外设 **`0x40000000`** 不同段，见 [memory-boot-map §2.1](stm32f103-memory-boot-map.md#21-soc-分层cpu-内核-vs-st-外设-vs-ppb)。
+
+**与本仓库**
+
+- [`main.c`](../../projects/f103-manual-reg/src/main.c) — RCC/PWR/GPIOC MMIO；PC13 点灯 walkthrough
+- [`gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) — `PCout` 位带写 `GPIOC_ODR` @ `0x4001100C`
+
+详见 **[STM32F103 MMIO 基础](stm32f103-mmio-basics.md)**。
+
+---
+
 ## 延伸阅读
 
 - [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) — 向量表作用、NVIC 职责、与 CMSIS/HAL 关系
+- [STM32F103 内存映射与启动流程](stm32f103-memory-boot-map.md) — BOOT 重映射、Flash/SRAM、复位加载、与 x86 对比
+- [STM32F103 MMIO 基础](stm32f103-mmio-basics.md) — 外设地址、flip-flop、PC13 点灯、PPB vs ST 外设
 - [f103-manual-reg 编译流程](f103-module-build-flow.md) — CMake、.c/.s 链接、链接脚本与 startup 协作
 - [CMSIS 标准与手写裸机边界](cmsis-overview.md)
 - [Datasheet 与 Reference Manual 怎么读？](datasheet-vs-reference-manual.md)

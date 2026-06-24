@@ -23,7 +23,9 @@
 .word _ebss      /* .bss 结束地址 */
 
 /* -------------------------------------------------------------------------- */
-/* 中断向量表（位于 Flash 起始，见 linker/STM32F103C8_FLASH.ld .isr_vector）        */
+/* 中断向量表（位于 Flash 物理起始 0x08000000，见 STM32F103C8_FLASH.ld）
+ * 复位硬件读向量表 +0 → MSP，+4 → PC（Flash 启动：逻辑 0x00000000 别名到此）
+ * 详见 doc/learn/stm32f103-memory-boot-map.md                                        */
 /* -------------------------------------------------------------------------- */
 .section .isr_vector,"a",%progbits
 .type g_pfnVectors, %object

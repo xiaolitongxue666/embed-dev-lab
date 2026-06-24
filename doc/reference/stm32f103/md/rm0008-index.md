@@ -11,7 +11,7 @@
 
 | 章节 | PDF 页码 (Rev 9) | 主题 MD |
 |------|------------------|---------|
-| 2 Memory and bus architecture → 2.3 Memory map | 41–44 | [memory-map-medium-density.md](topics/memory-map-medium-density.md) |
+| 2 Memory and bus architecture → 2.3 Memory map；Boot configuration / 启动重映射 | 41–44 | [memory-map-medium-density.md](topics/memory-map-medium-density.md)（含 BOOT、System memory、外设/PPB 区）；MMIO 叙述 [stm32f103-mmio-basics.md](../../../learn/stm32f103-mmio-basics.md) |
 | 4 Power control (PWR) → 4.1.2 Battery backup domain | 54–55 | [backup-domain-pc13.md](topics/backup-domain-pc13.md) |
 | 4.4 PWR registers (PWR_CR DBP) | 62–65 | [backup-domain-pc13.md](topics/backup-domain-pc13.md) |
 | 5 Backup registers (BKP) | 66–70 | [backup-domain-pc13.md](topics/backup-domain-pc13.md) |

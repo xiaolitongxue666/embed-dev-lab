@@ -78,7 +78,12 @@ GPIOC_CRH    = ... PC13 推挽输出 ... // 4. 配置 PC13
 | `IOPCEN` | bit 4 | `(1U << 4)` | OK |
 | PC13 在 CRH | bit[23:20] | `(0xFU << 20)` | OK |
 
+## MMIO 访问
+
+上表地址为 CPU **memory-mapped I/O** 目标：`main.c` 中 `RCC_APB1ENR |= …` 等对总线地址 load/store，由硬件解码写入外设寄存器（flip-flop），**不在 Flash `.data` 段**。完整点灯 MMIO 流程见 [stm32f103-mmio-basics.md §5](../../../../learn/stm32f103-mmio-basics.md#5-f103-manual-reg-pc13-点灯完整-mmio-流程)。
+
 ## 延伸阅读
 
+- [stm32f103-mmio-basics.md](../../../../learn/stm32f103-mmio-basics.md) — MMIO、地址与 flip-flop  
 - [rm0008-index.md](../rm0008-index.md) — §4 PWR、§5 BKP、§8 GPIO  
 - [f103-manual-reg 模块](../../../projects/f103-manual-reg.md) — 模块说明

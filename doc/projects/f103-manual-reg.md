@@ -34,9 +34,9 @@ projects/f103-manual-reg/
 |------|------|----------|
 | [`startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表、`Reset_Handler`、`.data`/`.bss` 初始化、`bl SystemInit`、`bl main` | [编译流程](../learn/f103-module-build-flow.md)、[中断向量表与 NVIC](../learn/interrupt-vector-table-and-nvic.md) |
 | [`src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：RCC 复位默认化，HSE×PLL→72 MHz；HSE 超时保持 HSI | [裸机入门 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE topic](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
-| [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | PWR+DBP、GPIOC 配置、PC13 闪烁主循环 | [Backup 域与 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
-| [`src/gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) | `PCout(n)` 位带宏，简化 ODR 读写 | — |
-| [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) | Flash 64K / RAM 20K，`.isr_vector` 固定 `0x08000000` | [链接器 map](../learn/linker-map-file.md)、[memory-map topic](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
+| [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | PWR+DBP、GPIOC 配置、PC13 闪烁主循环 | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域与 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
+| [`src/gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) | `PCout(n)` 位带宏，简化 ODR 读写 | [MMIO 基础 §5](../learn/stm32f103-mmio-basics.md#5-f103-manual-reg-pc13-点灯完整-mmio-流程) |
+| [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) | Flash 64K / RAM 20K，`.isr_vector` 固定 Flash 物理 `0x08000000` | [内存映射与启动](../learn/stm32f103-memory-boot-map.md)、[链接器 map](../learn/linker-map-file.md)、[memory-map topic](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
 
 ## 构建与烧录
 

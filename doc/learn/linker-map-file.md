@@ -150,4 +150,5 @@ target_link_options(${target_name}.elf PRIVATE
 
 - [f103-manual-reg 编译流程](f103-module-build-flow.md) — CMake 构建、`f103-manual-reg.map` 链接顺序与段布局精读
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — `.data`/`.bss` 运行时语义
+- [STM32F103 内存映射与启动流程](stm32f103-memory-boot-map.md) — BOOT 重映射、Flash/SRAM 分工、复位加载
 - [f103-manual-reg 链接脚本](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) — `MEMORY` / `SECTIONS` 定义

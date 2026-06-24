@@ -4,7 +4,8 @@
  *
  * @ref     核心板测试程序(PC13闪烁)/USER/GPIOLIKE51.h
  * @note    Cortex-M3 支持位带：对别名区单 bit 读写等效于原寄存器原子位操作。
- *          本头文件仅封装 GPIOC 的 ODR 输出位带。
+ *          本头文件仅封装 GPIOC 的 ODR 输出位带；PCout 仍是对 GPIOC_ODR（0x4001100C）的 MMIO。
+ *          详见 doc/learn/stm32f103-mmio-basics.md
  */
 
 #ifndef GPIOC_BITBAND_H

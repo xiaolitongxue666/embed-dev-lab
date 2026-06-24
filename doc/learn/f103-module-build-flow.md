@@ -337,6 +337,8 @@ flowchart TB
 
 [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) 定义 Flash/RAM 布局与段符号；[`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 在 `Reset_Handler` 中使用这些符号。
 
+链接脚本使用 Main Flash **物理**基址 `0x08000000`；复位时 CPU 经逻辑 `0x00000000` 别名读到同一向量表（BOOT 与 memory map 见 [内存映射与启动流程](stm32f103-memory-boot-map.md)）。
+
 | 链接脚本 | startup 使用 |
 |----------|--------------|
 | `.isr_vector` → Flash 起始 | `g_pfnVectors` 置于 `.section .isr_vector` |
@@ -395,7 +397,8 @@ C 中的 `delay()`、`GPIOC_Init()` 等进入 `.text`，与 `Reset_Handler` 同�
 ## 延伸阅读
 
 - [链接器 Map 文件](linker-map-file.md) — map 是什么、核心内容、六大用途、生成方式
-- [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — Reset_Handler、`SystemInit` 运行时行为（Q5/Q11/Q12）
+- [STM32F103 内存映射与启动流程](stm32f103-memory-boot-map.md) — BOOT 重映射、Flash 物理地址 vs 复位别名、启动加载
+- [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — Reset_Handler、`SystemInit` 运行时行为（Q5/Q11/Q12/Q13）
 - [f103-manual-reg 模块说明](../projects/f103-manual-reg.md) — 硬件要点、PC13、构建命令
 - [脚本参考](../scripts-reference.md) — `build.sh` action 与自动化链路
 - [CMSIS 标准与手写裸机边界](cmsis-overview.md) — startup 规范兼容判定

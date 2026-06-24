@@ -6,6 +6,8 @@
  * @stack  栈顶 _estack = RAM 末尾（满递减栈）
  *
  * @note    符号 _sidata/_sdata/_edata/_sbss/_ebss 供 startup 初始化段使用
+ * @note    ORIGIN 为 Main Flash 物理基址（RM0008）；复位时 CPU 经逻辑 0x00000000
+ *          别名访问同内容（BOOT0=0），详见 doc/learn/stm32f103-memory-boot-map.md
  */
 
 ENTRY(Reset_Handler)

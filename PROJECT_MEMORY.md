@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（summary-memory：MMIO/启动文档索引压缩）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（summary-memory：从零构建指南沉淀）
 
 ## 快速路径
 
@@ -12,6 +12,7 @@
 | F103 烧录 | `./scripts/build.sh f103-manual-reg flash` |
 | 应用层文档 | `doc/projects/`（说明）· `projects/`（源码）· `projects/README.md` |
 | f103-manual-reg | `doc/projects/f103-manual-reg.md` |
+| f103-manual-reg 从零构建 | `doc/learn/f103-manual-build-from-scratch.md` |
 | f103-cmsis-hal | 占位 · `projects/f103-cmsis-hal/README.md` |
 | 模块编译流程 | `doc/learn/f103-module-build-flow.md` |
 | F103 内存映射与启动 | `doc/learn/stm32f103-memory-boot-map.md` |
@@ -45,7 +46,7 @@
 6. **烧录后复位**：`scripts/build.sh` 的 `flash` 在 download 后执行 `probe-rs reset`，避免目标停在调试态。
 7. **ST-Link WinUSB**：Windows 上 probe-rs 需 Debug 接口 WinUSB；bundled 路径 `vendor-pack/STLink/.../USBDriver/`，脚本 `stlink-winusb-windows.sh`。
 8. **projects 布局**：固件小工程在 `projects/<name>/`，与 `doc/projects/<name>.md` 一一对应；`f103-manual-reg`（全手写寄存器）与 `f103-cmsis-hal`（CMSIS+HAL 占位）彼此独立。
-9. **f103-manual-reg 启动与 MMIO 文档**：`stm32f103-memory-boot-map.md`（BOOT/Flash/SRAM/SoC 分层）；`stm32f103-mmio-basics.md`（MMIO、flip-flop、PC13）；链接脚本 `STM32F103C8_FLASH.ld` 用 Flash 物理 `0x08000000`，复位读 `0x00000000` 别名；源码 `system_stm32f1xx.c/h`、`startup_stm32f103xb.s`。
+9. **f103-manual-reg 文档链**：`f103-manual-build-from-scratch.md`（从零写文件顺序、CMSIS 对照）；`f103-module-build-flow.md`（CMake 编译链接）；`stm32f103-memory-boot-map.md`（BOOT/Flash/SRAM）；`stm32f103-mmio-basics.md`（MMIO、PC13）；链接脚本 `STM32F103C8_FLASH.ld` 为 CMSIS xB 模板改 64K Flash。
 10. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
 11. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md`；submodule `cmsis-core` + `cmsis-device-f1` 供对照；f103-manual-reg **不** `#include` 官方 Device 头。
 12. **flash 前需 build**：`build.sh … flash` 不自动编译；`build-flash.sh` 只调 `build` 不调 `configure`。
@@ -68,6 +69,7 @@
 | 问题 | 解法 |
 |------|------|
 | 找不到工程文档 | `doc/projects/README.md`；源码 `projects/README.md` |
+| 从零手写 f103-manual-reg 写什么、顺序 | `doc/learn/f103-manual-build-from-scratch.md`；编译链接见 `f103-module-build-flow.md` |
 | `clean` 后 `build-flash` 失败（build 目录不存在） | `build-flash` 不 configure；用 `./scripts/build.sh f103-manual-reg`（configure+build）再 flash |
 | `probe-rs list` 为空 | Windows：`stlink-winusb-windows.sh --install` 或 Zadig WinUSB |
 | 烧录成功但 PC13 不闪 | PWR+DBP；先 `build` 再 `flash`；`probe-rs reset` |
@@ -82,7 +84,7 @@
 | System memory | medium-density @ `0x1FFFF000`，12 KB 出厂 ISP ROM |
 | 外设地址在 `.data` 吗 / memory map 映 RAM？ | 否；MMIO 写外设硬件；见 `stm32f103-mmio-basics.md` |
 | NVIC 和 GPIO 一样吗？ | NVIC 在 PPB `0xE000xxxx`（ARM）；GPIO/RCC 在 `0x40000000`（ST）；见 memory-boot-map §2.1 |
-| 链接脚本 / `.ld` 从哪来 | CMSIS gcc 模板思路 + RM0008 64K 精简手写；见 memory-boot-map、f103-module-build-flow |
+| 链接脚本 / `.ld` 从哪来 | CMSIS `STM32F103XB_FLASH.ld` 改 64K（无 x8 专用模板）；见 `f103-manual-build-from-scratch.md` §3.3 |
 | 手册地址与代码 `0x400xxxxx` | 裸机无 MMU，总线实地址 = RM0008；MMIO 见 `stm32f103-mmio-basics.md` |
 | clone 后 CMSIS submodule 空 | `git clone --recursive` 或 `./scripts/fetch-cmsis.sh` |
 | GitHub CubeF1 ZIP 缺 CMSIS | `git clone --recursive` 或 `fetch-stm32cubef1.sh` |

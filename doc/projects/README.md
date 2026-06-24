@@ -20,6 +20,7 @@ doc/projects/<name>.md    # 工程说明、硬件要点、排错（本目录）
 
 | 主题 | 文档 |
 |------|------|
+| 从零手写构建 | [f103-manual-build-from-scratch.md](../learn/f103-manual-build-from-scratch.md) |
 | 编译与链接流程 | [f103-module-build-flow.md](../learn/f103-module-build-flow.md) |
 | 链接器 map | [linker-map-file.md](../learn/linker-map-file.md) |
 | CMSIS 与手写边界 | [cmsis-overview.md](../learn/cmsis-overview.md) |

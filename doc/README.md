@@ -9,16 +9,17 @@
 3. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 4. [脚本参考](scripts-reference.md) — 全脚本与自动化链路  
 5. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
-6. [f103-manual-reg 编译流程](learn/f103-module-build-flow.md) — CMake、.c/.s 链接、startup 与链接脚本  
-7. [STM32F103 内存映射与启动流程](learn/stm32f103-memory-boot-map.md) — BOOT 重映射、Flash/SRAM、复位加载、与 x86 对比  
-8. [STM32F103 MMIO 基础](learn/stm32f103-mmio-basics.md) — 外设寄存器、flip-flop、手册地址、PC13 点灯  
-9. [链接器 Map 文件](learn/linker-map-file.md) — 内存布局报告、段与符号、排查与优化  
-10. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008（fetch 脚本 + 精选 MD）  
-11. [STM32 裸机入门笔记](learn/stm32-bare-metal-bootstrap.md) — startup、SystemInit 调用链、ARM 汇编与 x86 对比、RCC、HSE/HSERDY、CMSIS、资料分工  
-12. [CMSIS 标准与手写裸机边界](learn/cmsis-overview.md) — 分层、CubeMX、手写兼容判定、与 HAL 关系  
-13. [ST F1 软件仓库归纳](learn/stm32-cmsis-component-repos.md) — CMSIS / HAL / STM32CubeF1 参考 repo  
-14. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表作用、NVIC 职责、与 CMSIS/HAL 关系  
-15. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
+6. [f103-manual-reg 从零手写构建](learn/f103-manual-build-from-scratch.md) — 文件编写顺序、CMSIS 对照、验收清单  
+7. [f103-manual-reg 编译流程](learn/f103-module-build-flow.md) — CMake、.c/.s 链接、startup 与链接脚本  
+8. [STM32F103 内存映射与启动流程](learn/stm32f103-memory-boot-map.md) — BOOT 重映射、Flash/SRAM、复位加载、与 x86 对比  
+9. [STM32F103 MMIO 基础](learn/stm32f103-mmio-basics.md) — 外设寄存器、flip-flop、手册地址、PC13 点灯  
+10. [链接器 Map 文件](learn/linker-map-file.md) — 内存布局报告、段与符号、排查与优化  
+11. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008（fetch 脚本 + 精选 MD）  
+12. [STM32 裸机入门笔记](learn/stm32-bare-metal-bootstrap.md) — startup、SystemInit 调用链、ARM 汇编与 x86 对比、RCC、HSE/HSERDY、CMSIS、资料分工  
+13. [CMSIS 标准与手写裸机边界](learn/cmsis-overview.md) — 分层、CubeMX、手写兼容判定、与 HAL 关系  
+14. [ST F1 软件仓库归纳](learn/stm32-cmsis-component-repos.md) — CMSIS / HAL / STM32CubeF1 参考 repo  
+15. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表作用、NVIC 职责、与 CMSIS/HAL 关系  
+16. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
 
 ## 应用层
 
@@ -38,6 +39,7 @@
 | [scripts-reference.md](scripts-reference.md) | scripts/ 脚本说明 |
 | [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 PC13 全手写寄存器 demo |
 | [projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md) | CMSIS+HAL 占位 |
+| [learn/f103-manual-build-from-scratch.md](learn/f103-manual-build-from-scratch.md) | 从零手写：文件顺序、CMSIS 对照、验收清单 |
 | [learn/f103-module-build-flow.md](learn/f103-module-build-flow.md) | CMake 构建、.c/.s 链接、startup 与链接脚本协作 |
 | [learn/stm32f103-memory-boot-map.md](learn/stm32f103-memory-boot-map.md) | BOOT 重映射、Flash/SRAM/System memory、复位加载、平坦地址 vs x86 |
 | [learn/stm32f103-mmio-basics.md](learn/stm32f103-mmio-basics.md) | MMIO、flip-flop、手册地址、PC13 点灯、PPB vs ST 外设 |

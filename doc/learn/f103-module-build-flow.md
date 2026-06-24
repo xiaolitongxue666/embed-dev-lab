@@ -388,6 +388,7 @@ C 中的 `delay()`、`GPIOC_Init()` 等进入 `.text`，与 `Reset_Handler` 同�
 
 ## 6. 新增模块参考
 
+0. **从零手写**：按文件依赖顺序新建，见 [从零手写构建指南](f103-manual-build-from-scratch.md)
 1. 复制 [`projects/f103-manual-reg/`](../../projects/f103-manual-reg/) 目录结构（`CMakeLists.txt`、`CMakePresets.json`、`startup/`、`linker/`、`src/`）
 2. 在 `CMakeLists.txt` 中调整 `F103_SOURCES` 与 `LINKER_SCRIPT`，调用 `embed_mcu_add_executable()`
 3. `./scripts/build.sh <新模块名>`
@@ -400,5 +401,6 @@ C 中的 `delay()`、`GPIOC_Init()` 等进入 `.text`，与 `Reset_Handler` 同�
 - [STM32F103 内存映射与启动流程](stm32f103-memory-boot-map.md) — BOOT 重映射、Flash 物理地址 vs 复位别名、启动加载
 - [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) — Reset_Handler、`SystemInit` 运行时行为（Q5/Q11/Q12/Q13）
 - [f103-manual-reg 模块说明](../projects/f103-manual-reg.md) — 硬件要点、PC13、构建命令
+- [从零手写构建指南](f103-manual-build-from-scratch.md) — 文件编写顺序、CMSIS 对照、验收清单
 - [脚本参考](../scripts-reference.md) — `build.sh` action 与自动化链路
 - [CMSIS 标准与手写裸机边界](cmsis-overview.md) — startup 规范兼容判定

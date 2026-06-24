@@ -9,7 +9,7 @@
 | 目标芯片 | STM32F103C8T6（Cortex-M3，Medium-density F103xB） |
 | 实现方式 | 全手写 `startup` / `system_stm32f1xx.c` / GPIO 寄存器，**不链接** CMSIS submodule 与 HAL |
 | 兼容性 | 精简启动与复位流程（`SystemInit`、向量表）；与官方 CMSIS 模板**对照学习**，非同一套源码 |
-| 参照关系 | 与 [`vendor-pack`](../../vendor-pack/) 三层对照见 [ST F1 软件仓库归纳 §5](../learn/stm32-cmsis-component-repos.md#5-与-embed-dev-lab-的三层参照) |
+| 参照关系 | 与 [`vendor-pack`](../../vendor-pack/) 三层对照见 [ST F1 软件仓库归纳 §5](../learn/stm32-cmsis-component-repos.md#5-与-embed-dev-lab-的三层参照)；从零手写流程见 [从零手写构建指南](../learn/f103-manual-build-from-scratch.md) |
 
 ## 目录结构
 
@@ -36,7 +36,7 @@ projects/f103-manual-reg/
 | [`src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：RCC 复位默认化，HSE×PLL→72 MHz；HSE 超时保持 HSI | [裸机入门 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE topic](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
 | [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | PWR+DBP、GPIOC 配置、PC13 闪烁主循环 | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域与 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
 | [`src/gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) | `PCout(n)` 位带宏，简化 ODR 读写 | [MMIO 基础 §5](../learn/stm32f103-mmio-basics.md#5-f103-manual-reg-pc13-点灯完整-mmio-流程) |
-| [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) | Flash 64K / RAM 20K，`.isr_vector` 固定 Flash 物理 `0x08000000` | [内存映射与启动](../learn/stm32f103-memory-boot-map.md)、[链接器 map](../learn/linker-map-file.md)、[memory-map topic](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
+| [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) | Flash 64K / RAM 20K，`.isr_vector` 固定 Flash 物理 `0x08000000` | [从零手写构建](../learn/f103-manual-build-from-scratch.md)、[内存映射与启动](../learn/stm32f103-memory-boot-map.md)、[链接器 map](../learn/linker-map-file.md)、[memory-map topic](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
 
 ## 构建与烧录
 
@@ -147,4 +147,5 @@ PC13 属于 **Backup 域** GPIO，配置前必须：
 
 ## 新增工程参考
 
-见 [应用层文档索引](README.md#新增工程-checklist)。
+- **从零手写**：按依赖顺序写链接脚本 / startup / system / main，见 [从零手写构建指南](../learn/f103-manual-build-from-scratch.md)
+- **复制目录**：见 [应用层文档索引](README.md#新增工程-checklist)

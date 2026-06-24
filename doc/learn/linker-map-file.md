@@ -113,7 +113,7 @@ HardFault、跑飞等异常时常能拿到崩溃瞬间的 **PC**（程序计数�
 
 ### 6. 确认栈堆配置，规避溢出风险
 
-- 栈顶 `_estack`、栈与 `.bss`/`.data` 的边界
+- 栈顶 `_estack`、栈与 `.bss`/`.data` 的边界（满递减：`_estack` 为 RAM 上界，push 时 SP 减小；见 [memory-boot-map §6.1](stm32f103-memory-boot-map.md#61-主栈满递减与-_estack)）
 - 堆大小及与栈的重叠风险（本 demo 无堆使用）
 
 栈溢出是隐蔽故障源；map 结合实际调用深度评估栈空间是否充足。

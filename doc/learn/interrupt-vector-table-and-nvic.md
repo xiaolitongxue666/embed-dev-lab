@@ -36,7 +36,7 @@ g_pfnVectors:
     .word SysTick_Handler      /* 15 SysTick */
 ```
 
-**注意**：索引 0 的项 **不是函数**，而是初始主栈顶 `_estack`；从索引 1 起才是入口地址。
+**注意**：索引 0 的项 **不是函数**，而是初始主栈顶 `_estack`（`0x20005000`，RAM 上界）；从索引 1 起才是入口地址。Cortex-M3 为满递减栈：复位后 MSP 从此处开始，**push 时 SP 向低地址减小**（不是增大）。详见 [内存映射 §6.1](stm32f103-memory-boot-map.md#61-主栈满递减与-_estack)。
 
 CMakeLists 注释中的「向量表」即指这张表：
 

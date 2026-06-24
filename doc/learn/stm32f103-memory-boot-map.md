@@ -171,6 +171,26 @@ Flash 物理 0x08000000          SRAM 物理 0x20000000
 | `.data` | **SRAM** | **Flash** | 已初始化全局变量 |
 | `.bss` | SRAM | — | 未初始化全局变量 |
 
+### 6.1 主栈：满递减与 `_estack`
+
+Cortex-M3 主栈为 **满递减栈（full descending）**：「向下增长」指 **SP 向低地址减小**，不是从 `0x20005000` 往上加。
+
+```text
+0x20005000  ← _estack（RAM 上界 = 0x20000000 + 20K；复位后 MSP 初值）
+     ↓ push / 函数调用，SP 每次通常减 4
+0x20004FFC
+     ↓
+0x20000000  ← .data / .bss 从 RAM 低地址向上占用
+```
+
+| 操作 | SP 变化 |
+|------|---------|
+| 复位 / `mov sp, _estack` | SP = `0x20005000` |
+| `push`、调用子函数 | SP **减小**（如 `0x20004FFC`） |
+| `pop`、函数返回 | SP **增大** |
+
+向量表第 0 项与 [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 中的 `ldr r0, =_estack; mov sp, r0` 均写入同一初值。栈与 `.bss`/`.data` 若重叠会导致静默破坏，可用 map 核对边界（见 [linker-map-file.md](linker-map-file.md) §二.6）。
+
 构建后可用 [`f103-manual-reg.map`](../../projects/f103-manual-reg/build/f103-manual-reg.map) 核对（须先 `./scripts/build.sh f103-manual-reg build`），见 [linker-map-file.md](linker-map-file.md)。
 
 ---

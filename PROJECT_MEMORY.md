@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（summary-memory：GNU ld SECTIONS 文档沉淀）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（满递减栈 _estack / SP 方向）
 
 ## 快速路径
 
@@ -86,6 +86,7 @@
 | NVIC 和 GPIO 一样吗？ | NVIC 在 PPB `0xE000xxxx`（ARM）；GPIO/RCC 在 `0x40000000`（ST）；见 memory-boot-map §2.1 |
 | 链接脚本 / `.ld` 从哪来 | CMSIS `STM32F103XB_FLASH.ld` 改 64K（无 x8 专用模板）；见 `f103-manual-build-from-scratch.md` §3.3 |
 | `SECTIONS` / `MEMORY` / VMA·LMA | GNU ld 语法（非 C）；`MEMORY` 定义区域、`SECTIONS` 合并输入段并映射；权威 §2.1，交叉引用 `linker-map-file.md`、`memory-boot-map` §6、`.ld` 行内注释 |
+| `_estack` / 栈「向下增长」 | 满递减栈：`_estack=0x20005000` 为 RAM **上界**；push 时 SP **减小**（非增大）；见 `memory-boot-map` §6.1 |
 | 链接命令行 `.obj` 顺序 vs Flash 段布局 | **无关** — 段布局由 `SECTIONS` 决定（如 `.isr_vector` 固定最前）；见 `f103-module-build-flow.md` §3.2 |
 | 手册地址与代码 `0x400xxxxx` | 裸机无 MMU，总线实地址 = RM0008；MMIO 见 `stm32f103-mmio-basics.md` |
 | clone 后 CMSIS submodule 空 | `git clone --recursive` 或 `./scripts/fetch-cmsis.sh` |

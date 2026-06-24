@@ -33,7 +33,7 @@ _estack = 0x20005000;   /* RAM 末尾，主栈顶 */
 | Flash LENGTH | 64K | 与 C8 一致 |
 | RAM ORIGIN | `0x20000000` | SRAM 起始 |
 | RAM LENGTH | 20K | 与 C8 一致 |
-| `_estack` | `0x20005000` | `0x20000000 + 20K` |
+| `_estack` | `0x20005000` | `0x20000000 + 20K`；满递减栈，push 时 SP **减小** |
 
 ## 外设基地址（RM0008 Table 1, p.41–42）
 

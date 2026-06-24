@@ -31,7 +31,7 @@
 .type g_pfnVectors, %object
 .size g_pfnVectors, .-g_pfnVectors
 g_pfnVectors:
-    .word _estack              /* 0  初始主栈顶 */
+    .word _estack              /* 0  初始 MSP；满递减栈，此后 push 时 SP 减小 */
     .word Reset_Handler        /* 1  复位 */
     .word NMI_Handler          /* 2  不可屏蔽中断 */
     .word HardFault_Handler    /* 3  硬 fault */
@@ -56,7 +56,7 @@ g_pfnVectors:
 .type Reset_Handler, %function
 Reset_Handler:
     ldr r0, =_estack
-    mov sp, r0                 /* 设置主栈指针 MSP */
+    mov sp, r0                 /* MSP = RAM 上界；栈向低地址增长（push 减 SP） */
 
     /* 将 .data 从 Flash 拷贝到 RAM */
     ldr r0, =_sdata

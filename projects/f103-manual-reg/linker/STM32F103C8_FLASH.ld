@@ -3,7 +3,7 @@
  * @brief   STM32F103C8T6 链接脚本（GNU ld）
  *
  * @memory 64 KB Flash @ 0x0800_0000，20 KB SRAM @ 0x2000_0000
- * @stack  栈顶 _estack = RAM 末尾（满递减栈）
+ * @stack  栈顶 _estack = RAM 末尾（满递减栈）；push 时 SP 向低地址减小
  *
  * GNU ld 顶层命令（自上而下）：
  *   ENTRY     — 程序入口符号（Reset_Handler）
@@ -18,7 +18,7 @@
 
 ENTRY(Reset_Handler)
 
-/* Cortex-M3 主栈顶：SRAM 最高地址（栈向下增长） */
+/* Cortex-M3 主栈顶：SRAM 上界 0x20005000（= ORIGIN+LENGTH）；满递减栈，push 时 SP 减小 */
 _estack = 0x20005000;
 
 /* MEMORY：定义芯片上的物理存储区域（链接器分配时的「容器」） */

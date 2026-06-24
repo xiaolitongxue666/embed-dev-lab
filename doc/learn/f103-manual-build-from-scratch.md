@@ -134,7 +134,7 @@ projects/f103-manual-reg/
 |----|---------|
 | Flash `ORIGIN` | `0x08000000`，`LENGTH = 64K` |
 | RAM `ORIGIN` | `0x20000000`，`LENGTH = 20K` |
-| 栈顶 `_estack` | `0x20005000`（RAM 末尾，满递减栈） |
+| 栈顶 `_estack` | `0x20005000`（RAM 上界）；满递减栈，**push 时 SP 减小**；详见 [memory-boot-map §6.1](stm32f103-memory-boot-map.md#61-主栈满递减与-_estack) |
 | 向量表段 | `KEEP(*(.isr_vector))` 置于 Flash 最前 |
 
 #### 2.1 GNU ld 脚本结构（ENTRY / MEMORY / SECTIONS）

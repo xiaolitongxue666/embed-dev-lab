@@ -358,8 +358,10 @@ Flash 布局（简化）：
             (.data 的 LMA) ← 初始化数据的 Flash 镜像
 0x20000000  .data          ← 已初始化全局变量（RAM）
             .bss           ← 未初始化全局变量（RAM）
-0x20005000  _estack        ← 栈顶（向下增长）
+0x20005000  _estack        ← 栈顶（满递减：push 时 SP 减小，向 .bss 方向增长）
 ```
+
+栈方向说明见 [memory-boot-map §6.1](stm32f103-memory-boot-map.md#61-主栈满递减与-_estack)。
 
 ### 4.2 跨文件符号解析
 

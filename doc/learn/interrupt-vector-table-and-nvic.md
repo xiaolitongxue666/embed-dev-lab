@@ -47,17 +47,23 @@ set(F103_SOURCES
     startup/startup_stm32f103xb.s # 向量表、.data/.bss、跳转 main
 ```
 
-链接脚本要求向量表必须位于 Flash 最前：
+链接脚本要求向量表必须位于 Flash 最前（`ALIGN` / `KEEP` 语义见 [从零手写 §2.2](f103-manual-build-from-scratch.md#22-align-与-keepisr_vector-段常用)）：
 
-```24:30:projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld
-    /* 中断向量表必须位于 Flash 起始 */
-    .isr_vector :
+### 链接脚本中的 `.isr_vector`
+
+```39:45:projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld
+    /* ---------- 输出段 .isr_vector：中断向量表，须固定 Flash 物理起始 0x08000000 ---------- */
+    .isr_vector :                        /* 独立输出段；排在 .text 之前，故链接后位于 Flash 最前 */
     {
-        . = ALIGN(4);
-        KEEP(*(.isr_vector))
-        . = ALIGN(4);
-    } > FLASH
+        . = ALIGN(4);                    /* . 为位置计数器：向上对齐到 4 字节（向量表每项 4 字节） */
+        KEEP(*(.isr_vector))             /* 从所有 .o 收集 .isr_vector；KEEP 防止 --gc-sections 丢弃向量表 */
+        . = ALIGN(4);                    /* 段尾 4 字节对齐 */
+    } > FLASH                            /* VMA 在 Flash；复位 CPU 从 0x08000000 读 MSP 与 Reset_Handler */
 ```
+
+**`ALIGN(4)`**：`.` 为位置计数器；`= ALIGN(4)` 将当前链接地址向上对齐到 4 字节边界（向量表每项 4 字节，Cortex-M 要求字对齐）。
+
+**`KEEP(*(.isr_vector))`**：从所有 `.o` 收集 startup 里 `.section .isr_vector` 定义的输入段；`KEEP` 在启用 `--gc-sections` 时仍强制保留——向量表不在普通调用链上，否则可能被链接器误删。语法详解见 [从零手写 §2.2](f103-manual-build-from-scratch.md#22-align-与-keepisr_vector-段常用)。
 
 ---
 

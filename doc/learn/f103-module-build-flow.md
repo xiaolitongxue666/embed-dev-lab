@@ -153,7 +153,7 @@ build f103-manual-reg.elf: ... main.c.obj system_stm32f1xx.c.obj startup_stm32f1
 
 | 输出段 | 链接脚本规则 | 实际来源 |
 |--------|--------------|----------|
-| `.isr_vector` @ Flash 起始 | `KEEP(*(.isr_vector))` | 仅 startup 含此段 → **固定 0x08000000** |
+| `.isr_vector` @ Flash 起始 | `KEEP(*(.isr_vector))` + `ALIGN(4)` | 仅 startup 含此段 → **固定 0x08000000**；`KEEP` 防 gc-sections 丢弃 |
 | `.text` | `*(.text) *(.text*)` | 各 `.obj` 中带 `.text` 的输入段 |
 | `.data` / `.bss` | `*(.data*)` / `*(.bss*)` | 各 C 文件的已初始化/未初始化全局变量 |
 

@@ -163,7 +163,18 @@ projects/f103-manual-reg/
 | `.data` | RAM | Flash | 已初始化全局变量；`_sidata = LOADADDR(.data)` 供 startup 拷贝 |
 | `.bss` | RAM | — | 未初始化全局变量；startup 清零，不占 Flash 镜像 |
 
-链接命令行上 `.obj` 的先后顺序**不决定** Flash 里段布局 —— 向量表仍在最前，因为 `SECTIONS` 先把 `*(.isr_vector)` 收进独立输出段。详见 [f103-module-build-flow.md §3.2](f103-module-build-flow.md#32-目标文件链接顺序)。
+链接命令行上 `.obj` 的先后顺序**不决定** Flash 里段布局 —— 向量表仍在最前，因为 `SECTIONS` 先把 `KEEP(*(.isr_vector))` 收进独立输出段。详见 [f103-module-build-flow.md §3.2](f103-module-build-flow.md#32-目标文件链接顺序)。
+
+#### 2.2 `ALIGN` 与 `KEEP`（`.isr_vector` 段常用）
+
+| 写法 | 含义 |
+|------|------|
+| `.` | **位置计数器**（location counter）：当前输出段内下一个字节的链接地址 |
+| `. = ALIGN(4)` | 将 `.` **向上**取整到 4 字节边界；不足处填 0。Cortex-M 向量表每项 4 字节，须字对齐 |
+| `*(.isr_vector)` | 从**所有**目标文件收集名为 `.isr_vector` 的输入段（本仓库来自 startup 的 `g_pfnVectors`） |
+| `KEEP(...)` | 强制保留括号内段，**即使**启用 `--gc-sections` / `-ffunction-sections` 也不丢弃 |
+
+向量表不在普通函数调用链上，链接器可能误判为「未引用」而优化掉；`KEEP` 保证其进入最终 ELF。`.isr_vector` 段排在 `.text` 之前且 `> FLASH`，故向量表固定在 `0x08000000`。详见 [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md#链接脚本中的-isr_vector)。
 
 **参照**：CMSIS [`STM32F103XB_FLASH.ld`](../../vendor-pack/cmsis-device-f1/Source/Templates/gcc/linker/STM32F103XB_FLASH.ld)，改 Flash 为 64K；链接脚本与 startup 的「契约」关系见 [f103-module-build-flow.md §4.1](f103-module-build-flow.md#41-链接脚本与-startup-协作)。
 

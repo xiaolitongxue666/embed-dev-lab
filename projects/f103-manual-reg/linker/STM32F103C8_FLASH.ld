@@ -36,13 +36,13 @@ MEMORY
  */
 SECTIONS
 {
-    /* 中断向量表必须位于 Flash 起始 */
-    .isr_vector :
+    /* ---------- 输出段 .isr_vector：中断向量表，须固定 Flash 物理起始 0x08000000 ---------- */
+    .isr_vector :                        /* 独立输出段；排在 .text 之前，故链接后位于 Flash 最前 */
     {
-        . = ALIGN(4);
-        KEEP(*(.isr_vector))
-        . = ALIGN(4);
-    } > FLASH
+        . = ALIGN(4);                    /* . 为位置计数器：向上对齐到 4 字节（向量表每项 4 字节） */
+        KEEP(*(.isr_vector))             /* 从所有 .o 收集 .isr_vector；KEEP 防止 --gc-sections 丢弃向量表 */
+        . = ALIGN(4);                    /* 段尾 4 字节对齐 */
+    } > FLASH                            /* VMA 在 Flash；复位 CPU 从 0x08000000 读 MSP 与 Reset_Handler */
 
     /* ---------- 输出段 .text：机器码与只读常量，VMA/LMA 均在 Flash（XIP 执行） ---------- */
     .text :                              /* 定义名为 .text 的输出段（ELF 中的代码段） */

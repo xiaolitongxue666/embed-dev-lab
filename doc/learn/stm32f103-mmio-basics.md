@@ -37,6 +37,34 @@ str r0, [0x4001100C]  →  写到 GPIOC_ODR 寄存器（MMIO）
 
 F103 无 MMU：**调试器、map 文件、手册、代码中的地址一致**（平坦物理地址）。与 x86 用户态虚拟地址对比见 [memory-boot-map §8](stm32f103-memory-boot-map.md#8-与-x86-虚拟地址对比)。
 
+### 2.1 地址如何对应：总线解码（不是映进 RAM）
+
+对应关系**不是**软件把外设「映射进 RAM」，而是 **硬件布线 + 手册规定**：RM0008 给每个外设固定 **基址 + 偏移**；芯片内部 **地址解码器** 根据 CPU 发出的地址选中 Flash、SRAM、外设模块或 PPB。load/store 直接改外设里的 flip-flop，**不会**先把寄存器拷进 SRAM。
+
+以写 `GPIOC_ODR`（`0x4001100C`）为例：
+
+```text
+CPU 发出地址 0x4001100C
+        │
+        ▼
+   地址解码器（芯片内部逻辑）
+        │
+        ├── 0x2000xxxx ──► 选中 SRAM
+        ├── 0x0800xxxx ──► 选中 Main Flash
+        ├── 0x40011000–0x400113FF ──► 选中 GPIOC 模块
+        │         └── 偏移 +0x0C ──► 该模块内的 ODR 寄存器
+        └── 其他区间 ──► RCC、USART…
+```
+
+§1 中 `str r0, [0x4001100C]` 走的就是上图中 **GPIOC / ODR** 分支，而非 `0x2000xxxx`（SRAM）分支。
+
+| 环节 | 来源 | 本仓库例子 |
+|------|------|------------|
+| 手册 | RM0008 Table 1：`GPIOC` @ `0x40011000`，`ODR` @ `+0x0C` | [backup-domain-pc13 topic](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
+| 代码 | `#define` + `volatile` 指针 | `GPIOC_ODR` → `0x4001100C` |
+| 编译 | 地址进 Flash `.text` 立即数 | `str` / `PCout(13)` |
+| 硬件 | 解码 → GPIOC flip-flop → PC13 | [§5](#5-f103-manual-reg-pc13-点灯完整-mmio-流程) |
+
 ---
 
 ## 3. 寄存器与 flip-flop
@@ -82,7 +110,7 @@ RCC_APB2ENR |= RCC_APB2ENR_IOPCEN;
 | 解除 Backup 写保护 | `PWR_CR` bit8 DBP | `0x40007000` | `PWR_CR \|= DBP` |
 | 开 GPIOC 时钟 | `RCC_APB2ENR` bit4 | `0x40021018` | `RCC_APB2ENR \|= IOPCEN` |
 | 配置 PC13 模式 | `GPIOC_CRH` bit[23:20] | `0x40011004` | `GPIOC_CRH &= …; \|= …` |
-| 拉高/拉低 PC13 | `GPIOC_ODR` bit13 | `0x4001100C` | `PCout(13) = 0/1` |
+| 拉高/拉低 PC13 | `GPIOC_ODR` bit13 | `0x4001100C`（`0x40011000`+`0x0C`，见 [§2.1](#21-地址如何对应总线解码不是映进-ram)） | `PCout(13) = 0/1` |
 
 寄存器位域与 Backup 域顺序见 [backup-domain-pc13 topic](../reference/stm32f103/md/topics/backup-domain-pc13.md)。
 
@@ -98,7 +126,7 @@ GPIOC_CRH |= GPIOC_CRH_PC13_OUT_PP;
 
 ### 5.3 闪烁（[`main`](../../projects/f103-manual-reg/src/main.c) + 位带）
 
-[`gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) 中 `PCout(13)` 通过 **位带别名** 写 `GPIOC_ODR` bit13，本质仍是 MMIO，目标寄存器 **`0x4001100C`**。
+[`gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) 中 `PCout(13)` 通过 **位带别名** 写 `GPIOC_ODR` bit13，本质仍是 MMIO，目标寄存器 **`0x4001100C`**。下面 `Store` 步骤经 [§2.1](#21-地址如何对应总线解码不是映进-ram) 解码树选中 GPIOC 的 ODR。
 
 ```mermaid
 flowchart LR

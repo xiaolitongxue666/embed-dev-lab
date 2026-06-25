@@ -91,6 +91,13 @@ probe-rs chip：**`STM32F103C8Tx`**
 | 链接 `assert_param` / `_init` | 确认 `stm32f1xx_hal_conf.h` 含 `assert_param`；startup 已跳过 `__libc_init_array` |
 | 烧录成功但 LED 不闪 | PWR+DBP；先 `build` 再 `flash` |
 
+## 调试
+
+- IDE：**F103 CMSIS-HAL Probe-rs Debug**（F5；`.vscode/launch.json`）
+- 调试前须已 `./scripts/fetch-f103-cmsis-hal-deps.sh`；preLaunchTask 自动 `build.sh f103-cmsis-hal`
+- OpenOCD 备选：**F103 CMSIS-HAL OpenOCD Debug**
+- 详见 [ide-debug.md](../ide-debug.md)
+
 ## 延伸阅读
 
 - [CMSIS 标准与手写裸机边界](../learn/cmsis-overview.md) §6

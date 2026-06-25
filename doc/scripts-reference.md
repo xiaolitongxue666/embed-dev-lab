@@ -166,7 +166,7 @@ CMake / 链接细节见 [f103-manual-reg 编译流程](learn/f103-module-build-f
 | 自动装环境 + **编译** | `./scripts/bootstrap.sh` |
 | CLI **编译 + 烧录** | `build.sh f103-manual-reg build && build.sh f103-manual-reg flash` |
 | Task **编译 + 烧录** | Run Task → **Build and Flash F103** |
-| IDE **编译 + 烧录 + 调试** | F5 → **F103 Probe-rs Debug** |
+| IDE **编译 + 烧录 + 调试** | F5 → **F103 Probe-rs Debug** 或 **F103 CMSIS-HAL Probe-rs Debug** |
 
 ---
 

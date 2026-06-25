@@ -45,6 +45,45 @@
       "problemMatcher": []
     },
     {
+      "label": "Build F103 CMSIS-HAL",
+      "type": "shell",
+      "command": "./scripts/build.sh f103-cmsis-hal",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "C:/Program Files/Git/bin/bash.exe",
+          "args": ["-l", "-c"]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build and Flash F103 CMSIS-HAL",
+      "type": "shell",
+      "command": "./scripts/build.sh f103-cmsis-hal build && ./scripts/build.sh f103-cmsis-hal flash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "C:/Program Files/Git/bin/bash.exe",
+          "args": ["-l", "-c"]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash OpenOCD CMSIS-HAL",
+      "type": "shell",
+      "command": "./scripts/build.sh f103-cmsis-hal flash-openocd",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "C:/Program Files/Git/bin/bash.exe",
+          "args": ["-l", "-c"]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Env Check",
       "type": "shell",
       "command": "./scripts/env-check.sh",

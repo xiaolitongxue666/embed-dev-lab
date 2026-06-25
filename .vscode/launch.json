@@ -34,6 +34,40 @@
         "target/stm32f1x.cfg"
       ],
       "preLaunchTask": "Build F103"
+    },
+    {
+      "name": "F103 CMSIS-HAL Probe-rs Debug",
+      "type": "probe-rs-debug",
+      "request": "launch",
+      "preLaunchTask": "Build F103 CMSIS-HAL",
+      "cwd": "${workspaceFolder}",
+      "chip": "STM32F103C8Tx",
+      "flashingConfig": {
+        "flashingEnabled": true,
+        "haltAfterReset": true,
+        "formatOptions": {
+          "binaryFormat": "elf"
+        }
+      },
+      "coreConfigs": [
+        {
+          "programBinary": "${workspaceFolder}/projects/f103-cmsis-hal/build/f103-cmsis-hal.elf"
+        }
+      ],
+      "connectUnderReset": true
+    },
+    {
+      "name": "F103 CMSIS-HAL OpenOCD Debug",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/projects/f103-cmsis-hal/build/f103-cmsis-hal.elf",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32f1x.cfg"
+      ],
+      "preLaunchTask": "Build F103 CMSIS-HAL"
     }
   ]
 }

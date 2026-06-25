@@ -59,7 +59,7 @@
 17. **用户文档**：`doc/` 中文；应用层 `doc/projects/`；旧链 `doc/modules-f103-blink.md` 为重定向 stub。
 18. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线。
 19. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`（扫描 `projects/*/build/`）。
-20. **调试**：Cursor Run →「F103 Probe-rs Debug」；ELF 路径 `projects/f103-manual-reg/build/f103-manual-reg.elf`。
+20. **调试**：Cursor Run →「F103 Probe-rs Debug」（manual-reg）或「F103 CMSIS-HAL Probe-rs Debug」；ELF 路径见 `.vscode/launch.json`。
 21. **f103-manual-reg 注释**：源码中文；终端/CLI 输出保持英文。
 22. **`.gitignore`**：CubeF1 全包、核心板、PDF、`.tools/` 忽略；CMSIS submodules **不**忽略。
 23. **MCP/Skill**：`install-mcp-skills.sh` → `.cursor/mcp.json` + `skills/embed-dev-lab`；Codex 无 MCP。

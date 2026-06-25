@@ -35,11 +35,19 @@
 
 ### 一键调试（自动编译 + 烧录）
 
+**f103-manual-reg**
+
 1. 打开 Run and Debug（运行和调试）
 2. 选择配置：**F103 Probe-rs Debug**
 3. 按 F5 或点击 Start Debugging
 
-流程：
+**f103-cmsis-hal**
+
+1. 首次须 `./scripts/fetch-f103-cmsis-hal-deps.sh`
+2. 选择配置：**F103 CMSIS-HAL Probe-rs Debug**
+3. 按 F5
+
+流程（manual-reg 示例）：
 
 ```text
 preLaunchTask "Build F103"
@@ -53,23 +61,31 @@ preLaunchTask "Build F103"
 
 文件：`.vscode/launch.json`
 
+| 配置 | preLaunchTask | programBinary / executable |
+|------|---------------|----------------------------|
+| **F103 Probe-rs Debug** | Build F103 | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| **F103 CMSIS-HAL Probe-rs Debug** | Build F103 CMSIS-HAL | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+| **F103 OpenOCD Debug** | Build F103 | manual-reg `.elf` |
+| **F103 CMSIS-HAL OpenOCD Debug** | Build F103 CMSIS-HAL | cmsis-hal `.elf` |
+
+公共字段：
+
 | 字段 | 值 | 含义 |
 |------|-----|------|
 | `type` | `probe-rs-debug` | 使用 probe-rs 插件 |
 | `chip` | `STM32F103C8Tx` | 目标芯片 |
-| `preLaunchTask` | `Build F103` | 调试前自动编译 |
 | `flashingConfig.flashingEnabled` | `true` | 启动时烧录 |
 | `flashingConfig.formatOptions.binaryFormat` | `elf` | ELF 格式 |
-| `coreConfigs[0].programBinary` | `projects/f103-manual-reg/build/f103-manual-reg.elf` | 程序文件 |
 | `connectUnderReset` | `true` | 在复位下连接 |
 
 ### 与 CLI 的差异
 
 | 方式 | 自动编译 | 自动烧录 | 断点调试 |
 |------|----------|----------|----------|
-| **F103 Probe-rs Debug** | 是（preLaunchTask） | 是（flashingConfig） | 是 |
+| **F103 Probe-rs Debug** | 是 | 是 | 是 |
+| **F103 CMSIS-HAL Probe-rs Debug** | 是 | 是 | 是 |
 | `build.sh flash` | **否** | 是 | 否 |
-| Task **Build and Flash F103** | 是 | 是 | 否 |
+| Task **Build and Flash F103** / **Build and Flash F103 CMSIS-HAL** | 是 | 是 | 否 |
 
 ---
 
@@ -80,8 +96,11 @@ preLaunchTask "Build F103"
 | Task 标签 | 命令 | 用途 |
 |-----------|------|------|
 | **Build F103** | `./scripts/build.sh f103-manual-reg` | 默认构建任务（Ctrl+Shift+B） |
-| **Build and Flash F103** | `build` + `flash` | 编译并烧录，不进入调试 |
-| **Flash OpenOCD** | `./scripts/build.sh f103-manual-reg flash-openocd` | OpenOCD 烧录 |
+| **Build and Flash F103** | `build` + `flash` | manual-reg 编译并烧录 |
+| **Flash OpenOCD** | `./scripts/build.sh f103-manual-reg flash-openocd` | manual-reg OpenOCD 烧录 |
+| **Build F103 CMSIS-HAL** | `./scripts/build.sh f103-cmsis-hal` | cmsis-hal configure + build |
+| **Build and Flash F103 CMSIS-HAL** | `build` + `flash` | cmsis-hal 编译并烧录 |
+| **Flash OpenOCD CMSIS-HAL** | `./scripts/build.sh f103-cmsis-hal flash-openocd` | cmsis-hal OpenOCD 烧录 |
 | **Env Check** | `./scripts/env-check.sh` | 环境校验 |
 
 运行 Task：Terminal → Run Task…
@@ -115,7 +134,7 @@ preLaunchTask "Build F103"
 |------|------|
 | 扩展未安装 / bootstrap 报 extension failed | 运行 `./scripts/install-extensions.sh`；必需扩展失败时 bootstrap 会退出；无 GUI 环境用 `--skip-extensions` |
 | F5 提示找不到 probe-rs | User PATH 添加 cargo/WinGet 路径；重启 Cursor |
-| 调试前 build 失败 | 终端单独运行 `./scripts/build.sh f103-manual-reg` 看错误 |
+| 调试前 build 失败 | 终端单独运行 `./scripts/build.sh <module>`；cmsis-hal 缺 deps 时先 `fetch-f103-cmsis-hal-deps.sh` |
 | 烧录后无断点停住 | 确认 `haltAfterReset: true`；检查 SWD |
 | OpenOCD 报找不到 hex | 须先 `build` 生成 `.hex`（objcopy POST_BUILD）；probe-rs 路径用 `.elf` |
 | Git Bash 路径错误 | 工作区已设 profile 名；User settings 中配置实际 bash 路径 |
@@ -127,3 +146,4 @@ preLaunchTask "Build F103"
 - [probe-rs CLI 与驱动](probe-rs.md)
 - [脚本参考](scripts-reference.md)
 - [f103-manual-reg 模块](projects/f103-manual-reg.md)
+- [f103-cmsis-hal 模块](projects/f103-cmsis-hal.md)

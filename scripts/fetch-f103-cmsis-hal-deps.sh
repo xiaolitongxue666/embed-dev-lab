@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # 为 f103-cmsis-hal 拷贝 PC13 闪烁所需最小 CMSIS + HAL 子集
-# 参考源：vendor-pack CMSIS submodules + stm32f1xx-hal-driver@v1.1.8（clone 至 .tools/）
+# 参考源：vendor-pack CMSIS + HAL submodules（stm32f1xx-hal-driver@v1.1.8）
 # 用法: ./scripts/fetch-f103-cmsis-hal-deps.sh [--verify-only]
 # -----------------------------------------------------------------------------
 
@@ -10,17 +10,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
-# shellcheck source=lib/proxy.sh
-source "$ROOT/scripts/lib/proxy.sh"
 # shellcheck source=lib/apply-f103-cmsis-hal-comments.sh
 source "$ROOT/scripts/lib/apply-f103-cmsis-hal-comments.sh"
 
 PROJECT_DIR="$ROOT/projects/f103-cmsis-hal"
 CMSIS_CORE_DIR="$ROOT/vendor-pack/cmsis-core"
 CMSIS_DEVICE_DIR="$ROOT/vendor-pack/cmsis-device-f1"
-HAL_REF_DIR="$ROOT/.tools/stm32f1xx-hal-driver-ref"
-HAL_TAG="v1.1.8"
-HAL_REPO="https://github.com/STMicroelectronics/stm32f1xx-hal-driver.git"
+HAL_SRC_ROOT="$ROOT/vendor-pack/stm32f1xx-hal-driver"
 
 CMSIS_OUT="$PROJECT_DIR/third_party/cmsis/Include"
 HAL_INC_OUT="$PROJECT_DIR/third_party/hal/Inc"
@@ -33,7 +29,7 @@ usage() {
 Usage: ./scripts/fetch-f103-cmsis-hal-deps.sh [options]
 
 Copy minimal CMSIS/HAL files into projects/f103-cmsis-hal/ for PC13 blink demo.
-Requires vendor-pack CMSIS submodules (run ./scripts/fetch-cmsis.sh first).
+Requires vendor-pack CMSIS + HAL submodules (run ./scripts/fetch-cmsis.sh first).
 
 Options:
   --verify-only    Check copied paths exist (no fetch/copy)
@@ -156,39 +152,22 @@ patch_linker_for_c8() {
   log_ok "Linker patched for STM32F103C8T6 (64K Flash)"
 }
 
-ensure_hal_ref() {
-  apply_embed_proxy
-  mkdir -p "$ROOT/.tools"
-  if [[ -d "$HAL_REF_DIR/.git" ]]; then
-    log_info "Updating HAL ref repo ..."
-    git -C "$HAL_REF_DIR" fetch --tags origin
-  else
-    log_info "Cloning HAL driver ref ($HAL_TAG) ..."
-    git clone --depth 1 --branch "$HAL_TAG" "$HAL_REPO" "$HAL_REF_DIR"
-  fi
-  local current_tag
-  current_tag="$(git -C "$HAL_REF_DIR" describe --tags --exact-match 2>/dev/null || true)"
-  if [[ "$current_tag" != "$HAL_TAG" ]]; then
-    git -C "$HAL_REF_DIR" checkout "$HAL_TAG"
-  fi
-  [[ -f "$HAL_REF_DIR/Inc/stm32f1xx_hal.h" ]] || die "HAL ref invalid: $HAL_REF_DIR"
-  log_ok "HAL ref ready: $HAL_REF_DIR ($HAL_TAG)"
-}
-
 copy_hal_minimal() {
+  [[ -f "$HAL_SRC_ROOT/Inc/stm32f1xx_hal.h" ]] \
+    || die "HAL submodule not ready: $HAL_SRC_ROOT (run ./scripts/fetch-cmsis.sh)"
   log_info "Copying minimal HAL Inc/Src ..."
   mkdir -p "$HAL_INC_OUT" "$HAL_SRC_OUT"
   # All HAL module headers (small; avoids missing dependency headers)
-  cp -f "$HAL_REF_DIR"/Inc/stm32f1xx_hal*.h "$HAL_INC_OUT/"
-  cp -f "$HAL_REF_DIR"/Inc/stm32f1xx_ll*.h "$HAL_INC_OUT/" 2>/dev/null || true
-  if [[ -d "$HAL_REF_DIR/Inc/Legacy" ]]; then
+  cp -f "$HAL_SRC_ROOT"/Inc/stm32f1xx_hal*.h "$HAL_INC_OUT/"
+  cp -f "$HAL_SRC_ROOT"/Inc/stm32f1xx_ll*.h "$HAL_INC_OUT/" 2>/dev/null || true
+  if [[ -d "$HAL_SRC_ROOT/Inc/Legacy" ]]; then
     mkdir -p "$HAL_INC_OUT/Legacy"
-    cp -f "$HAL_REF_DIR"/Inc/Legacy/*.h "$HAL_INC_OUT/Legacy/"
+    cp -f "$HAL_SRC_ROOT"/Inc/Legacy/*.h "$HAL_INC_OUT/Legacy/"
   fi
   local f
   for f in "${HAL_SRC_FILES[@]}"; do
-    [[ -f "$HAL_REF_DIR/Src/$f" ]] || die "Missing HAL source in ref: $f"
-    copy_file "$HAL_REF_DIR/Src/$f" "$HAL_SRC_OUT/$f"
+    [[ -f "$HAL_SRC_ROOT/Src/$f" ]] || die "Missing HAL source in submodule: $f"
+    copy_file "$HAL_SRC_ROOT/Src/$f" "$HAL_SRC_OUT/$f"
   done
   log_ok "HAL minimal subset copied"
 }
@@ -204,7 +183,6 @@ mkdir -p "$PROJECT_DIR/src"
 bash "$ROOT/scripts/fetch-cmsis.sh"
 copy_cmsis_headers
 copy_templates
-ensure_hal_ref
 copy_hal_minimal
 verify_paths
 log_ok "f103-cmsis-hal dependencies ready"

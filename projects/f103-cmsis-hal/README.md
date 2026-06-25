@@ -19,7 +19,7 @@
 ./scripts/fetch-f103-cmsis-hal-deps.sh --verify-only
 ```
 
-拷贝来源：`vendor-pack/cmsis-core` + `vendor-pack/cmsis-device-f1`；HAL `stm32f1xx-hal-driver@v1.1.8`（clone 至 `.tools/`，**按需裁剪**的最小子集进 `third_party/`）。
+拷贝来源：`vendor-pack/cmsis-core` + `vendor-pack/cmsis-device-f1` + `vendor-pack/stm32f1xx-hal-driver`（`v1.1.8`）；**按需裁剪**的最小子集进 `third_party/`。
 
 ## third_party 是完整 CMSIS/HAL 吗？
 
@@ -28,7 +28,7 @@
 | 参考源（完整） | 路径 |
 |----------------|------|
 | CMSIS-Core / Device F1 | `vendor-pack/cmsis-core`、`vendor-pack/cmsis-device-f1` |
-| HAL Driver F1 v1.1.8 | `.tools/stm32f1xx-hal-driver-ref` |
+| HAL Driver F1 v1.1.8 | `vendor-pack/stm32f1xx-hal-driver` |
 
 `fetch-f103-cmsis-hal-deps.sh` 的裁剪策略：
 
@@ -40,7 +40,7 @@
 | **HAL Src** | **仅 8 个 .c** → `third_party/hal/Src/` | CMake 编译并链入 `f103-cmsis-hal.elf` |
 
 ```text
-vendor-pack/ + .tools/stm32f1xx-hal-driver-ref   ← 完整 CMSIS/HAL（参考与拷贝源）
+vendor-pack/cmsis-core + cmsis-device-f1 + stm32f1xx-hal-driver   ← 完整 CMSIS/HAL（submodule，拷贝源）
         ↓ fetch 按需裁剪
 projects/f103-cmsis-hal/third_party/             ← 工程内 vendored 最小子集
         ↓ CMake 仅链入 8 个 HAL .c

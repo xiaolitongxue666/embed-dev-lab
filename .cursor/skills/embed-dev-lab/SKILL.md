@@ -68,6 +68,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 | CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
 | ST F1 软件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |
 | STM32CubeF1 参考 | https://github.com/STMicroelectronics/STM32CubeF1 |
+| HAL submodule | `vendor-pack/stm32f1xx-hal-driver` · `v1.1.8` · `./scripts/fetch-cmsis.sh` |
 | HAL 参考 | https://github.com/STMicroelectronics/stm32f1xx-hal-driver · `vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md` |
 | 脚本 | `doc/scripts-reference.md` |
 | MCP/Skill | `doc/mcp-skills.md` |

@@ -1,34 +1,53 @@
-# stm32f1xx-hal-driver（参考仓库说明）
+# stm32f1xx-hal-driver（embed-dev-lab 子模块说明）
 
-本仓库**未**将 [STMicroelectronics/stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) 列为 submodule；此处仅作 **HAL/LL 层** 上游参考。
+本目录 [`stm32f1xx-hal-driver/`](stm32f1xx-hal-driver/) 为 **git submodule**，指向 ST 维护的 [STMicroelectronics/stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver)。
 
-## 是什么
+目标芯片：**STM32F103C8T6**（F1 系列 HAL + LL 外设驱动）。
 
-ST **STM32CubeF1 MCU Component** 中的 `hal_driver` 部分，提供 F1 系列 **HAL + LL** 外设驱动（`stm32f1xx_hal_gpio.c`、`stm32f1xx_ll_gpio.h` 等）。
+## 固定版本
 
-HAL 全包内路径（fetch 后）：`Drivers/STM32F1xx_HAL_Driver/`
+| 项 | 值 |
+|----|-----|
+| Tag | **`v1.1.8`**（F1 HAL 发布 tag；勿跟踪 `master`） |
+| 配对 Core | [`cmsis-core`](cmsis-core/) 分支 **`cm3`** / **`v5.6.0_cm3`** |
+| 配对 Device | [`cmsis-device-f1`](cmsis-device-f1/) tag **`v4.3.5`** |
 
-## 版本配对（须与 CMSIS 一致）
+> CMSIS-Core、CMSIS-Device 与 HAL **须成对升级**；ST 官方表见 [stm32f1xx-hal-driver README](https://github.com/STMicroelectronics/stm32f1xx-hal-driver#compatibility-information) 与 [ST F1 软件仓库归纳](../doc/learn/stm32-cmsis-component-repos.md)。
 
-摘自 [stm32f1xx-hal-driver README](https://github.com/STMicroelectronics/stm32f1xx-hal-driver#compatibility-information)（节选）：
+## 关键路径（submodule 内）
 
-| HAL Driver F1 | CMSIS Device F1 | CMSIS Core | STM32CubeF1 |
-|---------------|-----------------|------------|-------------|
-| v1.1.8 | v4.3.3 | v5.4.0_cm3 | v1.8.4 |
+| 文件 | 路径（相对 `vendor-pack/stm32f1xx-hal-driver/`） |
+|------|-----------------------------------------------------|
+| HAL 主头 | `Inc/stm32f1xx_hal.h` |
+| GPIO 驱动 | `Src/stm32f1xx_hal_gpio.c` |
+| LL 头文件 | `Inc/stm32f1xx_ll_*.h` |
 
-与 embed-dev-lab 当前 CMSIS submodule（`v5.6.0_cm3` + `v4.3.5`）对照时，HAL 宜查阅 [stm32f1xx-hal-driver Release Notes](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) 确认兼容性；ST 文档记载的旧配对为 **v1.1.8**（见上表）。
+CubeF1 全包内等价路径为 `Drivers/STM32F1xx_HAL_Driver/`（目录层级不同，内容同源代际）。
+
+## 获取与更新
+
+```bash
+git clone --recursive <repo-url>
+./scripts/fetch-cmsis.sh
+./scripts/fetch-cmsis.sh --verify-only
+```
+
+现有 clone 迁移（新增 HAL submodule 后）：
+
+```bash
+git pull
+git submodule update --init vendor-pack/stm32f1xx-hal-driver
+./scripts/fetch-cmsis.sh
+./scripts/fetch-f103-cmsis-hal-deps.sh   # 刷新 third_party
+# 可选：rm -rf .tools/stm32f1xx-hal-driver-ref
+```
+
+更新 tag 时须同步评估 [`cmsis-core`](cmsis-core.embed-dev-lab.md) 与 [`cmsis-device-f1`](cmsis-device-f1.embed-dev-lab.md) 版本。
 
 ## 与本仓库 demo 的关系
 
-[`projects/f103-manual-reg`](../projects/f103-manual-reg/)（STM32F103C8T6）**不链接** HAL，采用纯寄存器实现。CMSIS+HAL 实验见 [`projects/f103-cmsis-hal`](../projects/f103-cmsis-hal/)（`./scripts/fetch-f103-cmsis-hal-deps.sh`）。
+[`projects/f103-manual-reg`](../projects/f103-manual-reg/) **不链接**本 submodule；纯寄存器实现。
 
-## 获取
+[`projects/f103-cmsis-hal`](../projects/f103-cmsis-hal/) 通过 `./scripts/fetch-f103-cmsis-hal-deps.sh` 从本 submodule **按需裁剪**拷贝至 [`third_party/`](../projects/f103-cmsis-hal/third_party/)（Inc 全拷、Src 仅 8 个 `.c` 链入 `.elf`）；**完整 HAL 仓库在本 submodule**，`third_party/hal/` 不是完整上游。
 
-```bash
-git clone https://github.com/STMicroelectronics/stm32f1xx-hal-driver.git
-git checkout v1.1.8   # 与当前 CMSIS submodule 成对时
-```
-
-全包（含 HAL + Middleware + 例程）：[`fetch-stm32cubef1.sh`](../scripts/fetch-stm32cubef1.sh) → [STM32CubeF1/README.md](STM32CubeF1/README.md)
-
-归纳文档：[ST CMSIS 与 F1 软件仓库归纳](../doc/learn/stm32-cmsis-component-repos.md)
+归纳文档：[ST F1 软件仓库归纳](../doc/learn/stm32-cmsis-component-repos.md)

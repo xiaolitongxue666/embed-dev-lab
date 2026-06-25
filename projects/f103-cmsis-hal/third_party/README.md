@@ -11,7 +11,7 @@
 |--------|------|------|
 | CMSIS-Core | `vendor-pack/cmsis-core` | 完整 submodule（`cm3` / `v5.6.0_cm3`） |
 | CMSIS-Device F1 | `vendor-pack/cmsis-device-f1` | 完整 submodule（`v4.3.5`） |
-| HAL Driver F1 | `.tools/stm32f1xx-hal-driver-ref` | 完整 HAL 仓库 clone（`v1.1.8`） |
+| HAL Driver F1 | `vendor-pack/stm32f1xx-hal-driver` | 完整 HAL submodule（`v1.1.8`） |
 
 ### fetch 裁剪策略（`scripts/fetch-f103-cmsis-hal-deps.sh`）
 
@@ -23,7 +23,7 @@
 | `third_party/hal/Src/` | **仅 8 个 .c**（GPIO/RCC/PWR/Flash/Cortex 等） | **是** |
 
 ```text
-vendor-pack/ + .tools/stm32f1xx-hal-driver-ref
+vendor-pack/cmsis-core + cmsis-device-f1 + stm32f1xx-hal-driver
         ↓ fetch 按需裁剪（非整包复制）
 third_party/  +  startup/ + linker/ + src/system_stm32f1xx.c
         ↓ CMake：8 个 HAL .c + 工程 src/startup
@@ -52,7 +52,7 @@ third_party/
 |------|------------|----------|
 | CMSIS-Core | `cm3` / `v5.6.0_cm3` | `vendor-pack/cmsis-core` |
 | CMSIS-Device F1 | `v4.3.5` | `vendor-pack/cmsis-device-f1` |
-| HAL Driver F1 | `v1.1.8` | `.tools/stm32f1xx-hal-driver-ref` |
+| HAL Driver F1 | `v1.1.8` | `vendor-pack/stm32f1xx-hal-driver` |
 
 ## 编译参与范围
 

@@ -195,14 +195,15 @@ CMake / 链接细节见 [f103-manual-reg 编译流程](learn/f103-module-build-f
 
 ---
 
-### fetch-cmsis.sh — CMSIS 子模块（Core + Device F1）
+### fetch-cmsis.sh — CMSIS + HAL 子模块（Core + Device F1 + HAL）
 
-初始化或更新 ST CMSIS **git submodules**：
+初始化或更新 ST CMSIS + HAL **git submodules**：
 
 | 路径 | Tag | 层 |
 |------|-----|-----|
 | `vendor-pack/cmsis-core/` | 分支 `cm3` · `v5.6.0_cm3` | CMSIS-Core（Cortex-M3，F103C8T6） |
 | `vendor-pack/cmsis-device-f1/` | `v4.3.5` | CMSIS-Device F1（F103xB） |
+| `vendor-pack/stm32f1xx-hal-driver/` | `v1.1.8` | HAL/LL F1 |
 
 ```bash
 git clone --recursive <repo-url>
@@ -210,8 +211,8 @@ git clone --recursive <repo-url>
 ./scripts/fetch-cmsis.sh --verify-only
 ```
 
-- 验证：Core `Include/core_cm3.h`；Device `Include/stm32f103xb.h`、`Source/Templates/gcc/startup_stm32f103xb.s`、`Source/Templates/system_stm32f1xx.c`
-- 说明：[cmsis-core.embed-dev-lab.md](../vendor-pack/cmsis-core.embed-dev-lab.md)、[cmsis-device-f1.embed-dev-lab.md](../vendor-pack/cmsis-device-f1.embed-dev-lab.md)
+- 验证：Core `Include/core_cm3.h`；Device `Include/stm32f103xb.h`、`Source/Templates/gcc/startup_stm32f103xb.s`、`Source/Templates/system_stm32f1xx.c`；HAL `Inc/stm32f1xx_hal.h`、`Src/stm32f1xx_hal_gpio.c`
+- 说明：[cmsis-core.embed-dev-lab.md](../vendor-pack/cmsis-core.embed-dev-lab.md)、[cmsis-device-f1.embed-dev-lab.md](../vendor-pack/cmsis-device-f1.embed-dev-lab.md)、[stm32f1xx-hal-driver.embed-dev-lab.md](../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)
 - 组件归纳：[doc/learn/stm32-cmsis-component-repos.md](learn/stm32-cmsis-component-repos.md)
 - 兼容：`fetch-cmsis-core.sh` 为同脚本的别名入口
 
@@ -219,7 +220,7 @@ git clone --recursive <repo-url>
 
 ### fetch-f103-cmsis-hal-deps.sh — f103-cmsis-hal 最小 CMSIS/HAL
 
-从 `vendor-pack` CMSIS submodule 与 HAL ref（`stm32f1xx-hal-driver@v1.1.8`，clone 至 `.tools/`）拷贝 PC13 闪烁所需最小子集至 `projects/f103-cmsis-hal/third_party/`，并拷贝 CMSIS `startup` / `system` / `STM32F103XB_FLASH.ld`（C8 64K 裁剪）。
+从 `vendor-pack` CMSIS + HAL submodule（`stm32f1xx-hal-driver@v1.1.8`）拷贝 PC13 闪烁所需最小子集至 `projects/f103-cmsis-hal/third_party/`，并拷贝 CMSIS `startup` / `system` / `STM32F103XB_FLASH.ld`（C8 64K 裁剪）。
 
 ```bash
 ./scripts/fetch-cmsis.sh

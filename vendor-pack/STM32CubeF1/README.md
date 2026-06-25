@@ -8,7 +8,7 @@ ST 官方 [**STM32CubeF1 MCU Package**](https://github.com/STMicroelectronics/ST
 |----------|---------------|
 | CMSIS-Core | [cmsis-core](https://github.com/STMicroelectronics/cmsis-core) → 本仓库 submodule |
 | CMSIS-Device F1 | [cmsis-device-f1](https://github.com/STMicroelectronics/cmsis-device-f1) → 本仓库 submodule |
-| HAL/LL | [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) → [`stm32f1xx-hal-driver.embed-dev-lab.md`](../stm32f1xx-hal-driver.embed-dev-lab.md) |
+| HAL/LL | [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) → 本仓库 submodule |
 
 ## 目标版本
 

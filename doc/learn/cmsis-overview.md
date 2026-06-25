@@ -87,15 +87,16 @@ git clone --recursive <repo-url>          # 首次推荐
 |----|------|------------|
 | Core | `vendor-pack/cmsis-core/` | 分支 `cm3` · `v5.6.0_cm3` |
 | Device F1 | `vendor-pack/cmsis-device-f1/` | `v4.3.5` |
+| HAL F1 | `vendor-pack/stm32f1xx-hal-driver/` | `v1.1.8` |
 
-说明：[`cmsis-core.embed-dev-lab.md`](../../vendor-pack/cmsis-core.embed-dev-lab.md)、[`cmsis-device-f1.embed-dev-lab.md`](../../vendor-pack/cmsis-device-f1.embed-dev-lab.md)
+说明：[`cmsis-core.embed-dev-lab.md`](../../vendor-pack/cmsis-core.embed-dev-lab.md)、[`cmsis-device-f1.embed-dev-lab.md`](../../vendor-pack/cmsis-device-f1.embed-dev-lab.md)、[`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)
 
 **CMSIS-Device + HAL + 全包（可选，本地 fetch / 参考 repo）**
 
 | 方式 | 上游仓库 | 本仓库 |
 |------|----------|--------|
 | 全包 | [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) | `./scripts/fetch-stm32cubef1.sh` → `vendor-pack/STM32CubeF1/` |
-| 仅 HAL | [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | 参考 [`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md) |
+| 仅 HAL | [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | **git submodule** [`vendor-pack/stm32f1xx-hal-driver`](../../vendor-pack/stm32f1xx-hal-driver) · [`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md) |
 
 ```bash
 ./scripts/fetch-stm32cubef1.sh

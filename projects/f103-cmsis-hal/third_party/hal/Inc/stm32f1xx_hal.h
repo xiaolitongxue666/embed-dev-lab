@@ -1,9 +1,4 @@
 /**
- * @note    embed-dev-lab third_party：HAL 主头；由 src/stm32f1xx_hal_conf.h 裁剪包含模块
- *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
- */
-
-/**
   ******************************************************************************
   * @file    stm32f1xx_hal.h
   * @author  MCD Application Team
@@ -12,13 +7,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -360,4 +354,4 @@ void HAL_DBGMCU_DisableDBGStandbyMode(void);
 
 #endif /* __STM32F1xx_HAL_H */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

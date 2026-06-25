@@ -2,15 +2,8 @@
  * @file    system_stm32f1xx.c
  * @brief   CMSIS SystemInit 模板（复位后由 startup 调用）
  * @target  STM32F103C8T6
- *
- * @note    embed-dev-lab 分工说明：
- *          - startup Reset_Handler 在 main 之前调用 SystemInit()
- *          - 本 demo **不在** SystemInit 中配置 PLL；72 MHz 在 main.c SystemClock_Config()（HAL）完成
- *          - SystemCoreClock 变量由 HAL_RCC_ClockConfig 自动更新，也可调用 SystemCoreClockUpdate()
- *          下方 ST 原文 Doxygen 与 Copyright 保留；仅翻译与本 demo 相关的 inline 注释。
- *
- * @see     src/main.c — SystemClock_Config()
- * @see     startup/startup_stm32f103xb.s — bl SystemInit
+ * @note    embed-dev-lab 中文说明：本 demo 时钟在 main.c 的 SystemClock_Config() 中由 HAL 配置；
+ *          SystemInit 仅做向量表等复位默认化。下方 ST 原文与 Copyright 保留。
  */
 
 /**
@@ -103,7 +96,8 @@
 /* #define DATA_IN_ExtSRAM */
 #endif /* STM32F100xE || STM32F101xE || STM32F101xG || STM32F103xE || STM32F103xG */
 
-/* 向量表地址须与链接脚本一致（本 demo 未启用 USER_VECT_TAB_ADDRESS） */
+/* 向量表地址须与链接脚本一致（本 demo 未启用 USER_VECT_TAB_ADDRESS）
+ */
 /*!< Uncomment the following line if you need to relocate the vector table
      anywhere in Flash or Sram, else the vector table is kept at the automatic
      remap of boot address selected */
@@ -148,7 +142,7 @@
   /* 更新方式：
       1) 调用 CMSIS SystemCoreClockUpdate()
       2) 调用 HAL API HAL_RCC_GetHCLKFreq()
-      3) 每次 HAL_RCC_ClockConfig() 后自动更新（本 demo 采用）
+      3) 每次 HAL_RCC_ClockConfig() 后自动更新（本 demo 采用） 
   */
 uint32_t SystemCoreClock = 8000000;
 const uint8_t AHBPrescTable[16U] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
@@ -178,7 +172,9 @@ const uint8_t APBPrescTable[8U] =  {0, 0, 0, 0, 1, 2, 3, 4};
 
 /**
   * @brief  复位后系统默认化（本 demo 不在此配置 PLL 时钟）
-  * @note   72 MHz 时钟见 main.c SystemClock_Config()
+  * @note   72 MHz 时钟见 main.c SystemClock_Config() 
+  * @param  None
+  * @retval None
   */
 void SystemInit (void)
 {
@@ -188,15 +184,17 @@ void SystemInit (void)
   #endif /* DATA_IN_ExtSRAM */
 #endif 
 
-  /* 向量表重定位（本 demo 未启用 USER_VECT_TAB_ADDRESS） */
+  /* Configure the Vector Table location -------------------------------------*/
 #if defined(USER_VECT_TAB_ADDRESS)
-  SCB->VTOR = VECT_TAB_BASE_ADDRESS | VECT_TAB_OFFSET;
+  SCB->VTOR = VECT_TAB_BASE_ADDRESS | VECT_TAB_OFFSET; /* 向量表重定位 */
 #endif /* USER_VECT_TAB_ADDRESS */
 }
 
 /**
   * @brief  根据 RCC 寄存器更新 SystemCoreClock（HCLK）
-  * @note   本 demo 主要依赖 HAL_RCC_ClockConfig 自动维护；读寄存器推算频率见 ST 原文注释
+  *     
+  * @param  None
+  * @retval None
   */
 void SystemCoreClockUpdate (void)
 {
@@ -210,7 +208,7 @@ void SystemCoreClockUpdate (void)
   uint32_t prediv1factor = 0U;
 #endif /* STM32F100xB or STM32F100xE */
     
-  /* 读取 SYSCLK 来源 -------------------------------------------------------*/
+  /* Get SYSCLK source -------------------------------------------------------*/
   tmp = RCC->CFGR & RCC_CFGR_SWS;
   
   switch (tmp)
@@ -223,7 +221,7 @@ void SystemCoreClockUpdate (void)
       break;
     case 0x08U:  /* PLL 作为系统时钟 */
 
-      /* 读取 PLL 时钟源与倍频系数 */
+      /* Get PLL clock source and multiplication factor ----------------------*/
       pllmull = RCC->CFGR & RCC_CFGR_PLLMULL;
       pllsource = RCC->CFGR & RCC_CFGR_PLLSRC;
       
@@ -299,11 +297,11 @@ void SystemCoreClockUpdate (void)
       break;
   }
   
-  /* 计算 HCLK 频率 */
+  /* Compute HCLK clock frequency ----------------*/
   /* 读取 AHB 预分频 */
   tmp = AHBPrescTable[((RCC->CFGR & RCC_CFGR_HPRE) >> 4U)];
   /* HCLK = SYSCLK / 预分频 */
-  SystemCoreClock >>= tmp;
+  SystemCoreClock >>= tmp;  
 }
 
 #if defined(STM32F100xE) || defined(STM32F101xE) || defined(STM32F101xG) || defined(STM32F103xE) || defined(STM32F103xG)

@@ -63,7 +63,7 @@ flowchart TB
 | [cmsis-device-u5](https://github.com/STMicroelectronics/cmsis-device-u5) | **Device** | U5 系列（含 TrustZone 等）设备描述与启动模板 | STM32U5 | 同上 |
 | [cmsis-device-h5](https://github.com/STMicroelectronics/cmsis-device-h5) | **Device** | H5 系列设备描述与启动模板 | STM32H5 | 同上 |
 | [cmsis-device-h7](https://github.com/STMicroelectronics/cmsis-device-h7) | **Device** | H7 高性能/双核系列设备描述与启动模板 | STM32H7 | 同上 |
-| [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | **HAL/LL** | F1 外设 HAL + LL 驱动（`stm32f1xx_hal_*.c`、`stm32f1xx_ll_*.h`）；Cube 内路径 `Drivers/STM32F1xx_HAL_Driver/` | STM32F1 | **参考 repo**；说明见 [`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md)；本仓库未 submodule |
+| [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver) | **HAL/LL** | F1 外设 HAL + LL 驱动（`stm32f1xx_hal_*.c`、`stm32f1xx_ll_*.h`）；Cube 内路径 `Drivers/STM32F1xx_HAL_Driver/` | STM32F1 | **git submodule** [`vendor-pack/stm32f1xx-hal-driver`](../../vendor-pack/stm32f1xx-hal-driver)；[`stm32f1xx-hal-driver.embed-dev-lab.md`](../../vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md) |
 | [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) | **MCU Package** | **全家桶**：CMSIS + HAL/LL + Middleware + BSP + Projects + Utilities；自身亦为 **submodule 聚合仓库** | STM32F1 | 本地 [`fetch-stm32cubef1.sh`](../../scripts/fetch-stm32cubef1.sh) → [`vendor-pack/STM32CubeF1/`](../../vendor-pack/STM32CubeF1/README.md)（可选，不全量进库） |
 | [stm32-mw-cmsis-rtos-tx](https://github.com/STMicroelectronics/stm32-mw-cmsis-rtos-tx) | **Middleware** | **CMSIS-RTOS v2** API 对 **Azure RTOS ThreadX** 的封装适配层（**非** FreeRTOS 封装） | 全系列通用中间件组件 | 可选；当前 [`f103-manual-reg`](../../projects/f103-manual-reg/) 未使用 |
 
@@ -161,12 +161,9 @@ ST `cmsis-core` 在仓库根保留 **`Include/` 副本**，使旧工程与 Cube 
 ## 6. 获取命令速查
 
 ```bash
-# CMSIS-Core + CMSIS-Device F1（submodule）
+# CMSIS-Core + CMSIS-Device F1 + HAL（submodule）
 ./scripts/fetch-cmsis.sh
 ./scripts/fetch-cmsis.sh --verify-only
-
-# HAL 组件（参考，未 submodule）
-# git clone https://github.com/STMicroelectronics/stm32f1xx-hal-driver.git
 
 # STM32CubeF1 全包（可选）
 ./scripts/fetch-stm32cubef1.sh

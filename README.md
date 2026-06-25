@@ -128,10 +128,11 @@ embed-dev-lab/
 │   └── skills/embed-dev-lab/       # Cursor Skill 注册
 ├── .vscode/                        # launch.json / tasks.json / extensions.json
 ├── AGENTS.md                       # Codex 等无 MCP Agent 的 Skill 摘要
-├── .gitmodules                     # cmsis-core / cmsis-device-f1 submodule
-├── vendor-pack/                    # ST-Link 驱动、CMSIS submodules、CubeF1 fetch
+├── .gitmodules                     # cmsis-core / cmsis-device-f1 / stm32f1xx-hal-driver submodule
+├── vendor-pack/                    # ST-Link 驱动、CMSIS + HAL submodules、CubeF1 fetch
 │   ├── cmsis-core/                 # CMSIS-Core submodule cm3 / v5.6.0_cm3
 │   ├── cmsis-device-f1/            # CMSIS-Device F1 submodule v4.3.5
+│   ├── stm32f1xx-hal-driver/       # HAL Driver F1 submodule v1.1.8
 │   ├── cmsis-core.embed-dev-lab.md
 │   ├── cmsis-device-f1.embed-dev-lab.md
 │   ├── stm32f1xx-hal-driver.embed-dev-lab.md
@@ -162,7 +163,7 @@ embed-dev-lab/
 | [`install-tools.sh`](scripts/install-tools.sh) | 分 OS 安装（windows / linux / macos） | — |
 | [`install-mcp-skills.sh`](scripts/install-mcp-skills.sh) | embedded-debugger MCP + 项目 Skill | — |
 | [`fetch-stm32f103-docs.sh`](scripts/fetch-stm32f103-docs.sh) | 下载 DS5319 + RM0008 PDF | — |
-| [`fetch-cmsis.sh`](scripts/fetch-cmsis.sh) | 初始化 `cmsis-core` + `cmsis-device-f1` submodule | — |
+| [`fetch-cmsis.sh`](scripts/fetch-cmsis.sh) | 初始化 `cmsis-core` + `cmsis-device-f1` + `stm32f1xx-hal-driver` submodule | — |
 | [`fetch-cmsis-core.sh`](scripts/fetch-cmsis-core.sh) | 同上（兼容别名） | — |
 | [`fetch-stm32cubef1.sh`](scripts/fetch-stm32cubef1.sh) | 获取 STM32CubeF1 至 `vendor-pack/STM32CubeF1/` | — |
 

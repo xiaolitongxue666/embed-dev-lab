@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-25（f103-cmsis-hal README 结构 + third_party 最小子集说明）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-25（HAL submodule v1.1.8 纳入 vendor-pack）
 
 ## 快速路径
 
@@ -24,11 +24,11 @@
 | ST 官方文档 fetch | `./scripts/fetch-stm32f103-docs.sh` |
 | STM32CubeF1 fetch | `./scripts/fetch-stm32cubef1.sh` |
 | ST 官方参考（PDF+MD） | `doc/reference/stm32f103/` |
-| CMSIS submodules | `cmsis-core`（`cm3` / `v5.6.0_cm3`）+ `cmsis-device-f1`（`v4.3.5`）；`./scripts/fetch-cmsis.sh` |
+| CMSIS + HAL submodules | `cmsis-core`（`cm3`/`v5.6.0_cm3`）+ `cmsis-device-f1`（`v4.3.5`）+ `stm32f1xx-hal-driver`（`v1.1.8`）；`./scripts/fetch-cmsis.sh` |
 | CMSIS 标准与手写边界 | `doc/learn/cmsis-overview.md` |
 | ST F1 软件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |
 | STM32CubeF1 参考 | https://github.com/STMicroelectronics/STM32CubeF1 · `vendor-pack/STM32CubeF1/README.md` |
-| HAL 参考 | https://github.com/STMicroelectronics/stm32f1xx-hal-driver · `vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md` |
+| HAL submodule | `vendor-pack/stm32f1xx-hal-driver` · `v1.1.8` · [`stm32f1xx-hal-driver.embed-dev-lab.md`](vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md) |
 | 中断向量表与 NVIC | `doc/learn/interrupt-vector-table-and-nvic.md` |
 | DS5319 / RM0008 分工 | `doc/learn/datasheet-vs-reference-manual.md` |
 | 厂商本地资料 | `vendor-pack/`（驱动 / CMSIS submodules / CubeF1 fetch） |
@@ -54,15 +54,15 @@
 11. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md`；submodule `cmsis-core` + `cmsis-device-f1` 供对照；f103-manual-reg **不** `#include` 官方 Device 头。
 12. **flash 前需 build**：`build.sh … flash` 不自动编译；`build-flash.sh` 只调 `build` 不调 `configure`。
 13. **ST 官方 PDF+MD**：改 `system_stm32f1xx.c` 以 RM0008 §6 RCC 为主；DS5319 定约束；见 `doc/learn/datasheet-vs-reference-manual.md`。
-14. **vendor-pack**：ST-Link 驱动 + CMSIS submodules + 核心板例程 + STM32CubeF1 fetch（可选）。
-15. **fetch-cmsis.sh**：Core 分支 **`cm3`** / **`v5.6.0_cm3`**，Device **`v4.3.5`**；首次 `git clone --recursive`。
-16. **f103-cmsis-hal 依赖与 third_party**：`third_party/` **非完整 CMSIS/HAL**，而是 fetch **按需裁剪**的最小子集；完整上游在 `vendor-pack/`（CMSIS submodule）与 `.tools/stm32f1xx-hal-driver-ref`（HAL v1.1.8）；**CMSIS 仅 7 头**入 `third_party/cmsis/Include/`，模板 `startup/linker/system` 在工程根目录；**HAL Inc 全拷、Src 仅 8 个 .c 链入 .elf**；模块裁剪在 `src/stm32f1xx_hal_conf.h`；详见 `projects/f103-cmsis-hal/third_party/README.md`。
+14. **vendor-pack**：ST-Link 驱动 + CMSIS/HAL submodules（Core + Device + HAL）+ 核心板例程 + STM32CubeF1 fetch（可选）。
+15. **fetch-cmsis.sh**：Core **`cm3`** / **`v5.6.0_cm3`**，Device **`v4.3.5`**，HAL **`v1.1.8`**；`git submodule update --init` 后 `checkout_hal_driver` 固定 tag；首次 `git clone --recursive`。
+16. **f103-cmsis-hal 依赖与 third_party**：`third_party/` **非完整 CMSIS/HAL**，而是 fetch **按需裁剪**的最小子集；完整上游在 `vendor-pack/`（`cmsis-core`、`cmsis-device-f1`、`stm32f1xx-hal-driver` submodule）；**CMSIS 仅 7 头**入 `third_party/cmsis/Include/`，模板 `startup/linker/system` 在工程根目录；**HAL Inc 全拷、Src 仅 8 个 .c 链入 .elf**；模块裁剪在 `src/stm32f1xx_hal_conf.h`；详见 `projects/f103-cmsis-hal/third_party/README.md`。
 17. **用户文档**：`doc/` 中文；应用层 `doc/projects/`；旧链 `doc/modules-f103-blink.md` 为重定向 stub。
 18. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线。
 19. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`（扫描 `projects/*/build/`）。
 20. **调试**：Cursor Run →「F103 Probe-rs Debug」（manual-reg）或「F103 CMSIS-HAL Probe-rs Debug」；ELF 路径见 `.vscode/launch.json`。
 21. **源码注释与语言**：manual-reg 与 cmsis-hal 的 `src/`、`startup/`、`linker/` 中文；`third_party` ST 正文英文，参与链接的 HAL .c 与 CMSIS 关键头有 embed-dev-lab 中文顶块 + `third_party/**/README.md`；**仅改注释不改代码**；fetch 后 `scripts/lib/apply-f103-cmsis-hal-comments.sh` 自动恢复模板与 third_party 顶注释。
-22. **`.gitignore`**：CubeF1 全包、核心板、PDF、`.tools/` 忽略；CMSIS submodules **不**忽略。
+22. **`.gitignore`**：CubeF1 全包、核心板、PDF、`.tools/` 忽略；CMSIS + HAL submodules **不**忽略。
 23. **MCP/Skill**：`install-mcp-skills.sh` → `.cursor/mcp.json` + `skills/embed-dev-lab`；Codex 无 MCP。
 24. **实机验证**（2026-06-25）：`f103-manual-reg` / `f103-cmsis-hal` build+probe-rs flash 均通过；`./scripts/build-flash.sh f103-cmsis-hal` 一键编译烧录已验证。
 25. **Cursor 终端**：工作区 `.vscode/settings.json` 声明 `defaultProfile: Git Bash`。
@@ -94,7 +94,9 @@
 | `_estack` / 栈「向下增长」 | 满递减栈：`_estack=0x20005000` 为 RAM **上界**；push 时 SP **减小**（非增大）；见 `memory-boot-map` §6.1 |
 | 链接命令行 `.obj` 顺序 vs Flash 段布局 | **无关** — 段布局由 `SECTIONS` 决定（如 `.isr_vector` 固定最前）；见 `f103-module-build-flow.md` §3.2 |
 | 手册地址与代码 `0x400xxxxx` | 裸机无 MMU，总线实地址 = RM0008；MMIO 见 `stm32f103-mmio-basics.md` |
-| clone 后 CMSIS submodule 空 | `git clone --recursive` 或 `./scripts/fetch-cmsis.sh` |
+| clone 后 CMSIS/HAL submodule 空 | `git clone --recursive` 或 `./scripts/fetch-cmsis.sh` |
+| pull 后新增 HAL submodule | `git submodule update --init vendor-pack/stm32f1xx-hal-driver` → `./scripts/fetch-cmsis.sh` → `./scripts/fetch-f103-cmsis-hal-deps.sh`；可选 `rm -rf .tools/stm32f1xx-hal-driver-ref` |
+| HAL submodule 指针非 v1.1.8 | `fetch-cmsis.sh` 会 checkout `v1.1.8`；`git submodule add` 后须显式 pin tag 再提交指针 |
 | GitHub CubeF1 ZIP 缺 CMSIS | `git clone --recursive` 或 `fetch-stm32cubef1.sh` |
 | 文档仍写 `modules/` 或 `f103-blink` | 已迁 `projects/f103-manual-reg`；stub 见 `doc/modules-f103-blink.md` |
 | bootstrap 慢 | `--build-only --skip-extensions` |
@@ -104,7 +106,7 @@
 | f103-cmsis-hal 缺 third_party / 头文件 | `./scripts/fetch-cmsis.sh` 后 `./scripts/fetch-f103-cmsis-hal-deps.sh` |
 | f103-cmsis-hal 链接 assert_param / _init | `stm32f1xx_hal_conf.h` 定义 `assert_param`；startup 无 `__libc_init_array` |
 | fetch 后 cmsis-hal 模板注释变英文 | 重新 `./scripts/fetch-f103-cmsis-hal-deps.sh`（apply 恢复 startup/linker/system 与 third_party 顶注释） |
-| third_party 是完整 CMSIS/HAL 还是最小子集？ | **最小子集**：CMSIS 7 头 + HAL Inc 全拷 + **仅 8 个 HAL .c 链入 .elf**；完整包在 `vendor-pack/` 与 `.tools/stm32f1xx-hal-driver-ref`；见 `third_party/README.md` |
+| third_party 是完整 CMSIS/HAL 还是最小子集？ | **最小子集**：CMSIS 7 头 + HAL Inc 全拷 + **仅 8 个 HAL .c 链入 .elf**；完整包在 `vendor-pack/` submodule（含 `stm32f1xx-hal-driver`）；见 `third_party/README.md` |
 | third_party 是参考还是编入固件？ | **vendored 并入构建**：8 个 HAL `.c` 链入 `.elf`；`Inc/` 仅 `#include`；见 `third_party/README.md` |
 | fetch-stm32cubef1 勿用 GitHub ZIP | 缺 submodule；用 `git clone --recursive` 或 `fetch-stm32cubef1.sh` |
 | Cursor Agent 调不到 MCP | 确认 MCP 已连接；非 Codex；新开对话 |

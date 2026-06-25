@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# 初始化 / 更新 vendor-pack CMSIS git submodules（cmsis-core + cmsis-device-f1）
+# 初始化 / 更新 vendor-pack CMSIS + HAL F1 git submodules
 # 目标：STM32F103C8T6（Cortex-M3，f103-manual-reg 使用 startup_stm32f103xb.s）
 # 用法: ./scripts/fetch-cmsis.sh [--verify-only]
 # 首次 clone 本仓库请用: git clone --recursive
@@ -14,13 +14,17 @@ source "$ROOT/scripts/lib/common.sh"
 
 CMSIS_CORE_DIR="$ROOT/vendor-pack/cmsis-core"
 CMSIS_DEVICE_F1_DIR="$ROOT/vendor-pack/cmsis-device-f1"
+HAL_DRIVER_DIR="$ROOT/vendor-pack/stm32f1xx-hal-driver"
 CMSIS_CORE_BRANCH="cm3"
 CMSIS_CORE_TAG="v5.6.0_cm3"
 CMSIS_DEVICE_F1_TAG="v4.3.5"
+HAL_DRIVER_TAG="v1.1.8"
 REL_CORE_HEADER="Include/core_cm3.h"
 REL_DEVICE_HEADER="Include/stm32f103xb.h"
 REL_STARTUP="Source/Templates/gcc/startup_stm32f103xb.s"
 REL_SYSTEM="Source/Templates/system_stm32f1xx.c"
+REL_HAL_HEADER="Inc/stm32f1xx_hal.h"
+REL_HAL_GPIO_SRC="Src/stm32f1xx_hal_gpio.c"
 
 VERIFY_ONLY=false
 
@@ -28,18 +32,25 @@ usage() {
   cat <<EOF
 Usage: ./scripts/fetch-cmsis.sh [options]
 
-Initialize or update ST CMSIS git submodules for STM32F103C8T6 (Cortex-M3):
-  vendor-pack/cmsis-core/        branch ${CMSIS_CORE_BRANCH} (${CMSIS_CORE_TAG})
-  vendor-pack/cmsis-device-f1/   tag ${CMSIS_DEVICE_F1_TAG}
+Initialize or update ST CMSIS + HAL F1 git submodules for STM32F103C8T6 (Cortex-M3):
+  vendor-pack/cmsis-core/           branch ${CMSIS_CORE_BRANCH} (${CMSIS_CORE_TAG})
+  vendor-pack/cmsis-device-f1/      tag ${CMSIS_DEVICE_F1_TAG}
+  vendor-pack/stm32f1xx-hal-driver/ tag ${HAL_DRIVER_TAG}
 
 Options:
-  --verify-only    Check key CMSIS paths exist (no fetch)
+  --verify-only    Check key CMSIS/HAL paths exist (no fetch)
   -h, --help       Show this help
 
 First-time clone:
   git clone --recursive <repo-url>
   # or after plain clone:
   ./scripts/fetch-cmsis.sh
+
+Existing clone migration (new HAL submodule):
+  git pull
+  git submodule update --init vendor-pack/stm32f1xx-hal-driver
+  ./scripts/fetch-cmsis.sh
+  ./scripts/fetch-f103-cmsis-hal-deps.sh   # refresh third_party
 EOF
 }
 
@@ -77,9 +88,18 @@ verify_device_f1() {
   log_ok "CMSIS-Device F1 OK: $CMSIS_DEVICE_F1_DIR/$REL_STARTUP"
 }
 
+verify_hal_driver() {
+  [[ -f "$HAL_DRIVER_DIR/$REL_HAL_HEADER" ]] \
+    || die "Missing HAL header: $HAL_DRIVER_DIR/$REL_HAL_HEADER (run ./scripts/fetch-cmsis.sh)"
+  [[ -f "$HAL_DRIVER_DIR/$REL_HAL_GPIO_SRC" ]] \
+    || die "Missing HAL source: $HAL_DRIVER_DIR/$REL_HAL_GPIO_SRC (run ./scripts/fetch-cmsis.sh)"
+  log_ok "HAL Driver F1 OK: $HAL_DRIVER_DIR/$REL_HAL_HEADER"
+}
+
 verify_layout() {
   verify_core
   verify_device_f1
+  verify_hal_driver
 }
 
 checkout_core() {
@@ -109,9 +129,20 @@ checkout_device_f1() {
   fi
 }
 
+checkout_hal_driver() {
+  [[ -d "$HAL_DRIVER_DIR/.git" ]] || return 0
+  local current_tag
+  current_tag="$(git -C "$HAL_DRIVER_DIR" describe --tags --exact-match 2>/dev/null || true)"
+  if [[ "$current_tag" != "$HAL_DRIVER_TAG" ]]; then
+    log_info "Checking out stm32f1xx-hal-driver tag ${HAL_DRIVER_TAG} ..."
+    git -C "$HAL_DRIVER_DIR" fetch --tags origin
+    git -C "$HAL_DRIVER_DIR" checkout "$HAL_DRIVER_TAG"
+  fi
+}
+
 if $VERIFY_ONLY; then
   verify_layout
-  log_ok "CMSIS submodules verification passed"
+  log_ok "CMSIS + HAL submodules verification passed"
   exit 0
 fi
 
@@ -124,14 +155,18 @@ grep -q 'vendor-pack/cmsis-core' "$ROOT/.gitmodules" \
   || die "Submodule vendor-pack/cmsis-core not configured"
 grep -q 'vendor-pack/cmsis-device-f1' "$ROOT/.gitmodules" \
   || die "Submodule vendor-pack/cmsis-device-f1 not configured"
+grep -q 'vendor-pack/stm32f1xx-hal-driver' "$ROOT/.gitmodules" \
+  || die "Submodule vendor-pack/stm32f1xx-hal-driver not configured"
 
-log_info "Initializing CMSIS submodules ..."
+log_info "Initializing CMSIS + HAL submodules ..."
 git -C "$ROOT" submodule update --init --recursive \
   vendor-pack/cmsis-core \
-  vendor-pack/cmsis-device-f1
+  vendor-pack/cmsis-device-f1 \
+  vendor-pack/stm32f1xx-hal-driver
 
 checkout_core
 checkout_device_f1 "$CMSIS_DEVICE_F1_DIR" "$CMSIS_DEVICE_F1_TAG"
+checkout_hal_driver
 
 verify_layout
-log_ok "CMSIS submodules ready (core ${CMSIS_CORE_BRANCH}/${CMSIS_CORE_TAG}, device-f1 ${CMSIS_DEVICE_F1_TAG})"
+log_ok "CMSIS + HAL submodules ready (core ${CMSIS_CORE_BRANCH}/${CMSIS_CORE_TAG}, device-f1 ${CMSIS_DEVICE_F1_TAG}, hal ${HAL_DRIVER_TAG})"

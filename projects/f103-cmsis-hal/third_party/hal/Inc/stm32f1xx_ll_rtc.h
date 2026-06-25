@@ -6,13 +6,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -289,7 +288,7 @@ __STATIC_INLINE void LL_RTC_SetAsynchPrescaler(RTC_TypeDef *RTCx, uint32_t Async
   */
 __STATIC_INLINE uint32_t LL_RTC_GetDivider(RTC_TypeDef *RTCx)
 {
-  register uint16_t Highprescaler = 0, Lowprescaler = 0;
+  uint16_t Highprescaler = 0, Lowprescaler = 0;
   Highprescaler = READ_REG(RTCx->DIVH & RTC_DIVH_RTC_DIV);
   Lowprescaler  = READ_REG(RTCx->DIVL & RTC_DIVL_RTC_DIV);
 
@@ -388,7 +387,7 @@ __STATIC_INLINE void LL_RTC_TIME_Set(RTC_TypeDef *RTCx, uint32_t TimeCounter)
   */
 __STATIC_INLINE uint32_t LL_RTC_TIME_Get(RTC_TypeDef *RTCx)
 {
-  register uint16_t high = 0, low = 0;
+  uint16_t high = 0, low = 0;
 
   high = READ_REG(RTCx->CNTH & RTC_CNTH_RTC_CNT);
   low  = READ_REG(RTCx->CNTL & RTC_CNTL_RTC_CNT);
@@ -430,7 +429,7 @@ __STATIC_INLINE void LL_RTC_ALARM_Set(RTC_TypeDef *RTCx, uint32_t AlarmCounter)
   */
 __STATIC_INLINE uint32_t LL_RTC_ALARM_Get(RTC_TypeDef *RTCx)
 {
-  register uint16_t high = 0, low = 0;
+  uint16_t high = 0, low = 0;
 
   high  = READ_REG(RTCx->ALRH & RTC_ALRH_RTC_ALR);
   low   = READ_REG(RTCx->ALRL & RTC_ALRL_RTC_ALR);
@@ -551,7 +550,7 @@ __STATIC_INLINE uint32_t LL_RTC_TAMPER_GetActiveLevel(BKP_TypeDef *BKPx)
   */
 __STATIC_INLINE void LL_RTC_BKP_SetRegister(BKP_TypeDef *BKPx, uint32_t BackupRegister, uint32_t Data)
 {
-  register uint32_t tmp = 0U;
+  uint32_t tmp = 0U;
 
   tmp = (uint32_t)BKP_BASE;
   tmp += (BackupRegister * 4U);
@@ -611,7 +610,7 @@ __STATIC_INLINE void LL_RTC_BKP_SetRegister(BKP_TypeDef *BKPx, uint32_t BackupRe
   */
 __STATIC_INLINE uint32_t LL_RTC_BKP_GetRegister(BKP_TypeDef *BKPx, uint32_t BackupRegister)
 {
-  register uint32_t tmp = 0U;
+  uint32_t tmp = 0U;
 
   tmp = (uint32_t)BKP_BASE;
   tmp += (BackupRegister * 4U);
@@ -999,5 +998,3 @@ ErrorStatus LL_RTC_ALARM_SetCounter(RTC_TypeDef *RTCx, uint32_t AlarmCounter);
 #endif
 
 #endif /* __STM32F1xx_LL_RTC_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

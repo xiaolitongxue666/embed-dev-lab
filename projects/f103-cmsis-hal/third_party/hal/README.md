@@ -1,10 +1,10 @@
 # hal — STM32F1 HAL Driver（最小子集）
 
-> **注意**：本目录 **不是** 完整 HAL 驱动仓库。完整 HAL 在 `.tools/stm32f1xx-hal-driver-ref`（`v1.1.8`）。fetch 策略：**Inc 全拷**（`stm32f1xx_hal*.h` / `ll*.h` / `Legacy/`），**Src 仅拷本 demo 需要的 8 个 .c** 并由 CMake 链入固件；其余模块仅有头文件、无 `.c`，不占 Flash。
+> **注意**：本目录 **不是** 完整 HAL 驱动仓库。完整 HAL 在 `vendor-pack/stm32f1xx-hal-driver`（**git submodule**，`v1.1.8`）。fetch 策略：**Inc 全拷**（`stm32f1xx_hal*.h` / `ll*.h` / `Legacy/`），**Src 仅拷本 demo 需要的 8 个 .c** 并由 CMake 链入固件；其余模块仅有头文件、无 `.c`，不占 Flash。
 
 ## 拷贝策略
 
-`fetch-f103-cmsis-hal-deps.sh` 从 `stm32f1xx-hal-driver@v1.1.8` ref：
+`fetch-f103-cmsis-hal-deps.sh` 从 `vendor-pack/stm32f1xx-hal-driver` submodule：
 
 - **`Inc/`**：拷贝全部 `stm32f1xx_hal*.h` 与 `stm32f1xx_ll*.h`（及 `Legacy/`），避免缺依赖头。
 - **`Src/`**：仅拷贝本 demo **链接** 的 8 个 `.c`（见根 [`README.md`](../README.md)）。
@@ -41,7 +41,7 @@ stm32f1xx_hal_msp.c (src/)      ← MSP 回调（本 demo 空实现）
 ## 来源
 
 ```bash
-.tools/stm32f1xx-hal-driver-ref/   # clone --branch v1.1.8
+vendor-pack/stm32f1xx-hal-driver/   # git submodule @ v1.1.8
 ```
 
-首次 fetch 会自动 clone；后续 `git fetch --tags` 更新 ref。
+须先运行 `./scripts/fetch-cmsis.sh` 初始化 submodule。

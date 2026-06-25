@@ -43,7 +43,7 @@ projects/f103-cmsis-hal/
 
 ### third_party 是否为完整 CMSIS/HAL？
 
-**不是。** `third_party/` 仅含 PC13 闪烁 demo 所需的最小子集；完整 CMSIS 在 `vendor-pack/`，完整 HAL 在 `.tools/stm32f1xx-hal-driver-ref`。
+**不是。** `third_party/` 仅含 PC13 闪烁 demo 所需的最小子集；完整 CMSIS 与 HAL 在 `vendor-pack/`（`cmsis-core`、`cmsis-device-f1`、`stm32f1xx-hal-driver` submodule）。
 
 | 组件 | 拷贝范围 | 说明 |
 |------|----------|------|

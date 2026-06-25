@@ -33,13 +33,26 @@ projects/f103-cmsis-hal/
 
 ## 依赖获取
 
-首次构建前须拷贝最小 CMSIS/HAL 子集（参考源为 `vendor-pack` submodule + `stm32f1xx-hal-driver@v1.1.8`）：
+首次构建前须拷贝 **按需裁剪** 的最小 CMSIS/HAL 子集（**非**完整 ST 软件包；参考源为 `vendor-pack` submodule + `stm32f1xx-hal-driver@v1.1.8`）：
 
 ```bash
 ./scripts/fetch-cmsis.sh
 ./scripts/fetch-f103-cmsis-hal-deps.sh
 ./scripts/fetch-f103-cmsis-hal-deps.sh --verify-only
 ```
+
+### third_party 是否为完整 CMSIS/HAL？
+
+**不是。** `third_party/` 仅含 PC13 闪烁 demo 所需的最小子集；完整 CMSIS 在 `vendor-pack/`，完整 HAL 在 `.tools/stm32f1xx-hal-driver-ref`。
+
+| 组件 | 拷贝范围 | 说明 |
+|------|----------|------|
+| CMSIS | **7 个头文件** → `third_party/cmsis/Include/` | 最小 Core+Device 头 |
+| CMSIS 模板 | `startup/`、`linker/`、`src/system_stm32f1xx.c` | 不在 `third_party/` 内 |
+| HAL Inc | **全部** `hal*.h` / `ll*.h` | 仅 `#include` 依赖；无 `.c` 的不占 Flash |
+| HAL Src | **8 个 .c** | CMake 链入固件 |
+
+带注释的完整目录树与逐文件说明见工程 [`README.md`](../../projects/f103-cmsis-hal/README.md)；third_party 细则见 [`third_party/README.md`](../../projects/f103-cmsis-hal/third_party/README.md)。
 
 ## 构建与烧录
 
@@ -103,6 +116,7 @@ probe-rs chip：**`STM32F103C8Tx`**
 | 链接 `assert_param` / `_init` | 确认 `stm32f1xx_hal_conf.h` 含 `assert_param`；startup 已跳过 `__libc_init_array` |
 | 烧录成功但 LED 不闪 | PWR+DBP；先 `build` 再 `flash` |
 | fetch 后 startup/linker 注释变英文 | 重新 `./scripts/fetch-f103-cmsis-hal-deps.sh`（含中文注释补丁） |
+| `third_party` 是完整 CMSIS/HAL 吗？ | **否**，按需最小子集；完整包在 `vendor-pack/` 与 `.tools/`；见工程 `README.md` §third_party |
 
 ## 调试
 

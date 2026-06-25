@@ -1,7 +1,36 @@
 # third_party — f103-cmsis-hal 依赖说明
 
-本目录存放 **vendored** 最小 CMSIS + HAL 子集，供 PC13 闪烁 demo 编译链接。  
-**不由 git  submodule 管理**；由 `./scripts/fetch-f103-cmsis-hal-deps.sh` 从 `vendor-pack` 与 HAL ref 拷贝。
+本目录存放 **vendored 最小 CMSIS + HAL 子集**，供 PC13 闪烁 demo 编译链接。  
+**不是** ST 官方完整 CMSIS/HAL 软件包；**不由 git submodule 管理**；由 `./scripts/fetch-f103-cmsis-hal-deps.sh` 从 `vendor-pack` 与 HAL ref **按需裁剪**拷贝。
+
+## 是否为完整 CMSIS/HAL？
+
+**否 — 只 copy 了本 demo 需要的部分。** 完整上游在：
+
+| 参考源 | 路径 | 说明 |
+|--------|------|------|
+| CMSIS-Core | `vendor-pack/cmsis-core` | 完整 submodule（`cm3` / `v5.6.0_cm3`） |
+| CMSIS-Device F1 | `vendor-pack/cmsis-device-f1` | 完整 submodule（`v4.3.5`） |
+| HAL Driver F1 | `.tools/stm32f1xx-hal-driver-ref` | 完整 HAL 仓库 clone（`v1.1.8`） |
+
+### fetch 裁剪策略（`scripts/fetch-f103-cmsis-hal-deps.sh`）
+
+| 目标 | 拷贝内容 | 是否链入 `.elf` |
+|------|----------|-----------------|
+| `third_party/cmsis/Include/` | **7 个头文件**（见 [`cmsis/README.md`](cmsis/README.md)） | 否（编译期 `#include`） |
+| `startup/` · `linker/` · `src/system_stm32f1xx.c` | CMSIS GCC 模板（**不在 third_party 内**） | startup/system 是 |
+| `third_party/hal/Inc/` | **全部** `stm32f1xx_hal*.h`、`stm32f1xx_ll*.h`、`Legacy/*.h` | 否（仅声明；避免缺头文件） |
+| `third_party/hal/Src/` | **仅 8 个 .c**（GPIO/RCC/PWR/Flash/Cortex 等） | **是** |
+
+```text
+vendor-pack/ + .tools/stm32f1xx-hal-driver-ref
+        ↓ fetch 按需裁剪（非整包复制）
+third_party/  +  startup/ + linker/ + src/system_stm32f1xx.c
+        ↓ CMake：8 个 HAL .c + 工程 src/startup
+f103-cmsis-hal.elf
+```
+
+**结论**：`third_party` 是工程内 **最小 vendored 依赖** — CMSIS 只留 7 个必需头；HAL **头全拷、实现只拷 8 个 .c**。扩展外设（如 UART）时须在 fetch 脚本的 `HAL_SRC_FILES` 与 `CMakeLists.txt` 中追加对应 `.c`。
 
 ## 目录结构
 

@@ -1,5 +1,7 @@
 # cmsis — CMSIS-Core / CMSIS-Device 头文件
 
+> **注意**：本目录 **不是** 完整 CMSIS 软件包。`fetch-f103-cmsis-hal-deps.sh` 仅从 `vendor-pack` **按需拷贝 7 个头文件**；完整 CMSIS 仍在 `vendor-pack/cmsis-core` 与 `vendor-pack/cmsis-device-f1`。startup / linker / `system_stm32f1xx.c` 模板拷贝到工程根目录，不在 `third_party/cmsis/` 内。
+
 ## 拷贝清单（`fetch-f103-cmsis-hal-deps.sh`）
 
 | 文件 | 层级 | 本 demo 作用 |

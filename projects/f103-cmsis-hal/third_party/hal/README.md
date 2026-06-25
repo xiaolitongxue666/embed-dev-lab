@@ -1,5 +1,7 @@
 # hal — STM32F1 HAL Driver（最小子集）
 
+> **注意**：本目录 **不是** 完整 HAL 驱动仓库。完整 HAL 在 `.tools/stm32f1xx-hal-driver-ref`（`v1.1.8`）。fetch 策略：**Inc 全拷**（`stm32f1xx_hal*.h` / `ll*.h` / `Legacy/`），**Src 仅拷本 demo 需要的 8 个 .c** 并由 CMake 链入固件；其余模块仅有头文件、无 `.c`，不占 Flash。
+
 ## 拷贝策略
 
 `fetch-f103-cmsis-hal-deps.sh` 从 `stm32f1xx-hal-driver@v1.1.8` ref：

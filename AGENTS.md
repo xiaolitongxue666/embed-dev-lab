@@ -9,5 +9,5 @@
 - PC13 属于 Backup 域：配置前须 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`（manual-reg）或 HAL `HAL_PWR_EnableBkUpAccess()`（cmsis-hal）
 - 禁止未经确认的全片 Flash 擦除
 - CMSIS submodule：`cmsis-core`（`cm3`/`v5.6.0_cm3`）+ `cmsis-device-f1`（`v4.3.5`）；`./scripts/fetch-cmsis.sh`
-- 应用文档：`doc/projects/`（源码在 `projects/`）
+- 注释：`src/`、`startup/`、`linker/` 中文；`third_party/**` vendor 英文；fetch 后自动恢复模板中文注释
 - 详见 `skills/embed-dev-lab/SKILL.md` 与 `doc/probe-rs.md`

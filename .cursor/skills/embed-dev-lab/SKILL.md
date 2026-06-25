@@ -76,7 +76,9 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 
 ## 注释与语言
 
-- **源码注释**：中文  
+- **源码注释**：`f103-manual-reg` 与 `f103-cmsis-hal` 的工程维护文件（`src/`、`startup/`、`linker/`）中文；`third_party/**` 保持 vendor 英文  
+- **仅改注释**：翻译/注释任务不得改动代码逻辑  
+- **fetch 后恢复**：`fetch-f103-cmsis-hal-deps.sh` 拷贝 CMSIS 模板后会调用 `apply-f103-cmsis-hal-comments.sh` 恢复中文注释  
 - **终端 / CLI / 日志**：英文  
 
 ## 代理

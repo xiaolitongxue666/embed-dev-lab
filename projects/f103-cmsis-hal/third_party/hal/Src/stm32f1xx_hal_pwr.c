@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：电源与 Backup 域；main.c HAL_PWR_EnableBkUpAccess（PC13 前置）
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx_hal_pwr.c
   * @author  MCD Application Team

@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：F1 系列设备入口；CMake 定义 USE_HAL_DRIVER、STM32F103xB
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx.h
   * @author  MCD Application Team

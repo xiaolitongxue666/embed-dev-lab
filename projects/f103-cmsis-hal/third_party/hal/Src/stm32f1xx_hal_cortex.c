@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：NVIC/SysTick 配置；HAL_InitTick 内部调用
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx_hal_cortex.c
   * @author  MCD Application Team

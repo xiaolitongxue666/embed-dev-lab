@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：F103xB 寄存器映射（RCC/GPIO/PWR 等）；HAL 底层读写
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f103xb.h
   * @author  MCD Application Team

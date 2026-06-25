@@ -1,3 +1,8 @@
+/**
+ * @note    embed-dev-lab third_party：CMSIS 编译器抽象入口
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
 /**************************************************************************//**
  * @file     cmsis_compiler.h
  * @brief    CMSIS compiler generic header file

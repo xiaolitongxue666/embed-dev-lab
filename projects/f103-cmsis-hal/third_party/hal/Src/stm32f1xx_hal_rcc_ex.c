@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：F103 PLL 扩展；配合 HAL_RCC_OscConfig
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx_hal_rcc_ex.c
   * @author  MCD Application Team

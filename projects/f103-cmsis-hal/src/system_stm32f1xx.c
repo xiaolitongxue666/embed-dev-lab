@@ -1,4 +1,19 @@
 /**
+ * @file    system_stm32f1xx.c
+ * @brief   CMSIS SystemInit 模板（复位后由 startup 调用）
+ * @target  STM32F103C8T6
+ *
+ * @note    embed-dev-lab 分工说明：
+ *          - startup Reset_Handler 在 main 之前调用 SystemInit()
+ *          - 本 demo **不在** SystemInit 中配置 PLL；72 MHz 在 main.c SystemClock_Config()（HAL）完成
+ *          - SystemCoreClock 变量由 HAL_RCC_ClockConfig 自动更新，也可调用 SystemCoreClockUpdate()
+ *          下方 ST 原文 Doxygen 与 Copyright 保留；仅翻译与本 demo 相关的 inline 注释。
+ *
+ * @see     src/main.c — SystemClock_Config()
+ * @see     startup/startup_stm32f103xb.s — bl SystemInit
+ */
+
+/**
   ******************************************************************************
   * @file    system_stm32f1xx.c
   * @author  MCD Application Team
@@ -88,8 +103,7 @@
 /* #define DATA_IN_ExtSRAM */
 #endif /* STM32F100xE || STM32F101xE || STM32F101xG || STM32F103xE || STM32F103xG */
 
-/* Note: Following vector table addresses must be defined in line with linker
-         configuration. */
+/* 向量表地址须与链接脚本一致（本 demo 未启用 USER_VECT_TAB_ADDRESS） */
 /*!< Uncomment the following line if you need to relocate the vector table
      anywhere in Flash or Sram, else the vector table is kept at the automatic
      remap of boot address selected */
@@ -130,13 +144,11 @@
   * @{
   */
 
-  /* This variable is updated in three ways:
-      1) by calling CMSIS function SystemCoreClockUpdate()
-      2) by calling HAL API function HAL_RCC_GetHCLKFreq()
-      3) each time HAL_RCC_ClockConfig() is called to configure the system clock frequency 
-         Note: If you use this function to configure the system clock; then there
-               is no need to call the 2 first functions listed above, since SystemCoreClock
-               variable is updated automatically.
+  /* 本 demo 由 HAL 更新 SystemCoreClock；也可调用 SystemCoreClockUpdate() 或 HAL_RCC_GetHCLKFreq() */
+  /* 更新方式：
+      1) 调用 CMSIS SystemCoreClockUpdate()
+      2) 调用 HAL API HAL_RCC_GetHCLKFreq()
+      3) 每次 HAL_RCC_ClockConfig() 后自动更新（本 demo 采用）
   */
 uint32_t SystemCoreClock = 8000000;
 const uint8_t AHBPrescTable[16U] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
@@ -165,12 +177,8 @@ const uint8_t APBPrescTable[8U] =  {0, 0, 0, 0, 1, 2, 3, 4};
   */
 
 /**
-  * @brief  Setup the microcontroller system
-  *         Initialize the Embedded Flash Interface, the PLL and update the 
-  *         SystemCoreClock variable.
-  * @note   This function should be used only after reset.
-  * @param  None
-  * @retval None
+  * @brief  复位后系统默认化（本 demo 不在此配置 PLL 时钟）
+  * @note   72 MHz 时钟见 main.c SystemClock_Config()
   */
 void SystemInit (void)
 {
@@ -180,46 +188,15 @@ void SystemInit (void)
   #endif /* DATA_IN_ExtSRAM */
 #endif 
 
-  /* Configure the Vector Table location -------------------------------------*/
+  /* 向量表重定位（本 demo 未启用 USER_VECT_TAB_ADDRESS） */
 #if defined(USER_VECT_TAB_ADDRESS)
-  SCB->VTOR = VECT_TAB_BASE_ADDRESS | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM. */
+  SCB->VTOR = VECT_TAB_BASE_ADDRESS | VECT_TAB_OFFSET;
 #endif /* USER_VECT_TAB_ADDRESS */
 }
 
 /**
-  * @brief  Update SystemCoreClock variable according to Clock Register Values.
-  *         The SystemCoreClock variable contains the core clock (HCLK), it can
-  *         be used by the user application to setup the SysTick timer or configure
-  *         other parameters.
-  *           
-  * @note   Each time the core clock (HCLK) changes, this function must be called
-  *         to update SystemCoreClock variable value. Otherwise, any configuration
-  *         based on this variable will be incorrect.         
-  *     
-  * @note   - The system frequency computed by this function is not the real 
-  *           frequency in the chip. It is calculated based on the predefined 
-  *           constant and the selected clock source:
-  *             
-  *           - If SYSCLK source is HSI, SystemCoreClock will contain the HSI_VALUE(*)
-  *                                              
-  *           - If SYSCLK source is HSE, SystemCoreClock will contain the HSE_VALUE(**)
-  *                          
-  *           - If SYSCLK source is PLL, SystemCoreClock will contain the HSE_VALUE(**) 
-  *             or HSI_VALUE(*) multiplied by the PLL factors.
-  *         
-  *         (*) HSI_VALUE is a constant defined in stm32f1xx.h file (default value
-  *             8 MHz) but the real value may vary depending on the variations
-  *             in voltage and temperature.   
-  *    
-  *         (**) HSE_VALUE is a constant defined in stm32f1xx.h file (default value
-  *              8 MHz or 25 MHz, depending on the product used), user has to ensure
-  *              that HSE_VALUE is same as the real frequency of the crystal used.
-  *              Otherwise, this function may have wrong result.
-  *                
-  *         - The result of this function could be not correct when using fractional
-  *           value for HSE crystal.
-  * @param  None
-  * @retval None
+  * @brief  根据 RCC 寄存器更新 SystemCoreClock（HCLK）
+  * @note   本 demo 主要依赖 HAL_RCC_ClockConfig 自动维护；读寄存器推算频率见 ST 原文注释
   */
 void SystemCoreClockUpdate (void)
 {
@@ -233,20 +210,20 @@ void SystemCoreClockUpdate (void)
   uint32_t prediv1factor = 0U;
 #endif /* STM32F100xB or STM32F100xE */
     
-  /* Get SYSCLK source -------------------------------------------------------*/
+  /* 读取 SYSCLK 来源 -------------------------------------------------------*/
   tmp = RCC->CFGR & RCC_CFGR_SWS;
   
   switch (tmp)
   {
-    case 0x00U:  /* HSI used as system clock */
+    case 0x00U:  /* HSI 作为系统时钟 */
       SystemCoreClock = HSI_VALUE;
       break;
-    case 0x04U:  /* HSE used as system clock */
+    case 0x04U:  /* HSE 作为系统时钟 */
       SystemCoreClock = HSE_VALUE;
       break;
-    case 0x08U:  /* PLL used as system clock */
+    case 0x08U:  /* PLL 作为系统时钟 */
 
-      /* Get PLL clock source and multiplication factor ----------------------*/
+      /* 读取 PLL 时钟源与倍频系数 */
       pllmull = RCC->CFGR & RCC_CFGR_PLLMULL;
       pllsource = RCC->CFGR & RCC_CFGR_PLLSRC;
       
@@ -255,19 +232,19 @@ void SystemCoreClockUpdate (void)
       
       if (pllsource == 0x00U)
       {
-        /* HSI oscillator clock divided by 2 selected as PLL clock entry */
+        /* HSI/2 作为 PLL 输入 */
         SystemCoreClock = (HSI_VALUE >> 1U) * pllmull;
       }
       else
       {
  #if defined(STM32F100xB) || defined(STM32F100xE)
        prediv1factor = (RCC->CFGR2 & RCC_CFGR2_PREDIV1) + 1U;
-       /* HSE oscillator clock selected as PREDIV1 clock entry */
+       /* HSE 作为 PREDIV1 输入 */
        SystemCoreClock = (HSE_VALUE / prediv1factor) * pllmull; 
  #else
-        /* HSE selected as PLL clock entry */
+        /* HSE 作为 PLL 输入 */
         if ((RCC->CFGR & RCC_CFGR_PLLXTPRE) != (uint32_t)RESET)
-        {/* HSE oscillator clock divided by 2 */
+        {/* HSE 二分频 */
           SystemCoreClock = (HSE_VALUE >> 1U) * pllmull;
         }
         else
@@ -284,31 +261,31 @@ void SystemCoreClockUpdate (void)
          pllmull += 2U;
       }
       else
-      { /* PLL multiplication factor = PLL input clock * 6.5 */
+      { /* PLL 倍频系数 = 输入时钟 × 6.5 */
         pllmull = 13U / 2U; 
       }
             
       if (pllsource == 0x00U)
       {
-        /* HSI oscillator clock divided by 2 selected as PLL clock entry */
+        /* HSI/2 作为 PLL 输入 */
         SystemCoreClock = (HSI_VALUE >> 1U) * pllmull;
       }
       else
-      {/* PREDIV1 selected as PLL clock entry */
+      {/* PREDIV1 作为 PLL 输入 */
         
-        /* Get PREDIV1 clock source and division factor */
+        /* 读取 PREDIV1 时钟源与分频 */
         prediv1source = RCC->CFGR2 & RCC_CFGR2_PREDIV1SRC;
         prediv1factor = (RCC->CFGR2 & RCC_CFGR2_PREDIV1) + 1U;
         
         if (prediv1source == 0U)
         { 
-          /* HSE oscillator clock selected as PREDIV1 clock entry */
+          /* HSE 作为 PREDIV1 输入 */
           SystemCoreClock = (HSE_VALUE / prediv1factor) * pllmull;          
         }
         else
-        {/* PLL2 clock selected as PREDIV1 clock entry */
+        {/* PLL2 作为 PREDIV1 输入 */
           
-          /* Get PREDIV2 division factor and PLL2 multiplication factor */
+          /* 读取 PREDIV2 分频与 PLL2 倍频 */
           prediv2factor = ((RCC->CFGR2 & RCC_CFGR2_PREDIV2) >> 4U) + 1U;
           pll2mull = ((RCC->CFGR2 & RCC_CFGR2_PLL2MUL) >> 8U) + 2U; 
           SystemCoreClock = (((HSE_VALUE / prediv2factor) * pll2mull) / prediv1factor) * pllmull;                         
@@ -322,11 +299,11 @@ void SystemCoreClockUpdate (void)
       break;
   }
   
-  /* Compute HCLK clock frequency ----------------*/
-  /* Get HCLK prescaler */
+  /* 计算 HCLK 频率 */
+  /* 读取 AHB 预分频 */
   tmp = AHBPrescTable[((RCC->CFGR & RCC_CFGR_HPRE) >> 4U)];
-  /* HCLK clock frequency */
-  SystemCoreClock >>= tmp;  
+  /* HCLK = SYSCLK / 预分频 */
+  SystemCoreClock >>= tmp;
 }
 
 #if defined(STM32F100xE) || defined(STM32F101xE) || defined(STM32F101xG) || defined(STM32F103xE) || defined(STM32F103xG)

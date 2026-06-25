@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：Flash 等待周期；ClockConfig 时 FLASH_LATENCY_2
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx_hal_flash.c
   * @author  MCD Application Team

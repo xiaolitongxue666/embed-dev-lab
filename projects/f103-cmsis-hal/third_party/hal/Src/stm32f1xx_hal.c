@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：HAL_Init、SysTick、HAL_IncTick；main 与 stm32f1xx_it.c 使用
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx_hal.c
   * @author  MCD Application Team

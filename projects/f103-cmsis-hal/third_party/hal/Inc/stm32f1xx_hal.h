@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：HAL 主头；由 src/stm32f1xx_hal_conf.h 裁剪包含模块
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx_hal.h
   * @author  MCD Application Team

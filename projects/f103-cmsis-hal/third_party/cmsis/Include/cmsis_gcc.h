@@ -1,3 +1,8 @@
+/**
+ * @note    embed-dev-lab third_party：GCC/Arm Compiler intrinsic 与 barrier
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
 /**************************************************************************//**
  * @file     cmsis_gcc.h
  * @brief    CMSIS compiler GCC header file

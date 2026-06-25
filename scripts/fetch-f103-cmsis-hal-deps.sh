@@ -12,6 +12,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=lib/proxy.sh
 source "$ROOT/scripts/lib/proxy.sh"
+# shellcheck source=lib/apply-f103-cmsis-hal-comments.sh
+source "$ROOT/scripts/lib/apply-f103-cmsis-hal-comments.sh"
 
 PROJECT_DIR="$ROOT/projects/f103-cmsis-hal"
 CMSIS_CORE_DIR="$ROOT/vendor-pack/cmsis-core"
@@ -138,6 +140,7 @@ copy_templates() {
     "$CMSIS_DEVICE_DIR/Source/Templates/gcc/linker/STM32F103XB_FLASH.ld" \
     "$PROJECT_DIR/linker/STM32F103XB_FLASH.ld"
   patch_linker_for_c8
+  apply_f103_cmsis_hal_comments "$ROOT"
   log_ok "Templates copied (startup, system, linker)"
 }
 

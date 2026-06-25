@@ -1,3 +1,8 @@
+/**
+ * @note    embed-dev-lab third_party：Cortex-M3 内核（NVIC/SysTick）；startup 与 HAL 共用
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
 /**************************************************************************//**
  * @file     core_cm3.h
  * @brief    CMSIS Cortex-M3 Core Peripheral Access Layer Header File

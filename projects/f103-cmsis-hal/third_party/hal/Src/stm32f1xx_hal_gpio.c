@@ -1,4 +1,9 @@
 /**
+ * @note    embed-dev-lab third_party：GPIO 初始化与写引脚；main.c MX_GPIO_Init / WritePin
+ *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
+ */
+
+/**
   ******************************************************************************
   * @file    stm32f1xx_hal_gpio.c
   * @author  MCD Application Team

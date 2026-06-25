@@ -83,6 +83,18 @@ probe-rs chip：**`STM32F103C8Tx`**
 
 详见 [ST F1 软件仓库归纳](../learn/stm32-cmsis-component-repos.md) §3.1。
 
+## 注释与语言
+
+| 范围 | 语言 | 说明 |
+|------|------|------|
+| `src/`、`startup/`、`linker/` | 中文 | 工程维护源码；**仅改注释，不改代码** |
+| `third_party/**` ST 正文 | 英文（vendor） | fetch 自 ST/CMSIS；不逐行翻译 |
+| `third_party/**` 顶部的 embed-dev-lab 块 | 中文 | 说明该文件在本 demo 中的角色；fetch 后 apply 恢复 |
+| `third_party/README.md` 等 | 中文 | 目录级说明，fetch 不覆盖 |
+| 终端 / CLI / 日志 | 英文 | build.sh、probe-rs 等输出 |
+
+`fetch-f103-cmsis-hal-deps.sh` 拷贝模板后会调用 `scripts/lib/apply-f103-cmsis-hal-comments.sh` 恢复 startup/linker/system 中文注释及 third_party 说明头。详见 [`third_party/README.md`](../../projects/f103-cmsis-hal/third_party/README.md)。
+
 ## 排错速查
 
 | 现象 | 优先检查 |
@@ -90,6 +102,7 @@ probe-rs chip：**`STM32F103C8Tx`**
 | configure/build 缺头文件 | 运行 `fetch-f103-cmsis-hal-deps.sh` |
 | 链接 `assert_param` / `_init` | 确认 `stm32f1xx_hal_conf.h` 含 `assert_param`；startup 已跳过 `__libc_init_array` |
 | 烧录成功但 LED 不闪 | PWR+DBP；先 `build` 再 `flash` |
+| fetch 后 startup/linker 注释变英文 | 重新 `./scripts/fetch-f103-cmsis-hal-deps.sh`（含中文注释补丁） |
 
 ## 调试
 

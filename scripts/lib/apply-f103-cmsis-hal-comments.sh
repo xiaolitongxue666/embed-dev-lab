@@ -13,7 +13,12 @@ apply_f103_cmsis_hal_comments() {
 
   [[ -f "$startup" ]] || return 0
 
-  # startup：链接脚本符号注释
+  # startup：用 embed-dev-lab 带详细中文注释的模板覆盖 CMSIS 裸拷贝（fetch 后恢复）
+  local startup_tpl="$root/scripts/lib/templates/f103-cmsis-hal/startup_stm32f103xb.s"
+  if [[ -f "$startup_tpl" ]]; then
+    cp -f "$startup_tpl" "$startup"
+  else
+  # 无模板时回退：对 CMSIS 原文做 sed 注释补丁
   sed -i \
     -e 's|/\* start address for the initialization values of the .data section\.\ndefined in linker script \*/|/* .data 初值在 Flash 中的加载地址（LMA），由链接脚本定义 */|' \
     -e 's|/\* start address for the initialization values of the .data section\. defined in linker script \*/|/* .data 初值在 Flash 中的加载地址（LMA），由链接脚本定义 */|' \
@@ -57,6 +62,7 @@ apply_f103_cmsis_hal_comments() {
     sed -i '/\/\* Call the application'\''s entry point\.\*\//i\
 /* 裸机 nosys 无 C++ 全局构造，跳过 __libc_init_array */\
 /* bl __libc_init_array */' "$startup"
+  fi
   fi
 
   # linker 行尾注释 + embed-dev-lab @note

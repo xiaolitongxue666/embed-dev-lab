@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-25（f103-cmsis-hal 实现）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-25（f103-cmsis-hal 实机烧录 + IDE F5）
 
 ## 快速路径
 
@@ -36,7 +36,7 @@
 | ST-Link WinUSB (Windows) | `./scripts/install/stlink-winusb-windows.sh --check-only` |
 | 驱动包 | `vendor-pack/STLink/STLink/USBDriver/` |
 | 板级 PC13 参考例程 | `vendor-pack/.../核心板测试程序(PC13闪烁)/` |
-| probe-rs chip | `STM32F103C8Tx` |
+| IDE F5 调试 | `doc/ide-debug.md`；manual-reg / cmsis-hal 各一套 launch 配置 |
 
 ## 编号事实（≤25）
 
@@ -63,7 +63,7 @@
 21. **f103-manual-reg 注释**：源码中文；终端/CLI 输出保持英文。
 22. **`.gitignore`**：CubeF1 全包、核心板、PDF、`.tools/` 忽略；CMSIS submodules **不**忽略。
 23. **MCP/Skill**：`install-mcp-skills.sh` → `.cursor/mcp.json` + `skills/embed-dev-lab`；Codex 无 MCP。
-24. **实机验证**（2026-06-24/25）：`f103-manual-reg` / `f103-cmsis-hal` build 通过；manual-reg 已实机 PC13 闪烁。
+24. **实机验证**（2026-06-25）：`f103-manual-reg` / `f103-cmsis-hal` build+probe-rs flash 均通过；`./scripts/build-flash.sh f103-cmsis-hal` 一键编译烧录已验证。
 25. **Cursor 终端**：工作区 `.vscode/settings.json` 声明 `defaultProfile: Git Bash`。
 
 ## 问题 ↔ 解法
@@ -72,7 +72,8 @@
 |------|------|
 | 找不到工程文档 | `doc/projects/README.md`；源码 `projects/README.md` |
 | 从零手写 f103-manual-reg 写什么、顺序 | `doc/learn/f103-manual-build-from-scratch.md`；编译链接见 `f103-module-build-flow.md` |
-| `clean` 后 `build-flash` 失败（build 目录不存在） | `build-flash` 不 configure；用 `./scripts/build.sh f103-manual-reg`（configure+build）再 flash |
+| `clean` 后 `build-flash` 失败（build 目录不存在） | `build-flash` 不 configure；用 `./scripts/build.sh <module>`（configure+build）再 flash |
+| f103-cmsis-hal 一键编译烧录 | `./scripts/build-flash.sh f103-cmsis-hal`（须先 fetch deps；`clean` 后先 `build.sh f103-cmsis-hal`） |
 | `probe-rs list` 为空 | Windows：`stlink-winusb-windows.sh --install` 或 Zadig WinUSB |
 | 烧录成功但 PC13 不闪 | PWR+DBP；先 `build` 再 `flash`；`probe-rs reset` |
 | 程序卡死、无任何 IO | HSE 超时逻辑在 `system_stm32f1xx.c` 的 `SetSysClockTo72()` |

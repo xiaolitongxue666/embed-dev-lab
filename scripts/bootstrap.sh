@@ -46,7 +46,7 @@ Options:
   --with-mcp          Install embedded-debugger MCP + project Skill (requires Rust/cargo)
   --strict-extensions Fail bootstrap if required extensions missing (default: on; alias)
   --strict-env        env-check must pass extensions section too
-  --module <name>     Module to build (default: f103-manual-reg)
+  --module <name>     Module to build (default: f103-manual-reg; also: f103-cmsis-hal)
   --proxy <url>       HTTP proxy for downloads (default: http://127.0.0.1:7890)
   --no-proxy          Disable proxy even if default is set
   -h, --help          Show this help

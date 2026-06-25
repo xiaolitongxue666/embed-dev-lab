@@ -15,14 +15,21 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 ```bash
 ./scripts/build.sh f103-manual-reg build
 ./scripts/build.sh f103-manual-reg flash    # 不自动 compile，改代码后先 build
-./scripts/build-flash.sh               # 一键 build + flash；编译失败暂停
+./scripts/build.sh f103-cmsis-hal build     # 须先 fetch-f103-cmsis-hal-deps.sh
+./scripts/build.sh f103-cmsis-hal flash
+./scripts/build-flash.sh               # 一键 build + flash；默认 f103-manual-reg
+./scripts/build-flash.sh f103-cmsis-hal
 ```
+
+| 工程 | 实现 | 产物 |
+|------|------|------|
+| `f103-manual-reg` | 全手写寄存器，无 CMSIS/HAL | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| `f103-cmsis-hal` | CMSIS+HAL 最小子集；CMSIS 链接脚本 | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
 
 | 项 | 值 |
 |----|-----|
 | probe-rs chip | `STM32F103C8Tx` |
 | download 格式 | `--binary-format elf`（勿用废弃的 `--format`） |
-| 产物 | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
 
 一键环境：`./scripts/bootstrap.sh`（默认不含 MCP；加 `--with-mcp` 安装 embedded-debugger）。
 

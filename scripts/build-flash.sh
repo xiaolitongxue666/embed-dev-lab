@@ -29,6 +29,7 @@ On build failure, compiler errors are shown and the script pauses.
 Examples:
   ./scripts/build-flash.sh
   ./scripts/build-flash.sh f103-manual-reg
+  ./scripts/build-flash.sh f103-cmsis-hal
 EOF
 }
 

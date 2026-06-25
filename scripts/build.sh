@@ -60,6 +60,13 @@ CHIP="STM32F103C8Tx"
 
 [[ -d "$MODULE_DIR" ]] || die "Module not found: $MODULE_DIR"
 
+# f103-cmsis-hal: remind to fetch vendored deps before first configure
+if [[ "$MODULE" == "f103-cmsis-hal" ]] && [[ "$ACTION" == "configure" || "$ACTION" == "all" ]]; then
+  if [[ ! -f "$MODULE_DIR/third_party/hal/Inc/stm32f1xx_hal.h" ]]; then
+    die "Missing f103-cmsis-hal deps. Run: ./scripts/fetch-f103-cmsis-hal-deps.sh"
+  fi
+fi
+
 # CMake Presets 配置
 do_configure() {
   log_info "Configuring $MODULE..."

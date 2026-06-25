@@ -7,7 +7,7 @@
 | 工程 | 芯片 | 说明 | 文档 |
 |------|------|------|------|
 | [`f103-manual-reg/`](f103-manual-reg/) | STM32F103C8T6 | 全手写寄存器，不链接 CMSIS/HAL | [doc/projects/f103-manual-reg.md](../doc/projects/f103-manual-reg.md) |
-| [`f103-cmsis-hal/`](f103-cmsis-hal/) | STM32F103C8T6 | CMSIS + HAL 占位（未实现） | [doc/projects/f103-cmsis-hal.md](../doc/projects/f103-cmsis-hal.md) |
+| [`f103-cmsis-hal/`](f103-cmsis-hal/) | STM32F103C8T6 | CMSIS+HAL，CMake 框架同 manual-reg | [doc/projects/f103-cmsis-hal.md](../doc/projects/f103-cmsis-hal.md) |
 
 ## 构建
 

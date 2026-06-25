@@ -1,19 +1,20 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-24（linker VMA/LMA 文档）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-25（f103-cmsis-hal 实现）
 
 ## 快速路径
 
 | 用途 | 路径 / 命令 |
 |------|-------------|
 | 一键环境 + 编译 | `./scripts/bootstrap.sh` |
-| F103 一键编译+烧录 | `./scripts/build-flash.sh f103-manual-reg` |
-| F103 编译 | `./scripts/build.sh f103-manual-reg build` |
-| F103 烧录 | `./scripts/build.sh f103-manual-reg flash` |
+| F103 manual-reg 一键编译+烧录 | `./scripts/build-flash.sh f103-manual-reg` |
+| F103 cmsis-hal 一键编译+烧录 | `./scripts/build-flash.sh f103-cmsis-hal` |
+| F103 编译 | `./scripts/build.sh <f103-manual-reg\|f103-cmsis-hal> build` |
+| F103 烧录 | `./scripts/build.sh <module> flash` |
+| f103-cmsis-hal 依赖拷贝 | `./scripts/fetch-f103-cmsis-hal-deps.sh` |
 | 应用层文档 | `doc/projects/`（说明）· `projects/`（源码）· `projects/README.md` |
-| f103-manual-reg | `doc/projects/f103-manual-reg.md` |
-| f103-manual-reg 从零构建 | `doc/learn/f103-manual-build-from-scratch.md` |
-| f103-cmsis-hal | 占位 · `projects/f103-cmsis-hal/README.md` |
+| f103-manual-reg | `doc/projects/f103-manual-reg.md`（全手写寄存器，不链接 CMSIS/HAL） |
+| f103-cmsis-hal | `doc/projects/f103-cmsis-hal.md`（CMSIS+HAL，CMake 框架同 manual-reg） |
 | 模块编译流程 | `doc/learn/f103-module-build-flow.md` |
 | F103 内存映射与启动 | `doc/learn/stm32f103-memory-boot-map.md` |
 | F103 MMIO 基础 | `doc/learn/stm32f103-mmio-basics.md` |
@@ -46,7 +47,7 @@
 5. **probe-rs 烧录 CLI**：`probe-rs download --chip STM32F103C8Tx --binary-format elf <elf>`；旧版 `--format` 已废弃。
 6. **烧录后复位**：`scripts/build.sh` 的 `flash` 在 download 后执行 `probe-rs reset`，避免目标停在调试态。
 7. **ST-Link WinUSB**：Windows 上 probe-rs 需 Debug 接口 WinUSB；bundled 路径 `vendor-pack/STLink/.../USBDriver/`，脚本 `stlink-winusb-windows.sh`。
-8. **projects 布局**：固件小工程在 `projects/<name>/`，与 `doc/projects/<name>.md` 一一对应；`f103-manual-reg`（全手写寄存器）与 `f103-cmsis-hal`（CMSIS+HAL 占位）彼此独立。
+8. **projects 布局**：`f103-manual-reg`（全手写寄存器，不链接 CMSIS/HAL）与 `f103-cmsis-hal`（工程内最小 CMSIS+HAL）**并列独立**、功能对等（PC13 闪烁）；**CMake/build.sh 框架一致**。
 9. **f103-manual-reg 文档链**：`linker-vma-lma.md`（**VMA/LMA 权威**）；`f103-manual-build-from-scratch.md`（从零顺序、GNU ld §2.1–§2.2）；`f103-module-build-flow.md`（CMake/map）；`stm32f103-memory-boot-map.md`（BOOT/Flash/SRAM）；`linker-map-file.md`；链接脚本 `STM32F103C8_FLASH.ld` 行内注释与 startup 协作。
 10. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
 11. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md`；submodule `cmsis-core` + `cmsis-device-f1` 供对照；f103-manual-reg **不** `#include` 官方 Device 头。
@@ -54,7 +55,7 @@
 13. **ST 官方 PDF+MD**：改 `system_stm32f1xx.c` 以 RM0008 §6 RCC 为主；DS5319 定约束；见 `doc/learn/datasheet-vs-reference-manual.md`。
 14. **vendor-pack**：ST-Link 驱动 + CMSIS submodules + 核心板例程 + STM32CubeF1 fetch（可选）。
 15. **fetch-cmsis.sh**：Core 分支 **`cm3`** / **`v5.6.0_cm3`**，Device **`v4.3.5`**；首次 `git clone --recursive`。
-16. **fetch-stm32cubef1.sh**：优先 `archives/*.zip`；**勿用 GitHub「Download ZIP」**（缺 submodule）。
+16. **f103-cmsis-hal 依赖**：`./scripts/fetch-f103-cmsis-hal-deps.sh` 从 vendor-pack CMSIS + HAL ref（`v1.1.8` @ `.tools/`）拷贝最小子集至 `third_party/`；链接脚本 CMSIS `STM32F103XB_FLASH.ld`（C8 64K 裁剪）；startup 跳过 `__libc_init_array`。
 17. **用户文档**：`doc/` 中文；应用层 `doc/projects/`；旧链 `doc/modules-f103-blink.md` 为重定向 stub。
 18. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线。
 19. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`（扫描 `projects/*/build/`）。
@@ -62,7 +63,7 @@
 21. **f103-manual-reg 注释**：源码中文；终端/CLI 输出保持英文。
 22. **`.gitignore`**：CubeF1 全包、核心板、PDF、`.tools/` 忽略；CMSIS submodules **不**忽略。
 23. **MCP/Skill**：`install-mcp-skills.sh` → `.cursor/mcp.json` + `skills/embed-dev-lab`；Codex 无 MCP。
-24. **实机验证**（2026-06-24）：`f103-manual-reg` 重命名后 build+flash 正常，PC13 闪烁。
+24. **实机验证**（2026-06-24/25）：`f103-manual-reg` / `f103-cmsis-hal` build 通过；manual-reg 已实机 PC13 闪烁。
 25. **Cursor 终端**：工作区 `.vscode/settings.json` 声明 `defaultProfile: Git Bash`。
 
 ## 问题 ↔ 解法
@@ -98,4 +99,7 @@
 | Cursor 找不到 cmake/clangd | `setup-path.sh`，重启 Cursor |
 | IDE clangd 报错 | 先 `build`，再 `setup-clangd.sh` |
 | MCP `cargo required` | 安装 Rust，再 `install-mcp-skills.sh` |
+| f103-cmsis-hal 缺 third_party / 头文件 | `./scripts/fetch-cmsis.sh` 后 `./scripts/fetch-f103-cmsis-hal-deps.sh` |
+| f103-cmsis-hal 链接 assert_param / _init | `stm32f1xx_hal_conf.h` 定义 `assert_param`；startup 无 `__libc_init_array` |
+| fetch-stm32cubef1 勿用 GitHub ZIP | 缺 submodule；用 `git clone --recursive` 或 `fetch-stm32cubef1.sh` |
 | Cursor Agent 调不到 MCP | 确认 MCP 已连接；非 Codex；新开对话 |

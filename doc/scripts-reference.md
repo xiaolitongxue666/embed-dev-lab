@@ -68,6 +68,7 @@ flowchart TB
 ./scripts/build.sh f103-manual-reg flash
 ./scripts/build.sh f103-manual-reg build && ./scripts/build.sh f103-manual-reg flash
 ./scripts/build-flash.sh f103-manual-reg   # 同上；编译失败时暂停
+./scripts/build-flash.sh f103-cmsis-hal
 ```
 
 ---
@@ -79,6 +80,7 @@ flowchart TB
 ```bash
 ./scripts/build-flash.sh              # 默认 f103-manual-reg
 ./scripts/build-flash.sh f103-manual-reg
+./scripts/build-flash.sh f103-cmsis-hal
 ```
 
 | 步骤 | 行为 |
@@ -212,6 +214,20 @@ git clone --recursive <repo-url>
 - 说明：[cmsis-core.embed-dev-lab.md](../vendor-pack/cmsis-core.embed-dev-lab.md)、[cmsis-device-f1.embed-dev-lab.md](../vendor-pack/cmsis-device-f1.embed-dev-lab.md)
 - 组件归纳：[doc/learn/stm32-cmsis-component-repos.md](learn/stm32-cmsis-component-repos.md)
 - 兼容：`fetch-cmsis-core.sh` 为同脚本的别名入口
+
+---
+
+### fetch-f103-cmsis-hal-deps.sh — f103-cmsis-hal 最小 CMSIS/HAL
+
+从 `vendor-pack` CMSIS submodule 与 HAL ref（`stm32f1xx-hal-driver@v1.1.8`，clone 至 `.tools/`）拷贝 PC13 闪烁所需最小子集至 `projects/f103-cmsis-hal/third_party/`，并拷贝 CMSIS `startup` / `system` / `STM32F103XB_FLASH.ld`（C8 64K 裁剪）。
+
+```bash
+./scripts/fetch-cmsis.sh
+./scripts/fetch-f103-cmsis-hal-deps.sh
+./scripts/fetch-f103-cmsis-hal-deps.sh --verify-only
+```
+
+构建：`./scripts/build.sh f103-cmsis-hal`。说明见 [doc/projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md)。
 
 ---
 

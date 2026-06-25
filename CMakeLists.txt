@@ -8,3 +8,4 @@ cmake_minimum_required(VERSION 3.20)
 project(embed-dev-lab C ASM)
 
 add_subdirectory(projects/f103-manual-reg)
+add_subdirectory(projects/f103-cmsis-hal)

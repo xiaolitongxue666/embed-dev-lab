@@ -233,18 +233,15 @@ flowchart BT
 
 embed-dev-lab 选择 **「自写 CMSIS 兼容底层 + 纯寄存器开发」**：
 
-- [`f103-manual-reg`](../../projects/f103-manual-reg/) **不链接**官方 CMSIS 头文件与 HAL，不参与 `vendor-pack` 构建
-- 保留 `SystemInit`、向量表命名与 Reset 流程，便于与 ST 模板和工具链对照
-- `vendor-pack/cmsis-core/`、`cmsis-device-f1/` 为 **submodule**；HAL 参考 [stm32f1xx-hal-driver](https://github.com/STMicroelectronics/stm32f1xx-hal-driver)；全包可选 [STM32CubeF1](https://github.com/STMicroelectronics/STM32CubeF1) fetch
+embed-dev-lab 提供两个并列 F103 demo，**CMake/build.sh 框架一致**：
 
-两种路径均符合 Cortex-M 架构要求：
+| 工程 | 路径 | 栈 |
+|------|------|-----|
+| 手写寄存器 | [`f103-manual-reg`](../../projects/f103-manual-reg/) | 不链接 CMSIS/HAL；手写 `STM32F103C8_FLASH.ld` |
+| CMSIS + HAL | [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/) | 工程内最小 CMSIS/HAL；链接脚本 CMSIS `STM32F103XB_FLASH.ld` |
 
-| 路径 | 典型组合 |
-|------|----------|
-| 标准 ST 生态 | 官方 CMSIS + HAL/LL + CubeMX |
-| 轻量化裸机（本仓库） | 手写兼容 startup/system + 寄存器直接操作 |
-
-若后续需要「官方 CMSIS + HAL」实验，见占位工程 [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/README.md)，与 [`f103-manual-reg`](../../projects/f103-manual-reg/) 并列、彼此独立。
+- [`f103-manual-reg`](../projects/f103-manual-reg.md) **不链接**官方 CMSIS 头文件与 HAL
+- [`f103-cmsis-hal`](../projects/f103-cmsis-hal.md) 使用官方 CMSIS 启动/system + HAL API；依赖 `./scripts/fetch-f103-cmsis-hal-deps.sh`
 
 ---
 

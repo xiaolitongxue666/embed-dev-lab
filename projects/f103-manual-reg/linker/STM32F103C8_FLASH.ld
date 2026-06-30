@@ -11,9 +11,11 @@
  *   SECTIONS  — 将各 .o 的输入段合并为输出段，并映射到 MEMORY 区域
  *
  * @note    符号 _sidata/_sdata/_edata/_sbss/_ebss 供 startup 初始化段使用
+ * @note    end/_end 与 _ebss 同址，供 newlib/_sbrk 堆起点（printf 用）
  * @note    ORIGIN 为 Main Flash 物理基址（RM0008）；复位时 CPU 经逻辑 0x00000000
  *          别名访问同内容（BOOT0=0），详见 doc/learn/stm32f103-memory-boot-map.md
  * @see     doc/learn/linker-vma-lma.md — VMA/LMA 权威说明（逐段对照本文件）
+ * @see     doc/projects/f103-manual-reg.md — 堆/end 与 printf
  * @see     doc/learn/f103-manual-build-from-scratch.md §2.1 — MEMORY / SECTIONS / ALIGN / KEEP
  */
 
@@ -81,5 +83,8 @@ SECTIONS
         *(COMMON)                        /* 收集 COMMON 块（旧式未初始化全局符号，gcc 可能生成） */
         . = ALIGN(4);                    /* .bss 段尾对齐 */
         _ebss = .;                       /* 符号：.bss 结束地址（不含）；startup 清零循环终点 */
+        /* .bss 之后、主栈 (_estack) 之前的 RAM 可作堆；end/_end 为同址，供 newlib/libnosys 默认 _sbrk 作堆起点 */
+        PROVIDE ( end = . );             /* GNU 惯例：已用 RAM 末尾；与 _ebss 同址 */
+        PROVIDE ( _end = . );            /* end 的别名；部分 C 库/文档使用 _end */
     } > RAM                              /* 仅 VMA>RAM；无 LMA/AT，不占 Flash，startup 须清零 _sbss.._ebss */
 }

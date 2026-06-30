@@ -59,6 +59,16 @@ UART、SPI、TIM 等 HAL 模块在 `hal/Inc/` 中虽有头文件，但 **无对�
 
 产物：`build/f103-cmsis-hal.elf` · probe-rs chip **`STM32F103C8Tx`**
 
+## USART1 串口（无 printf）
+
+本工程**不用 `printf`**，串口走 `USART1_WriteStr` → `HAL_UART_Transmit`（无 `syscalls.c`）。若要用 libc 格式化输出，见 [`doc/learn/newlib-nosys-stdio-retarget.md`](../../doc/learn/newlib-nosys-stdio-retarget.md) 与 [`f103-manual-reg`](../f103-manual-reg/) 的 `syscalls.c`。
+
+| 项 | 说明 |
+|----|------|
+| 引脚 | PA9 TX，PA10 RX；CH341 RX←PA9，GND 共地 |
+| 波特率 | 1500000 8N1 |
+| 换行 | 字符串写 `\n`；`USART1_WriteStr` 自动补 `\r` |
+
 ---
 
 ## 带注释的目录树
@@ -78,9 +88,10 @@ f103-cmsis-hal/
 │   └── startup_stm32f103xb.s   # 向量表 @ 0x08000000；Reset：SystemInit→.data→.bss→main；跳过 __libc_init_array
 │
 ├── src/                        # 工程维护应用层（fetch 不覆盖，除 system_stm32f1xx.c）
-│   ├── main.c                  # HAL_Init、72 MHz 时钟、Backup 域 PC13、闪烁主循环
+│   ├── main.c                  # HAL_Init、72 MHz 时钟、Backup 域 PC13、USART1、闪烁主循环
 │   ├── main.h                  # 包含 stm32f1xx_hal.h；声明 Error_Handler
-│   ├── stm32f1xx_hal_conf.h    # HAL 模块裁剪（GPIO/RCC/PWR/FLASH/CORTEX）、HSE_VALUE、assert_param
+│   ├── usart.c / usart.h       # USART1 初始化 + USART1_WriteStr（HAL_UART_Transmit，无 printf/syscalls）
+│   ├── stm32f1xx_hal_conf.h    # HAL 模块裁剪（GPIO/RCC/PWR/FLASH/CORTEX/UART/DMA）、HSE_VALUE
 │   ├── stm32f1xx_hal_msp.c     # HAL MSP 回调（本 demo 空实现）
 │   ├── stm32f1xx_it.c          # Cortex-M3 异常处理；SysTick_Handler → HAL_IncTick
 │   ├── stm32f1xx_it.h          # 异常处理函数声明
@@ -121,7 +132,7 @@ f103-cmsis-hal/
         │       ├── stm32f1xx_hal_can_legacy.h   # CAN 旧 API 兼容
         │       └── stm32f1xx_hal_can_ex_legacy.h
         │
-        └── Src/                # ★ 以下 8 个 .c 由 CMake 编译并链入 f103-cmsis-hal.elf
+        └── Src/                # ★ 以下 9 个 .c 由 CMake 编译并链入 f103-cmsis-hal.elf
             ├── stm32f1xx_hal.c           # HAL_Init、SysTick、HAL_IncTick、HAL_GetTick
             ├── stm32f1xx_hal_cortex.c      # NVIC 优先级、SysTick 配置（HAL_InitTick）
             ├── stm32f1xx_hal_gpio.c        # HAL_GPIO_Init / WritePin / ReadPin
@@ -129,7 +140,8 @@ f103-cmsis-hal/
             ├── stm32f1xx_hal_rcc_ex.c      # F103 PLL/HSE 扩展配置
             ├── stm32f1xx_hal_pwr.c         # HAL_PWR_EnableBkUpAccess（Backup 域 DBP）
             ├── stm32f1xx_hal_flash.c       # Flash 等待周期设置
-            └── stm32f1xx_hal_flash_ex.c    # Flash 扩展操作（时钟配置路径依赖）
+            ├── stm32f1xx_hal_flash_ex.c    # Flash 扩展操作（时钟配置路径依赖）
+            └── stm32f1xx_hal_uart.c        # HAL_UART_Transmit（USART1 调试口）
 ```
 
 ★ = 本 demo 直接 `#include` 链上的头文件（经 `stm32f1xx_hal_conf.h` 或 `main.h`）。

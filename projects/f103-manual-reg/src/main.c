@@ -1,15 +1,25 @@
 /**
  * @file    main.c
- * @brief   STM32F103C8T6 核心板 PC13 LED 闪烁（纯寄存器实现）
+ * @brief   STM32F103C8T6 核心板：PC13 LED 闪烁 + USART1 printf（纯寄存器）
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
- * @ref     vendor-pack/.../核心板测试程序(PC13闪烁)/USER/main.c
+ * @ref     vendor-pack/.../核心板测试程序(PC13闪烁)/USER/main.c（LED 逻辑）
  *
- * @note    本模块无串口/printf；若后续添加日志，输出语言统一为 English。
- *          时钟初始化见 system_stm32f1xx.c（Reset_Handler 中 SystemInit 调用）。
+ * 初始化顺序（Reset 后）：
+ *   1. startup：SystemInit → 拷贝 .data → 清零 .bss
+ *   2. main：GPIOC_Init → USART1_Init → printf 闪烁循环
+ *
+ * 串口：USART1 PA9/PA10，1500000 bps；printf 经 syscalls.c → usart.c。
+ * 时钟：system_stm32f1xx.c（Reset_Handler 内 SystemInit，不在本文件调用）。
+ *
+ * @see     doc/projects/f103-manual-reg.md
+ * @see     doc/learn/stm32f103-mmio-basics.md
  */
 
+#include <stdio.h>
+
 #include "gpioc_bitband.h"
+#include "usart.h"
 
 /* -------------------------------------------------------------------------- */
 /* 外设基地址与寄存器映射（参考 RM0008）
@@ -89,18 +99,20 @@ static void GPIOC_Init(void)
  */
 int main(void)
 {
-    int count = 0;
     GPIOC_Init();
+    USART1_Init();
+
+    printf("Stm32 manual reg demo start\n");
 
     for (;;) {
+        printf("LED on\n");
         PCout(LED_PIN) = 1;
         delay(0xFFFFFU);
         delay(0xFFFFFU);
 
+        printf("LED off\n");
         PCout(LED_PIN) = 0;
         delay(0xFFFFFU);
         delay(0xFFFFFU);
-
-        count++;
     }
 }

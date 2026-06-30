@@ -80,6 +80,7 @@ HAL_SRC_FILES=(
   stm32f1xx_hal_pwr.c
   stm32f1xx_hal_flash.c
   stm32f1xx_hal_flash_ex.c
+  stm32f1xx_hal_uart.c
 )
 
 verify_paths() {

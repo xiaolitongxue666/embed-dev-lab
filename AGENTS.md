@@ -1,8 +1,8 @@
 
 ## embed-dev-lab Skill (Codex / 无 MCP Agent)
 
-- **f103-manual-reg**：全手写寄存器，不链接 CMSIS/HAL
-- **f103-cmsis-hal**：工程内 CMSIS+HAL 最小子集，CMake 框架与 manual-reg 一致
+- **f103-manual-reg**：全手写寄存器，不链接 CMSIS/HAL；串口用 `printf` + `syscalls.c` → `_write`
+- **f103-cmsis-hal**：工程内 CMSIS+HAL 最小子集，CMake 框架与 manual-reg 一致；串口用 `HAL_UART_Transmit`（无 printf/syscalls）
 - 构建：`./scripts/build.sh <module> build`；烧录：`flash`（需先 build）
 - cmsis-hal 依赖：`./scripts/fetch-f103-cmsis-hal-deps.sh`（须先 `fetch-cmsis.sh`）
 - probe-rs chip：`STM32F103C8Tx`；CLI 使用 `--binary-format elf`

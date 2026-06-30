@@ -1,7 +1,8 @@
 # -----------------------------------------------------------------------------
-# f103-manual-reg — STM32F103C8T6 PC13 LED 闪烁（全手写寄存器，无 CMSIS/HAL）
+# f103-manual-reg — STM32F103C8T6 PC13 闪烁 + USART1 printf（全手写寄存器，无 CMSIS/HAL）
 # 构建: 仓库根目录 ./scripts/build.sh f103-manual-reg
-# 可独立作为工程根打开，也可由顶层 CMakeLists.txt add_subdirectory 引入
+# 一键:  ./scripts/build-flash.sh
+# 文档:  doc/projects/f103-manual-reg.md
 # -----------------------------------------------------------------------------
 
 # 单独打开本工程目录时，自行声明 project
@@ -14,6 +15,8 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/mcu-config.cmake)
 
 set(F103_SOURCES
     src/main.c                  # 应用入口与 GPIO 闪烁
+    src/usart.c                 # USART1 纯寄存器初始化
+    src/syscalls.c              # printf → USART1
     src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
     startup/startup_stm32f103xb.s # 向量表、.data/.bss、跳转 main
 )

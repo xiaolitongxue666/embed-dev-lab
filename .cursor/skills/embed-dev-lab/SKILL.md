@@ -21,10 +21,10 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 ./scripts/build-flash.sh f103-cmsis-hal
 ```
 
-| 工程 | 实现 | 产物 |
-|------|------|------|
-| `f103-manual-reg` | 全手写寄存器，无 CMSIS/HAL | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
-| `f103-cmsis-hal` | CMSIS+HAL 最小子集；CMSIS 链接脚本 | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+| 工程 | 实现 | 串口 | 产物 |
+|------|------|------|------|
+| `f103-manual-reg` | 全手写寄存器，无 CMSIS/HAL | `printf` + `syscalls.c` | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| `f103-cmsis-hal` | CMSIS+HAL 最小子集；CMSIS 链接脚本 | `HAL_UART_Transmit`（无 printf） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
 
 | 项 | 值 |
 |----|-----|
@@ -66,6 +66,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 | 应用层模块 | `doc/projects/` · `projects/README.md` |
 | probe-rs | `doc/probe-rs.md` |
 | CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
+| 裸机 printf / nosys / HAL 串口 | `doc/learn/newlib-nosys-stdio-retarget.md` |
 | ST F1 软件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |
 | STM32CubeF1 参考 | https://github.com/STMicroelectronics/STM32CubeF1 |
 | HAL submodule | `vendor-pack/stm32f1xx-hal-driver` · `v1.1.8` · `./scripts/fetch-cmsis.sh` |

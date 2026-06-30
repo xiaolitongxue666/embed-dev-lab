@@ -28,7 +28,8 @@ projects/f103-cmsis-hal/
     ├── system_stm32f1xx.c        # CMSIS SystemInit 模板
     ├── stm32f1xx_hal_conf.h
     ├── stm32f1xx_hal_msp.c
-    └── stm32f1xx_it.c
+    ├── stm32f1xx_it.c
+    ├── usart.c / usart.h        # USART1 HAL 初始化 + USART1_WriteStr
 ```
 
 ## 依赖获取
@@ -79,12 +80,37 @@ probe-rs chip：**`STM32F103C8Tx`**
 | 系统时钟 | 手写 RCC → HSE×9 72 MHz | `HAL_RCC_OscConfig` / `HAL_RCC_ClockConfig` |
 | PC13 Backup 域 | `PWREN` + `DBP` + `GPIOC_CRH` | `HAL_PWR_EnableBkUpAccess` + `HAL_GPIO_Init` |
 | 闪烁 | `PCout` + 忙等 | `HAL_GPIO_WritePin` + 同等忙等 |
+| 串口输出 | `printf` + `syscalls.c` | `USART1_WriteStr` → `HAL_UART_Transmit`（不链 libc I/O） |
 | 链接脚本 | 手写 `STM32F103C8_FLASH.ld` | CMSIS `STM32F103XB_FLASH.ld` |
 | startup | 精简手写 | CMSIS 官方（跳过 `__libc_init_array`） |
 
 ## PC13 与 Backup 域
 
 与 manual-reg 相同：须 `PWR` 时钟 + `DBP` 后再配置 GPIOC。见 [`main.c`](../../projects/f103-cmsis-hal/src/main.c) 中 `MX_GPIO_Init()`。
+
+## USART1 串口输出
+
+本工程**有意不用 `printf`**，直接走 HAL（无 `syscalls.c`、不链 libc I/O）：
+
+```text
+USART1_WriteStr("...\n")  →  HAL_UART_Transmit(&huart1, ...)  →  PA9
+```
+
+### 为何 HAL 工程仍不必写 `_write`
+
+| 问题 | 说明 |
+|------|------|
+| HAL 能替代 `syscalls.c` 吗？ | **能 bypass**：不调用 `printf` 则不需要 `_write`；HAL 只负责发字节 |
+| 以前用 HAL 为何还要 `syscalls.c`？ | 那是因为用了 **`printf`**；libc 必须有人实现 `_write` |
+| 本工程选型 | `USART1_WriteStr` → `HAL_UART_Transmit`，Flash 更小，与 HAL API 一致 |
+
+| 项 | 说明 |
+|----|------|
+| 需要 `%d` 等格式化 | 可链 libc 并参考 [f103-manual-reg § printf](f103-manual-reg.md#printf-与-newlib-syscall) 增加 `syscalls.c` |
+| 引脚 / 波特率 | PA9 TX，1500000 8N1；`\n` 在 `USART1_WriteStr` 内补 `\r` |
+| Flash 参考 | Debug 约 **6 KB** text（无 libc I/O）；manual-reg 用 printf 约 **30 KB** |
+
+概念总览：[裸机 newlib、nosys 与串口输出 §5](../learn/newlib-nosys-stdio-retarget.md#5-printf-与-hal_uart_transmit-如何选)
 
 ## 版本配对
 
@@ -116,7 +142,8 @@ probe-rs chip：**`STM32F103C8Tx`**
 | 链接 `assert_param` / `_init` | 确认 `stm32f1xx_hal_conf.h` 含 `assert_param`；startup 已跳过 `__libc_init_array` |
 | 烧录成功但 LED 不闪 | PWR+DBP；先 `build` 再 `flash` |
 | fetch 后 startup/linker 注释变英文 | 重新 `./scripts/fetch-f103-cmsis-hal-deps.sh`（含中文注释补丁） |
-| `third_party` 是完整 CMSIS/HAL 吗？ | **否**，按需最小子集；完整包在 `vendor-pack/` 与 `.tools/`；见工程 `README.md` §third_party |
+| 有 LED 无串口 | `MX_USART1_UART_Init()`；COM/波特率/GND |
+| 串口逐行右移 | 字符串用 `\n`；`USART1_WriteStr` 会补 `\r` |
 
 ## 调试
 

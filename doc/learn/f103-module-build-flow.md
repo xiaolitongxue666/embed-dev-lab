@@ -80,20 +80,17 @@ endif()
 
 ```cmake
 set(F103_SOURCES
-    src/main.c                  # 应用入口与 GPIO 闪烁
+    src/main.c                  # 应用入口：GPIO 闪烁 + printf
+    src/usart.c                 # USART1 纯寄存器
+    src/syscalls.c              # newlib _write/_sbrk → 串口
     src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
     startup/startup_stm32f103xb.s # 向量表、.data/.bss、跳转 main
 )
-
-embed_mcu_add_executable(f103-manual-reg
-    SOURCES ${F103_SOURCES}
-    INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
-    LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker/STM32F103C8_FLASH.ld
-    MCU_FLAGS "-mcpu=cortex-m3 -mthumb"
-)
 ```
 
-`gpioc_bitband.h` 为头文件，由 `#include` 引入，**不**列入 `SOURCES`。
+`gpioc_bitband.h`、`usart.h`、`system_stm32f1xx.h` 为头文件，由 `#include` 引入，**不**列入 `SOURCES`。
+
+链接 `--specs=nosys.specs` 还会拉入 **libc.a** / **libnosys.a**（printf 用）；工程内 `syscalls.c` 的 `_write` 等于链接期替换 nosys 桩，见 [f103-manual-reg § printf](../projects/f103-manual-reg.md#printf-与-newlib-syscall)。
 
 ---
 
@@ -122,9 +119,11 @@ Ninja 规则示例（`build/` 内；Windows 下扩展名为 `.obj`，Linux 下�
 
 ```text
 CMakeFiles/f103-manual-reg.elf.dir/src/main.c.obj
+CMakeFiles/f103-manual-reg.elf.dir/src/usart.c.obj
+CMakeFiles/f103-manual-reg.elf.dir/src/syscalls.c.obj
 CMakeFiles/f103-manual-reg.elf.dir/src/system_stm32f1xx.c.obj
 CMakeFiles/f103-manual-reg.elf.dir/startup/startup_stm32f103xb.s.obj
-  → 链接 → f103-manual-reg.elf
+  → 链接 → f103-manual-reg.elf（另含 libc.a / libgcc.a / libnosys.a）
 ```
 
 ### 3.2 目标文件链接顺序
@@ -239,38 +238,42 @@ map 文件概念、四大核心内容与通用用途见 **[链接器 Map 文件]
 
 路径：`projects/f103-manual-reg/build/f103-manual-reg.map`（须先 `build` 生成；`build/` 不入 Git）。
 
-**① 命令行 `LOAD` 顺序（L27–29）**
+**① 命令行 `LOAD` 顺序（L693–697 附近，以当前 CMakeLists 为准）**
 
-与 `F103_SOURCES` 完全一致：
+与 `F103_SOURCES` 一致（**不含** libc，libc 在后续 `START GROUP`）：
 
 ```text
 LOAD .../main.c.obj
+LOAD .../usart.c.obj
+LOAD .../syscalls.c.obj
 LOAD .../system_stm32f1xx.c.obj
 LOAD .../startup/startup_stm32f103xb.s.obj
 ```
 
-其后 `START GROUP … libgcc.a libc.a libnosys.a` 为 `--specs=nosys.specs` 引入的运行库，与三个模块 `.obj` 无关。
+其后 `START GROUP … libgcc.a libc.a libnosys.a` 为 `--specs=nosys.specs` 引入的运行库。
 
-**② `Discarded input sections`（L2–16）**
+若工程含 `syscalls.c` 并实现 `_write` / `_sbrk` 等，则这些 **强符号** 在链接期替换 libnosys.a 中的同名占位桩（非 weak 覆盖）；详见 [裸机 newlib 与串口输出](../learn/newlib-nosys-stdio-retarget.md) 与 [f103-manual-reg § printf](../projects/f103-manual-reg.md#printf-与-newlib-syscall)。**f103-cmsis-hal 无 syscalls.c**，串口走 `HAL_UART_Transmit`。
 
-因 `-ffunction-sections` 把每个函数拆成独立输入段（如 `.text.main`），各 `.obj` 里**汇总的** `.text` 段为空（size `0x0`），map 开头显示为「丢弃的空段」——属正常现象，不代表代码未链接。
+**② `Discarded input sections`**
 
-**③ 输出段布局 vs 命令行顺序**
+因 `-ffunction-sections` 把每个函数拆成独立输入段（如 `.text.main`），各 `.obj` 里**汇总的** `.text` 段为空（size `0x0`），map 开头显示为「丢弃的空段」——属正常现象。
 
-| Flash 地址 | 输出段 / 符号 | 大小 | 来自哪个 `.obj` | 与命令行顺序关系 |
-|------------|---------------|------|-----------------|------------------|
-| `0x08000000` | `.isr_vector` / `g_pfnVectors` | `0x40` | **startup** | 链接脚本优先收 `.isr_vector`，与 startup 排第三无关 |
-| `0x08000040` | `.text.delay` | `0x22` | main | `.text` 内按命令行顺序：main 最先 |
-| `0x08000064` | `.text.GPIOC_Init` | `0x58` | main | |
-| `0x080000bc` | `.text.main` / **`main`** | `0x44` | main | |
-| `0x08000100` | `.text.SetSysClockTo72` | `0xe8` | system | 第二个 `.obj` |
-| `0x080001e8` | `.text.SystemInit` / **`SystemInit`** | `0x58` | system | |
-| `0x08000240` | `.text.Reset_Handler` / **`Reset_Handler`** | `0x50` | startup | 第三个 `.obj`，`.text` 段最后 |
-| `0x08000274` | `Default_Handler` 等弱符号别名 | — | startup | 与 `Default_Handler` 同址 |
+**③ 输出段布局（含 printf 后变化）**
 
-`.text` 输出段总大小 `0x250`（592 字节），起止 `0x08000040`–`0x08000290`。
+引入 `printf` 后，**libc.a** 占 Flash 主体；工程 `.obj` 中可见例如：
 
-**④ 向量表如何找到 `Reset_Handler`**
+| 符号 / 函数 | 来源 |
+|-------------|------|
+| `main` / `GPIOC_Init` / `delay` | main.c.obj |
+| `USART1_Init` / `USART1_Write` | usart.c.obj |
+| `_write` / `_sbrk` | syscalls.c.obj |
+| `SystemInit` | system_stm32f1xx.c.obj |
+| `Reset_Handler` | startup.obj |
+| `_write_r` / `vfprintf` 等 | libc.a |
+
+`.isr_vector` 仍在 Flash `0x08000000`（链接脚本段名决定，与 `LOAD` 顺序无关）。Debug 构建 `.text` 总量约 **30 KB**（`arm-none-eabi-size`）；仅 LED、无 libc 时约 **0.6 KB** 量级——**勿**用旧 map 中的固定地址做绝对对照，以当前 `f103-manual-reg.map` 为准。
+
+**④ 向量表与 `Reset_Handler`**
 
 向量表在 `0x08000000`，第二项为复位向量，汇编里写 `.word Reset_Handler`；链接后该字为 **`Reset_Handler` 的 Thumb 入口地址**（`0x08000241`，LSB=1 表示 Thumb）。`Reset_Handler` 函数体在 `.text` 段 `0x08000240` —— 虽在 Flash 布局上位于所有 C 函数**之后**，复位硬件只读向量表中的指针，**不**要求 `Reset_Handler` 紧挨向量表。
 
@@ -281,25 +284,24 @@ LOAD .../startup/startup_stm32f103xb.s.obj
 0x08000240  Reset_Handler 函数代码（.text 段靠后）
 ```
 
-**⑤ RAM 段（L101–119）**
+**⑤ RAM 段**
 
-本 demo 无全局变量，`.data` / `.bss` 均为 `0x0`；`_sdata`/`_edata`/`_sbss`/`_ebss` 均等于 `0x20000000`，startup 中拷贝/清零循环仍执行，只是迭代次数为 0。
+含 `printf` 时 libc 带来 `.data` / `.bss`（如 `stdout`、堆变量）；链接脚本在 `.bss` 后导出 `end`/`_end`（与 `_ebss` 同址）供 `_sbrk`。主栈顶仍为 `_estack = 0x20005000`。
 
-**⑥ 调试段（L123 起）**
+**⑥ 调试段**
 
 `.debug_info`、`.debug_line` 等同样按 **main → system → startup** 顺序排列，与 `LOAD` 一致；这些段**不烧进 Flash**，仅供 GDB/clangd 使用。
 
 **⑦ 小结对照**
 
 ```text
-命令行顺序:     main.obj  →  system.obj  →  startup.obj
-LOAD 行:          ✓ 同上
-.isr_vector:      仅 startup（脚本段名决定，非命令行顺序）
-.text 段内:       main 函数 → system 函数 → startup Reset_Handler（跟随命令行）
-符号 SystemInit/main:  解析成功，与 .text 内谁先谁后无关
+CMake SOURCES 顺序:  main → usart → syscalls → system → startup
+LOAD 行:              ✓ 同上（libc 在 GROUP 之后）
+.isr_vector:          仅 startup（链接脚本段名决定）
+工程 .text 符号顺序:  大致跟随 LOAD；libc 符号占 Flash 大部分
 ```
 
-查看 map 时优先看 **`Linker script and memory map`** 一节（约 L25 起）；`Discarded input sections` 可忽略。
+查看 map 时优先看 **`Linker script and memory map`** 一节；`Discarded input sections` 可忽略。
 
 ### 3.3 其他构建选项
 

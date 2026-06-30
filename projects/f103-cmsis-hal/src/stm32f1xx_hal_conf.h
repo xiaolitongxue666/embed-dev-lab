@@ -6,11 +6,12 @@
  *          仅使能本 demo 用到的 HAL 模块，减小代码体积与编译时间。
  *
  * 使能模块与用途：
- *   HAL_GPIO   — PC13 输出
+ *   HAL_GPIO   — PC13 输出、USART1 PA9/PA10
  *   HAL_RCC    — HSE/PLL 72 MHz 时钟
  *   HAL_PWR    — Backup 域 DBP（PC13 前置条件）
  *   HAL_FLASH  — 时钟配置时 Flash 等待周期
  *   HAL_CORTEX — HAL_Init / 内核相关
+ *   HAL_UART   — USART1 调试口（HAL_UART_Transmit，无 printf）
  *
  * assert_param：未定义 USE_FULL_ASSERT 时展开为空，避免链接 assert_failed
  */
@@ -31,6 +32,8 @@ extern "C" {
 #define HAL_PWR_MODULE_ENABLED
 #define HAL_FLASH_MODULE_ENABLED
 #define HAL_CORTEX_MODULE_ENABLED
+#define HAL_DMA_MODULE_ENABLED
+#define HAL_UART_MODULE_ENABLED
 
 /* --- 振荡器频率（与硬件晶振一致；CMake 亦通过 HSE_VALUE=8000000U 传递） --- */
 #define HSE_VALUE    8000000U
@@ -51,6 +54,8 @@ extern "C" {
 #include "stm32f1xx_hal_pwr.h"
 #include "stm32f1xx_hal_flash.h"
 #include "stm32f1xx_hal_cortex.h"
+#include "stm32f1xx_hal_dma.h"
+#include "stm32f1xx_hal_uart.h"
 
 #ifdef __cplusplus
 }

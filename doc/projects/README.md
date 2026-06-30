@@ -4,8 +4,8 @@
 
 | 工程 | 芯片 | 文档 | 源码 |
 |------|------|------|------|
-| `f103-manual-reg` | STM32F103C8T6 | [f103-manual-reg.md](f103-manual-reg.md) | [`projects/f103-manual-reg/`](../../projects/f103-manual-reg/) |
-| `f103-cmsis-hal` | STM32F103C8T6 | [f103-cmsis-hal.md](f103-cmsis-hal.md) | [`projects/f103-cmsis-hal/`](../../projects/f103-cmsis-hal/) |
+| `f103-manual-reg` | STM32F103C8T6 | [f103-manual-reg.md](f103-manual-reg.md) | [`projects/f103-manual-reg/`](../../projects/f103-manual-reg/) — PC13 + USART1 printf |
+| `f103-cmsis-hal` | STM32F103C8T6 | [f103-cmsis-hal.md](f103-cmsis-hal.md) | [`projects/f103-cmsis-hal/`](../../projects/f103-cmsis-hal/) — HAL_UART_Transmit，无 printf |
 
 ## 与 `projects/` 的关系
 
@@ -24,6 +24,7 @@ doc/projects/<name>.md    # 工程说明、硬件要点、排错（本目录）
 | 编译与链接流程 | [f103-module-build-flow.md](../learn/f103-module-build-flow.md) |
 | 链接器 map | [linker-map-file.md](../learn/linker-map-file.md) |
 | CMSIS 与手写边界 | [cmsis-overview.md](../learn/cmsis-overview.md) |
+| 裸机 printf / nosys / HAL 串口 | [newlib-nosys-stdio-retarget.md](../learn/newlib-nosys-stdio-retarget.md) |
 | vendor-pack 三层参照 | [stm32-cmsis-component-repos.md](../learn/stm32-cmsis-component-repos.md) §5 |
 
 ## 新增工程 checklist

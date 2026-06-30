@@ -18,6 +18,7 @@ set(HAL_SRC   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/hal/Src)
 
 set(F103_HAL_SOURCES
     src/main.c
+    src/usart.c
     src/system_stm32f1xx.c
     src/stm32f1xx_hal_msp.c
     src/stm32f1xx_it.c
@@ -30,6 +31,7 @@ set(F103_HAL_SOURCES
     ${HAL_SRC}/stm32f1xx_hal_pwr.c
     ${HAL_SRC}/stm32f1xx_hal_flash.c
     ${HAL_SRC}/stm32f1xx_hal_flash_ex.c
+    ${HAL_SRC}/stm32f1xx_hal_uart.c
 )
 
 add_compile_definitions(

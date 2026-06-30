@@ -52,6 +52,8 @@ set(CMAKE_OBJCOPY "${EMBED_OBJCOPY}" CACHE FILEPATH "ARM objcopy" FORCE)
 
 set(CMAKE_EXECUTABLE_FORMAT ELF)
 # 裸机链接：nosys + 不提供默认 startup（由模块 startup.s 提供）
+# nosys：无 OS；libnosys 提供 _write 等占位桩；用 printf 时工程 syscalls.c 链接期替换
+# 详见 doc/learn/newlib-nosys-stdio-retarget.md
 set(CMAKE_EXE_LINKER_FLAGS_INIT "--specs=nosys.specs -nostartfiles")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS_INIT}" CACHE INTERNAL "")
 

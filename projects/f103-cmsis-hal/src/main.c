@@ -4,11 +4,11 @@
  *
  * @target  STM32F103C8T6（Medium-density F103xB，64 KB Flash / 20 KB RAM）
  * @note    行为对齐 f103-manual-reg：HSE→72 MHz、Backup 域 PC13、低电平点亮
- *          终端/CLI 输出保持 English（本 demo 无 printf）
+ *          USART1（PA9/PA10）1500000 bps；串口用 HAL_UART_Transmit（usart.c），不用 printf
  *
  * 启动与初始化顺序（Reset 后）：
  *   1. startup：SystemInit → 拷贝 .data → 清零 .bss
- *   2. main：HAL_Init → SystemClock_Config → MX_GPIO_Init → 闪烁循环
+ *   2. main：HAL_Init → SystemClock_Config → MX_GPIO_Init → MX_USART1_UART_Init → 闪烁循环
  *
  * HAL 与 manual-reg 对照：
  *   | 步骤           | manual-reg              | 本文件（HAL）                    |
@@ -16,12 +16,15 @@
  *   | 系统时钟       | 手写 RCC 寄存器         | HAL_RCC_OscConfig/ClockConfig    |
  *   | Backup 域 PC13 | PWREN + DBP + GPIOC_CRH | HAL_PWR + HAL_GPIO_Init          |
  *   | LED 翻转       | PCout 位带              | HAL_GPIO_WritePin                |
+ *   | 串口输出       | printf → syscalls       | USART1_WriteStr → HAL_UART_Transmit|
  *
  * @see     doc/projects/f103-cmsis-hal.md
+ * @see     doc/learn/newlib-nosys-stdio-retarget.md — HAL 与 printf 分层、为何本工程不用 _write
  * @see     doc/reference/stm32f103/md/topics/backup-domain-pc13.md
  */
 
 #include "main.h"
+#include "usart.h"
 
 /** PC13 对应 HAL 引脚宏（GPIOC Pin 13） */
 #define LED_PIN GPIO_PIN_13
@@ -39,13 +42,18 @@ int main(void)
     HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();
+    MX_USART1_UART_Init();
+
+    USART1_WriteStr("Stm32 cmsis hal demo start\n");
 
     /* 多数 C8 核心板 PC13 LED 低电平点亮：SET=灭，RESET=亮 */
     for (;;) {
+        USART1_WriteStr("LED on\n");
         HAL_GPIO_WritePin(GPIOC, LED_PIN, GPIO_PIN_SET);
         delay(0xFFFFFU);
         delay(0xFFFFFU);
 
+        USART1_WriteStr("LED off\n");
         HAL_GPIO_WritePin(GPIOC, LED_PIN, GPIO_PIN_RESET);
         delay(0xFFFFFU);
         delay(0xFFFFFU);

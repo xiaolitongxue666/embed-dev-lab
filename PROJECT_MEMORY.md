@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-06-25（HAL submodule v1.1.8 纳入 vendor-pack）
+> 项目级持久知识（仅本仓库）。最后更新：2026-06-30（USART1 串口、newlib/nosys 文档）
 
 ## 快速路径
 
@@ -13,7 +13,9 @@
 | F103 烧录 | `./scripts/build.sh <module> flash` |
 | f103-cmsis-hal 依赖拷贝 | `./scripts/fetch-f103-cmsis-hal-deps.sh` |
 | 应用层文档 | `doc/projects/`（说明）· `projects/`（源码）· `projects/README.md` |
-| f103-manual-reg | `doc/projects/f103-manual-reg.md`（全手写寄存器，不链接 CMSIS/HAL） |
+| f103-manual-reg | `doc/projects/f103-manual-reg.md`（全手写寄存器；printf + syscalls 串口） |
+| f103-cmsis-hal | `doc/projects/f103-cmsis-hal.md`（CMSIS+HAL；HAL_UART_Transmit，无 printf） |
+| 裸机 printf / nosys / HAL 串口 | `doc/learn/newlib-nosys-stdio-retarget.md` |
 | f103-cmsis-hal third_party 说明 | `projects/f103-cmsis-hal/third_party/README.md` |
 | f103-cmsis-hal 工程结构（带注释目录树） | `projects/f103-cmsis-hal/README.md` |
 | 模块编译流程 | `doc/learn/f103-module-build-flow.md` |
@@ -48,7 +50,7 @@
 5. **probe-rs 烧录 CLI**：`probe-rs download --chip STM32F103C8Tx --binary-format elf <elf>`；旧版 `--format` 已废弃。
 6. **烧录后复位**：`scripts/build.sh` 的 `flash` 在 download 后执行 `probe-rs reset`，避免目标停在调试态。
 7. **ST-Link WinUSB**：Windows 上 probe-rs 需 Debug 接口 WinUSB；bundled 路径 `vendor-pack/STLink/.../USBDriver/`，脚本 `stlink-winusb-windows.sh`。
-8. **projects 布局**：`f103-manual-reg`（全手写寄存器，不链接 CMSIS/HAL）与 `f103-cmsis-hal`（工程内最小 CMSIS+HAL）**并列独立**、功能对等（PC13 闪烁）；**CMake/build.sh 框架一致**。
+8. **projects 布局**：`f103-manual-reg`（全手写寄存器 + `printf`→`syscalls.c`）与 `f103-cmsis-hal`（最小 CMSIS+HAL + `HAL_UART_Transmit`，**无** `syscalls.c`）**并列独立**、行为对等（PC13 闪烁 + 串口打印）；**CMake/build.sh 框架一致**。串口选型见 `doc/learn/newlib-nosys-stdio-retarget.md` §5。
 9. **f103-manual-reg 文档链**：`linker-vma-lma.md`（**VMA/LMA 权威**）；`f103-manual-build-from-scratch.md`（从零顺序、GNU ld §2.1–§2.2）；`f103-module-build-flow.md`（CMake/map）；`stm32f103-memory-boot-map.md`（BOOT/Flash/SRAM）；`linker-map-file.md`；链接脚本 `STM32F103C8_FLASH.ld` 行内注释与 startup 协作。
 10. **PC13 / Backup 域**：`RCC_APB1ENR.PWREN` + `PWR_CR.DBP` 后再写 `GPIOC_CRH`；详见 `doc/reference/stm32f103/md/topics/backup-domain-pc13.md`。
 11. **CMSIS 与本仓库**：`doc/learn/cmsis-overview.md`；submodule `cmsis-core` + `cmsis-device-f1` 供对照；f103-manual-reg **不** `#include` 官方 Device 头。
@@ -56,7 +58,7 @@
 13. **ST 官方 PDF+MD**：改 `system_stm32f1xx.c` 以 RM0008 §6 RCC 为主；DS5319 定约束；见 `doc/learn/datasheet-vs-reference-manual.md`。
 14. **vendor-pack**：ST-Link 驱动 + CMSIS/HAL submodules（Core + Device + HAL）+ 核心板例程 + STM32CubeF1 fetch（可选）。
 15. **fetch-cmsis.sh**：Core **`cm3`** / **`v5.6.0_cm3`**，Device **`v4.3.5`**，HAL **`v1.1.8`**；`git submodule update --init` 后 `checkout_hal_driver` 固定 tag；首次 `git clone --recursive`。
-16. **f103-cmsis-hal 依赖与 third_party**：`third_party/` **非完整 CMSIS/HAL**，而是 fetch **按需裁剪**的最小子集；完整上游在 `vendor-pack/`（`cmsis-core`、`cmsis-device-f1`、`stm32f1xx-hal-driver` submodule）；**CMSIS 仅 7 头**入 `third_party/cmsis/Include/`，模板 `startup/linker/system` 在工程根目录；**HAL Inc 全拷、Src 仅 8 个 .c 链入 .elf**；模块裁剪在 `src/stm32f1xx_hal_conf.h`；详见 `projects/f103-cmsis-hal/third_party/README.md`。
+16. **f103-cmsis-hal 依赖与 third_party**：`third_party/` **非完整 CMSIS/HAL**，而是 fetch **按需裁剪**的最小子集；完整上游在 `vendor-pack/`；**CMSIS 仅 7 头**；**HAL Inc 全拷、Src 9 个 .c 链入 .elf**（含 `hal_uart.c`）；模块裁剪在 `stm32f1xx_hal_conf.h`（GPIO/RCC/PWR/UART/DMA）；详见 `third_party/README.md`。
 17. **用户文档**：`doc/` 中文；应用层 `doc/projects/`；旧链 `doc/modules-f103-blink.md` 为重定向 stub。
 18. **USB / ST-Link**：绿联 Hub 下 ST-Link V2 (`0483:3748`) 可正常枚举；SWD 四线。
 19. **clangd**：build/bootstrap 后 `setup-clangd.sh` 同步根 `compile_commands.json`（扫描 `projects/*/build/`）。
@@ -64,7 +66,7 @@
 21. **源码注释与语言**：manual-reg 与 cmsis-hal 的 `src/`、`startup/`、`linker/` 中文；`third_party` ST 正文英文，参与链接的 HAL .c 与 CMSIS 关键头有 embed-dev-lab 中文顶块 + `third_party/**/README.md`；**仅改注释不改代码**；fetch 后 `scripts/lib/apply-f103-cmsis-hal-comments.sh` 自动恢复模板与 third_party 顶注释。
 22. **`.gitignore`**：CubeF1 全包、核心板、PDF、`.tools/` 忽略；CMSIS + HAL submodules **不**忽略。
 23. **MCP/Skill**：`install-mcp-skills.sh` → `.cursor/mcp.json` + `skills/embed-dev-lab`；Codex 无 MCP。
-24. **实机验证**（2026-06-25）：`f103-manual-reg` / `f103-cmsis-hal` build+probe-rs flash 均通过；`./scripts/build-flash.sh f103-cmsis-hal` 一键编译烧录已验证。
+24. **实机验证**（2026-06-30）：两工程 build+flash 通过；USART1 @ PA9/PA10 **1500000** 8N1；CH341 RX←PA9、GND 共地；`build-flash.sh` 一键可用。
 25. **Cursor 终端**：工作区 `.vscode/settings.json` 声明 `defaultProfile: Git Bash`。
 
 ## 问题 ↔ 解法
@@ -106,7 +108,13 @@
 | f103-cmsis-hal 缺 third_party / 头文件 | `./scripts/fetch-cmsis.sh` 后 `./scripts/fetch-f103-cmsis-hal-deps.sh` |
 | f103-cmsis-hal 链接 assert_param / _init | `stm32f1xx_hal_conf.h` 定义 `assert_param`；startup 无 `__libc_init_array` |
 | fetch 后 cmsis-hal 模板注释变英文 | 重新 `./scripts/fetch-f103-cmsis-hal-deps.sh`（apply 恢复 startup/linker/system 与 third_party 顶注释） |
-| third_party 是完整 CMSIS/HAL 还是最小子集？ | **最小子集**：CMSIS 7 头 + HAL Inc 全拷 + **仅 8 个 HAL .c 链入 .elf**；完整包在 `vendor-pack/` submodule（含 `stm32f1xx-hal-driver`）；见 `third_party/README.md` |
-| third_party 是参考还是编入固件？ | **vendored 并入构建**：8 个 HAL `.c` 链入 `.elf`；`Inc/` 仅 `#include`；见 `third_party/README.md` |
+| third_party 是完整 CMSIS/HAL 还是最小子集？ | **最小子集**：CMSIS 7 头 + HAL Inc 全拷 + **9 个 HAL .c 链入 .elf**（含 UART）；完整包在 `vendor-pack/` |
+| third_party 是参考还是编入固件？ | **vendored 并入构建**：9 个 HAL `.c` 链入 `.elf`；`Inc/` 仅 `#include`；见 `third_party/README.md` |
 | fetch-stm32cubef1 勿用 GitHub ZIP | 缺 submodule；用 `git clone --recursive` 或 `fetch-stm32cubef1.sh` |
 | Cursor Agent 调不到 MCP | 确认 MCP 已连接；非 Codex；新开对话 |
+| printf 无串口 / `_write is not implemented` | 须 `USART1_Init`/`MX_USART1_UART_Init`；**manual-reg** 须 `syscalls.c` 实现 `_write`→`USART1_Write`；**cmsis-hal** 用 `USART1_WriteStr`→`HAL_UART_Transmit`（无 printf） |
+| 串口有输出但逐行右移 | Windows 终端需 CRLF；`_write`/`USART1_WriteStr` 在 `\n` 前补 `\r` |
+| 链接 `undefined reference to 'end'` | manual-reg 链接脚本 `PROVIDE(end)`；`syscalls.c` 自定义 `_sbrk` 用 `_ebss` |
+| HAL 也要 syscalls / `_write` 吗 | 仅 **printf** 需要；HAL 只管发字节；概念见 `doc/learn/newlib-nosys-stdio-retarget.md` |
+| `--specs=nosys.specs` 必须写 syscalls？ | 否；**用 printf 才须 `_write`**；不用 libc I/O 时 libnosys 占位即可链接 |
+| third_party HAL .c 个数 | **9 个**（含 `hal_uart.c`）；见 `f103-cmsis-hal/CMakeLists.txt` |

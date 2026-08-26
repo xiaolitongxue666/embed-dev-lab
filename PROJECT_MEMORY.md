@@ -1,6 +1,6 @@
 # embed-dev-lab — Project Memory
 
-> 项目级持久知识（仅本仓库）。最后更新：2026-08-26（summary-memory：CH341 Win 读串口 / 规则）
+> 项目级持久知识（仅本仓库）。最后更新：2026-08-26（summary-memory：双路线规则 + gitignore）
 
 ## 快速路径
 
@@ -29,7 +29,7 @@
 4. **烧录**：probe-rs；chip `STM32F103C8Tx`；`--binary-format elf`；flash 后 `probe-rs reset`。
 5. **flash 不 compile / 不 configure**：改代码先 `build`；`clean` 后先 `./scripts/build.sh <module>`。
 6. **ST-Link WinUSB**：Windows Debug 接口；`vendor-pack/STLink/.../USBDriver/`。
-7. **两工程**：`f103-manual-reg`（寄存器 + printf/syscalls；**SystemInit** 72 MHz）与 `f103-cmsis-hal`（CubeIDE 对照，非占位；**main** HAL 升频；`HAL_UART_Transmit`）。
+7. **两工程双路线**：同一芯片（F103）上 `f103-manual-reg`（手写寄存器）与 `f103-cmsis-hal`（官方 CMSIS+HAL / Cube 风格对照）并列；**对外功能对齐**，实现路径不同；非 CubeMX 生成、非占位。
 8. **PC13 Backup**：`PWREN` + `DBP`（或 `HAL_PWR_EnableBkUpAccess`）后再配 GPIOC。
 9. **串口**：**波特率与 COM/tty 名可变**；以固件为准（demo 常 1500000 8N1）；CH341 `1a86:5523` RX←PA9；Win Agent 用 `serial-ch341-read.sh`（勿写死 COM、勿驱动 SecureCRT）；WSL 用 picocom；宿主 `serial-ch341-switch.sh`。
 10. **cmsis-hal third_party**：最小子集；HAL Src **9** 个 `.c`；完整上游在 `vendor-pack/`。
@@ -40,7 +40,7 @@
 15. **禁止**未经确认全片 Flash 擦除。
 16. **clangd**：`setup-clangd.sh` 同步根 `compile_commands.json`。
 17. **调试**：F5「F103 Probe-rs Debug」或「F103 CMSIS-HAL Probe-rs Debug」。
-18. **`.gitignore`**：CubeF1/PDF/`.tools/`/`.codegraph/`/`.project-memory-backups/`/`.local/`；CMSIS+HAL submodule 不忽略。
+18. **`.gitignore`**：CubeF1/PDF/`.tools/`/`.codegraph/`/`.project-memory-backups/`/`.local/`/`.tmp-*`/`*.log`；CMSIS+HAL submodule 与 `scripts/serial-ch341-*.sh` **不**忽略。
 19. **MCP**：`install-mcp-skills.sh`；不覆盖完整 `AGENTS.md`；Codex 无 MCP。
 20. **实机**：两工程 build+flash；USART1 高波特经 CH341 验证（Win `serial-ch341-read` / WSL picocom）。
 21. **Cursor 终端**：`defaultProfile: Git Bash`。

@@ -1,10 +1,12 @@
 ---
-description: f103-manual-reg — 全手写寄存器，禁止链接 CMSIS/HAL
+description: f103-manual-reg — 手写寄存器路线，禁止链接 CMSIS/HAL；与 cmsis-hal 功能对齐
 globs: projects/f103-manual-reg/**
 alwaysApply: false
 ---
 
 # f103-manual-reg
+
+与 `f103-cmsis-hal` 为**同一芯片上的并列路线**：本工程用**手写寄存器**实现功能；对照工程用官方 CMSIS+HAL（Cube 风格）。**对外具体功能应一致**。
 
 - **不** `#include` / 链接官方 CMSIS Device 头或 HAL
 - 串口：`printf` → `syscalls.c` `_write` → `USART1_Write`；勿改成仅 HAL 路径

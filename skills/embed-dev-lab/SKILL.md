@@ -23,8 +23,10 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 
 | 工程 | 实现 | 串口 | 产物 |
 |------|------|------|------|
-| `f103-manual-reg` | 全手写寄存器，无 CMSIS/HAL | `printf` + `syscalls.c` | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
-| `f103-cmsis-hal` | CubeIDE 风格对照；CMSIS+HAL 最小子集（HAL Src 9 个 `.c`） | `HAL_UART_Transmit`（无 printf） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+| `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL） | `printf` + `syscalls.c` | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| `f103-cmsis-hal` | CMSIS+HAL / Cube 风格对照路线（非 CubeMX 生成） | `HAL_UART_Transmit`（无 printf） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+
+两工程为**同一芯片上的并列路线**，对外具体功能应对齐；详见 `.cursor/rules/embed-dev-lab-core.mdc`。
 
 | 项 | 值 |
 |----|-----|

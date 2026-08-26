@@ -1,7 +1,12 @@
 ## embed-dev-lab Skill (Codex / 无 MCP Agent)
 
-- **f103-manual-reg**：全手写寄存器，不链接 CMSIS/HAL；串口用 `printf` + `syscalls.c` → `_write`；时钟在 `SystemInit`（进 `main` 前）升至 72 MHz
-- **f103-cmsis-hal**：CubeIDE 风格对照（`MX_*` / MSP / `hal_conf`），**非**占位、**非** CubeMX 生成工程；工程内 CMSIS+HAL 最小子集（HAL Src **9** 个 `.c`）；串口用 `HAL_UART_Transmit`（无 printf/syscalls）；时钟在 `main` 的 `SystemClock_Config`
+**双路线（同一芯片，功能对齐，路径不同）：**
+
+- **f103-manual-reg**：手写外设寄存器完成功能；不链接官方 CMSIS Device / HAL；串口 `printf` + `syscalls.c` → `_write`；时钟在 `SystemInit`（进 `main` 前）升至 72 MHz
+- **f103-cmsis-hal**：ST 官方 CMSIS + HAL，按 STM32Cube / CubeIDE 生成工程分层与风格手写对照（`MX_*` / MSP / `hal_conf`）；**非** CubeMX 一键生成、**非**占位；工程内 CMSIS+HAL 最小子集（HAL Src **9** 个 `.c`）；串口 `HAL_UART_Transmit`（无 printf/syscalls）；时钟在 `main` 的 `SystemClock_Config`
+
+新增/变更 demo 行为时两条路线应同步对齐（除非用户明确只改其一）。
+
 - 构建：`./scripts/build.sh <module> build`；烧录：`flash`（**不**自动 compile / configure；改代码后须先 build；`clean` 后须先 `build.sh <module>` 再 flash）
 - cmsis-hal 依赖：`./scripts/fetch-f103-cmsis-hal-deps.sh`（须先 `fetch-cmsis.sh`）
 - probe-rs chip：`STM32F103C8Tx`；CLI 使用 `--binary-format elf`

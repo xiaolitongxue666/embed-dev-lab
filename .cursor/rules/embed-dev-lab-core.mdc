@@ -1,11 +1,23 @@
 ---
-description: embed-dev-lab 全局约束 — 两工程、probe-rs、注释、Git Bash
+description: embed-dev-lab 全局约束 — 两工程双路线、probe-rs、注释、Git Bash
 alwaysApply: true
 ---
 
 # embed-dev-lab 核心规则
 
-- 两工程并列：`f103-manual-reg`（手写寄存器）与 `f103-cmsis-hal`（CubeIDE 风格对照，非占位、非 CubeMX 生成）
+## 双路线（功能一致，实现路径不同）
+
+同一目标芯片（STM32F103）下并列两套工程，**对外具体功能应对齐**（LED、串口日志等行为一致），仅实现路径不同：
+
+| 工程 | 路线 |
+|------|------|
+| `f103-manual-reg` | **手写寄存器**：直接操作外设寄存器完成功能；**不**链接官方 CMSIS Device / HAL |
+| `f103-cmsis-hal` | **CMSIS + HAL**：用 ST 官方 CMSIS/HAL，按 STM32Cube / CubeIDE 生成工程的分层与风格手写对照（`MX_*` / MSP / `hal_conf` 等）；**非** CubeMX 一键生成、**非**占位 stub |
+
+新增或变更 demo 行为时，两条路线应同步对齐，除非用户明确只改其一。
+
+## 其它约束
+
 - Windows 脚本须在 **Git Bash** 运行
 - probe-rs chip：`STM32F103C8Tx`；烧录：`--binary-format elf`（勿用 `--format`）
 - `flash` 不自动 compile/configure；改代码先 `build`；`clean` 后先 `./scripts/build.sh <module>`

@@ -23,13 +23,19 @@ __pycache__/
 .Python
 
 # --- Agent / 维护临时目录 ---
+# .local = 本地工具状态（如 gh device-id），勿入库
 .project-memory-backups/
 .local/
+# summary-memory / 临时草稿
 .tmp-PROJECT_MEMORY-draft.md
+.tmp-*
+*.tmp
 logs/
 graphify-out/
 temp_args.json
 ERROR.md
+# 通用日志（含 vendor-pack/STLink/.../Error.log）
+*.log
 
 # --- Codegraph 本地索引（SQLite / daemon，体积大，勿入库）---
 .codegraph/

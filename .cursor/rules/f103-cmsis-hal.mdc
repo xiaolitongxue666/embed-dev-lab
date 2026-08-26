@@ -1,10 +1,12 @@
 ---
-description: f103-cmsis-hal — CubeIDE 风格对照，最小 HAL 子集
+description: f103-cmsis-hal — CMSIS+HAL / Cube 风格路线；与 manual-reg 功能对齐
 globs: projects/f103-cmsis-hal/**
 alwaysApply: false
 ---
 
 # f103-cmsis-hal
+
+与 `f103-manual-reg` 为**同一芯片上的并列路线**：本工程用 **ST 官方 CMSIS + HAL**，按 STM32Cube / CubeIDE 生成工程的分层与风格手写对照；对照工程为手写寄存器。**对外具体功能应一致**。本工程**非** CubeMX 一键生成、**非**占位 stub。
 
 - 保持 Cube 分层：`MX_*`、`stm32f1xx_hal_msp.c`、`stm32f1xx_it.c`、`stm32f1xx_hal_conf.h`
 - 串口：`USART1_WriteStr` → `HAL_UART_Transmit`；**不要**为本 demo 加 `printf`/`syscalls.c`

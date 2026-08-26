@@ -116,6 +116,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | 引脚 | PA9=TX，PA10=RX（F103 默认映射，无 AFIO 重映射） |
 | 帧格式 | 1500000 bps，8N1 |
 | CH341 | 模块 **RX←PA9**，**TX→PA10**，**GND 共地** |
+| Windows ↔ WSL | `./scripts/serial-ch341-switch.sh status\|to-win\|to-wsl`；WSL 读串口：`picocom -b 1500000 /dev/ttyUSB0`（见 [scripts-reference § picocom](../scripts-reference.md#wsl-下用-picocom-读串口1500000-8n1)） |
 | 实现 | [`usart.c`](../../projects/f103-manual-reg/src/usart.c) 写 RCC/GPIOA/USART1 寄存器；`USART1_Write` 轮询 `SR.TXE` 写 `DR` |
 
 ## printf 与 newlib syscall
@@ -178,7 +179,7 @@ Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg
 |------|----------|
 | LED 不闪 | PWR+DBP；先 `build` 再 `flash` |
 | 程序卡死 | HSE 超时（`system_stm32f1xx.c`）；无晶振时 HSI 路径 |
-| 有 LED 无串口 | `USART1_Init()`；COM 口/波特率 1500000/GND |
+| 有 LED 无串口 | `USART1_Init()`；COM/波特率 1500000/GND；CH341 宿主 `serial-ch341-switch.sh status` |
 | 串口逐行右移 | `_write` 须 `\n`→`\r\n`（已实现在 `syscalls.c`） |
 | 链接 `_write` / `end` 错误 | 是否含 `syscalls.c`；链接脚本 `PROVIDE(end)` |
 | `probe-rs list` 空 | [WinUSB 脚本](../../scripts/install/stlink-winusb-windows.sh) |

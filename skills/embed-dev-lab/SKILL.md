@@ -1,6 +1,6 @@
 ---
 name: embed-dev-lab
-description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup 域 PC13、脚本与 MCP 安全约束。在 embed-dev-lab 仓库内开发 F103 裸机/嵌入式任务时使用。
+description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup 域 PC13、CH341 串口 Windows↔WSL、Win serial-ch341-read、WSL picocom、脚本与 MCP 安全约束。在 embed-dev-lab 仓库内开发 F103 裸机/嵌入式任务、验证串口日志时使用。
 ---
 
 # embed-dev-lab 嵌入式开发 Skill
@@ -33,7 +33,9 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 
 一键环境：`./scripts/bootstrap.sh`（默认不含 MCP；加 `--with-mcp` 安装 embedded-debugger）。
 
-编写 → 编译 → 下载：[`doc/workflow-write-build-flash.md`](doc/workflow-write-build-flash.md)。`flash` 不 configure；`clean` 后须先 `./scripts/build.sh <module>`。
+编写 → 编译 → 下载：[`doc/workflow-write-build-flash.md`](doc/workflow-write-build-flash.md)（含「烧写脚本在哪里」）。真正烧录在 `scripts/build.sh flash`；一键用 `scripts/build-flash.sh`。`flash` 不 configure；`clean` 后须先 `./scripts/build.sh <module>`。
+
+CH341 串口：`serial-ch341-switch.sh`（to-win/to-wsl）。Windows Agent 读：`./scripts/serial-ch341-read.sh [--baud N]`（自动 COM；波特/端口可变）。WSL：`picocom -b <固件波特> /dev/ttyUSB*`。规则：`.cursor/rules/serial-ch341.mdc`。
 
 ## 硬件要点（F103 PC13）
 
@@ -45,6 +47,16 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 否则 `GPIOC_CRH` 写入无效，LED 不亮。详见 [`doc/reference/stm32f103/md/topics/backup-domain-pc13.md`](doc/reference/stm32f103/md/topics/backup-domain-pc13.md)。
 
 多数核心板 **低电平点亮** PC13 LED。
+
+## 串口验证（CH341）
+
+烧录后看日志遵循 `.cursor/rules/serial-ch341.mdc`（**波特率与 COM/tty 名会变**）：
+
+1. Windows Agent：`./scripts/serial-ch341-read.sh`（自动 to-win + 按 VID 找 COM；固件改波特加 `--baud`）
+2. WSL：`to-wsl` 后 `picocom -b <与固件一致> /dev/ttyUSB*`
+3. 用户 SecureCRT 等：`to-win`；Agent 勿驱动 GUI、勿写死 COMx
+
+详解：`doc/scripts-reference.md`。
 
 ## Windows ST-Link
 
@@ -74,7 +86,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 | STM32CubeF1 参考 | https://github.com/STMicroelectronics/STM32CubeF1 |
 | HAL submodule | `vendor-pack/stm32f1xx-hal-driver` · `v1.1.8` · `./scripts/fetch-cmsis.sh` |
 | HAL 参考 | https://github.com/STMicroelectronics/stm32f1xx-hal-driver · `vendor-pack/stm32f1xx-hal-driver.embed-dev-lab.md` |
-| 脚本 | `doc/scripts-reference.md` |
+| 脚本 / CH341 读串口 | `doc/scripts-reference.md` · `serial-ch341-read.sh` · 规则 `serial-ch341.mdc` |
 | MCP/Skill | `doc/mcp-skills.md` |
 | ST 官方参考 | `doc/reference/stm32f103/` |
 | 项目记忆 | `PROJECT_MEMORY.md` |

@@ -2,9 +2,20 @@
 
 本文列出 `scripts/` 下各脚本的用途、典型命令及 **自动化链路**。脚本日志前缀为 `[embed-dev-lab]`，输出为英文。
 
-## 自动化总览
-
 日常流程见 [编写 → 编译 → 下载](workflow-write-build-flash.md)。
+
+## 烧写脚本在哪里
+
+| 文件 | 作用 |
+|------|------|
+| [`scripts/build.sh`](../scripts/build.sh) | **真正烧录**：`flash`（probe-rs ELF）/ `flash-openocd`（OpenOCD HEX） |
+| [`scripts/build-flash.sh`](../scripts/build-flash.sh) | 一键：`build` → `flash`（不 configure） |
+| [`.vscode/tasks.json`](../.vscode/tasks.json) | Task「Build and Flash F103」等，调用 `build.sh` |
+| [`.vscode/launch.json`](../.vscode/launch.json) | F5 时 probe-rs-debugger 烧录 |
+
+`bootstrap.sh` **不含**烧录。流程细节：[workflow-write-build-flash.md § 烧写脚本在哪里](workflow-write-build-flash.md#烧写脚本在哪里)。
+
+## 自动化总览
 
 ```mermaid
 flowchart TB
@@ -100,6 +111,122 @@ flowchart TB
 
 ---
 
+### serial-ch341-switch.sh — CH341 串口宿主切换（Windows ↔ WSL）
+
+基于 **usbipd-win**，把 CH341 USB-UART（VID:PID `1a86:5523`）在 Windows COM 口与 WSL `/dev/ttyUSB0` 之间切换。可在 **Windows Git Bash** 或 **WSL** 中运行；`bind` / `attach` / `detach` / `unbind` 通常需要 **管理员权限**。
+
+前置：已安装 [usbipd-win](https://github.com/dorssel/usbipd-win)（`usbipd.exe`，勿与 Linux 的 `/usr/bin/usbipd` 混淆）。
+
+```bash
+./scripts/serial-ch341-switch.sh                 # 默认：status
+./scripts/serial-ch341-switch.sh status
+./scripts/serial-ch341-switch.sh to-wsl          # 附加到 WSL → /dev/ttyUSB0
+./scripts/serial-ch341-switch.sh to-win          # 归还 Windows → COM 口
+./scripts/serial-ch341-switch.sh to-wsl --distro archlinux   # 指定发行版
+```
+
+| 动作 | 结果 | 读串口 |
+|------|------|--------|
+| `to-win`（默认宿主侧） | Windows COM 口 | 串口助手 **1500000** 8N1 |
+| `to-wsl` | WSL `/dev/ttyUSB0` | `picocom -b 1500000 /dev/ttyUSB0`（见下节） |
+
+硬件接线不变：CH341 **RX←PA9**，TX→PA10，GND 共地。烧录仍用 ST-Link（与串口宿主无关）。
+
+**端口名与波特率会变**：COM 编号随插拔变化；固件改波特后须传 `--baud` / `EMBED_SERIAL_BAUD`。Windows Agent 读串口用下一节脚本（自动认 CH341），勿写死 `COM5` / 假定永远 `1500000`。
+
+#### serial-ch341-read.sh — Windows Agent 读串口
+
+在 **Windows Git Bash** 下：可选先 `to-win`，按 VID:PID **自动找 CH341 COM**，按指定波特率抓取若干秒（依赖 pyserial；优先 `uv run --with pyserial`）。
+
+```bash
+./scripts/serial-ch341-read.sh                         # to-win + 自动 COM + 默认 1500000
+./scripts/serial-ch341-read.sh --baud 115200 --seconds 8
+./scripts/serial-ch341-read.sh --port COM5 --no-switch # 强制口（须先 --list 确认）
+./scripts/serial-ch341-read.sh --list
+EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
+```
+
+| 选项 / 环境变量 | 含义 |
+|-----------------|------|
+| `--baud` / `EMBED_SERIAL_BAUD` | 与**当前固件**一致（默认 1500000） |
+| `--port` / `EMBED_SERIAL_PORT` | 强制 COMx；默认自动检测 `1a86:5523` |
+| `--seconds` | 抓取时长（默认 5） |
+| `--no-switch` | 不调用 `to-win` |
+| `--list` | 列出 COM 并标记 CH341 |
+
+WSL 侧仍用 picocom（见下节），不要用本脚本。
+
+#### WSL 下用 picocom 读串口
+
+本仓库 demo **默认**波特率为 **1500000**（以固件为准，可改）。先把 CH341 切到 WSL，再开终端：
+
+```bash
+./scripts/serial-ch341-switch.sh to-wsl   # 出现 /dev/ttyUSB0（需管理员 + usbipd-win）
+ls -l /dev/ttyUSB0                        # 确认节点存在
+# 若 Permission denied：sudo usermod -aG dialout "$USER" 后重新登录，或临时 sudo
+sudo apt install picocom                  # Debian/Ubuntu；Arch: pacman -S picocom
+```
+
+**日常用法（默认已是 8 数据位 / 无校验 / 1 停止位 / 无流控）：**
+
+```bash
+picocom -b 1500000 /dev/ttyUSB0
+```
+
+**显式写出 8N1、无流控**（与 man 一致：校验用 `-y`，停止位用 `-p`）：
+
+```bash
+picocom -b 1500000 -d 8 -y n -p 1 -f n /dev/ttyUSB0
+```
+
+启动后应看到类似：
+
+```text
+port is        : /dev/ttyUSB0
+baudrate is    : 1500000
+parity is      : none
+databits are   : 8
+stopbits are   : 1
+```
+
+烧录后的 demo 会周期输出 `LED on` / `LED off`（含 `\r\n`）。用 **Ctrl+A** 再 **Ctrl+V** 可复核 `baudrate is: 1500000`。
+
+| 按键（默认转义前缀 Ctrl+A） | 功能 |
+|-----------------------------|------|
+| Ctrl+A Ctrl+Q | 退出且**不**复位串口参数（Quit） |
+| Ctrl+A Ctrl+X | 退出；默认会复位串口并拉低 DTR/RTS（Exit） |
+| Ctrl+A Ctrl+V | 显示当前配置（确认波特率） |
+| Ctrl+A Ctrl+C | 开/关本地回显（MCU 不回显时便于看自己键入） |
+| Ctrl+A Ctrl+B | 运行时改波特率 |
+| Ctrl+A Ctrl+S | 发送文件（可配合 `-s` 指定外部传输命令） |
+| Ctrl+A Ctrl+H | 快捷键帮助 |
+
+> 转义前缀默认是 **Ctrl+A**（`-e a`）。`-e x` 只是把转义改成 Ctrl+X，**不是**关闭转义；要禁用命令模式用 `-n` / `--no-escape`（此后只能关终端或发信号退出）。
+
+**记录会话日志**（`--logfile` 与 `-g` 等价；已有文件则追加）：
+
+```bash
+picocom -b 1500000 --logfile /tmp/uart.log /dev/ttyUSB0
+```
+
+**只看原始流、不交互**（Ctrl+C 结束；一般仍建议先 `stty` 设波特率，或直接用 picocom）：
+
+```bash
+cat /dev/ttyUSB0
+```
+
+**波特率说明**：Linux `ch341` 驱动可协商约 **46 bps～3 Mbps** 的自定义速率；**1500000** 在 picocom 的 `HIGH_BAUD` 列表中，且本仓库在 WSL（usbipd attach → `/dev/ttyUSB0`）上已验证可收到 `LED on\r\n` / `LED off\r\n` 无乱码。若出现 `Cannot set baud rate` 或乱码：确认已 `to-wsl`、接线 RX←PA9、固件按 72 MHz 算 BRR；仍失败再排查内核/驱动版本。
+
+调完切回 Windows 串口助手：
+
+```bash
+./scripts/serial-ch341-switch.sh to-win
+```
+
+参考：[picocom man page](https://manpages.debian.org/picocom/picocom.1.en.html)。
+
+---
+
 F103 chip：`STM32F103C8Tx`。ELF：`projects/<project>/build/<project>.elf`。
 
 #### 构建产物与格式转换
@@ -177,6 +304,9 @@ CMake / 链接细节见 [f103-manual-reg 编译流程](learn/f103-module-build-f
 | CLI **编译 + 烧录** | `build.sh f103-manual-reg build && build.sh f103-manual-reg flash` |
 | Task **编译 + 烧录** | Run Task → **Build and Flash F103** |
 | IDE **编译 + 烧录 + 调试** | F5 → **F103 Probe-rs Debug** 或 **F103 CMSIS-HAL Probe-rs Debug** |
+| CH341 **Windows ↔ WSL** | `./scripts/serial-ch341-switch.sh to-win` / `to-wsl`（需管理员 + usbipd-win） |
+| WSL **picocom** 读日志 | `picocom -b <固件波特> /dev/ttyUSB*`（见上节） |
+| Windows **Agent** 读日志 | `./scripts/serial-ch341-read.sh [--baud N]`（自动 COM） |
 
 ---
 

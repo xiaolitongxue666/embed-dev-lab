@@ -4,6 +4,32 @@
 
 相关：[`getting-started.md`](getting-started.md)（从零环境）、[`scripts-reference.md`](scripts-reference.md)（脚本全表）、[`probe-rs.md`](probe-rs.md)。
 
+## 烧写脚本在哪里
+
+烧写入口都在仓库根目录 [`scripts/`](../scripts/)，核心是两处：
+
+| 文件 | 作用 |
+|------|------|
+| [`scripts/build.sh`](../scripts/build.sh) | **真正烧录**：`flash` → `probe-rs download --chip STM32F103C8Tx --binary-format elf`，再 `probe-rs reset`；备选 `flash-openocd` 烧 `.hex` |
+| [`scripts/build-flash.sh`](../scripts/build-flash.sh) | **一键包装**：先 `build.sh … build`，再 `build.sh … flash`（**不** configure） |
+
+常用命令：
+
+```bash
+./scripts/build.sh f103-manual-reg flash
+./scripts/build-flash.sh f103-manual-reg
+./scripts/build-flash.sh f103-cmsis-hal
+```
+
+**IDE**（同样落到上述脚本或 probe-rs）：
+
+| 入口 | 路径 |
+|------|------|
+| Task「Build and Flash F103」等 | [`.vscode/tasks.json`](../.vscode/tasks.json) |
+| F5 调试烧录（`flashingEnabled`） | [`.vscode/launch.json`](../.vscode/launch.json) |
+
+[`bootstrap.sh`](../scripts/bootstrap.sh) **不含**烧录，只装环境并编译。脚本全表见 [`scripts-reference.md`](scripts-reference.md)。
+
 ## 总览
 
 ```mermaid
@@ -75,7 +101,30 @@ ELF 须已存在且为最新：`projects/<module>/build/<module>.elf`。
 | 波特率 | **1500000** 8N1 |
 | USB-TTL | 模块 **RX←PA9**，TX→PA10，**GND 共地** |
 
-串口与 SWD 独立：烧录只需 ST-Link；看日志需 USB-TTL。
+串口与 SWD 独立：烧录只需 ST-Link；看日志需 USB-TTL（常见 CH341）。
+
+**CH341 在 Windows / WSL 间切换**（usbipd-win）：
+
+```bash
+./scripts/serial-ch341-switch.sh status     # 当前宿主
+./scripts/serial-ch341-switch.sh to-win     # Windows COM → 串口助手 1500000 8N1
+./scripts/serial-ch341-switch.sh to-wsl     # WSL /dev/ttyUSB0
+```
+
+**WSL 读日志（picocom；波特率与固件一致）：**
+
+```bash
+picocom -b 1500000 /dev/ttyUSB0          # 默认 demo；固件改波特则改 -b
+```
+
+**Windows Agent 读日志（自动 COM，勿写死端口）：**
+
+```bash
+./scripts/serial-ch341-read.sh
+./scripts/serial-ch341-read.sh --baud 115200   # 固件波特已变时
+```
+
+完整选项见 [`scripts-reference.md` § serial-ch341-read / picocom](scripts-reference.md#serial-ch341-readsh--windows-agent-读串口)。宿主切换见 [serial-ch341-switch.sh](scripts-reference.md#serial-ch341-switchsh--ch341-串口宿主切换windows--wsl)。
 
 多数核心板 PC13 **低电平点亮**。串口打印 `LED on` 时 GPIO 置高（灯灭），`LED off` 时置低（灯亮）——与厂商例程一致，见各工程 `doc/projects/`。
 
@@ -95,6 +144,8 @@ ELF 须已存在且为最新：`projects/<module>/build/<module>.elf`。
 | cmsis-hal 缺头文件 | `./scripts/fetch-f103-cmsis-hal-deps.sh` |
 | `probe-rs list` 空 | Windows：`stlink-winusb-windows.sh --install` |
 | LED 不闪 | PWR+DBP；先 build 再 flash；板载 RESET |
-| 有 LED 无串口 | 波特率 1500000、RX←PA9、GND |
+| 有 LED 无串口 | 波特率 1500000、RX←PA9、GND；CH341 宿主见 `serial-ch341-switch.sh status` |
+| CH341 在 WSL 看不见 / Windows 无 COM | `./scripts/serial-ch341-switch.sh to-wsl` 或 `to-win`（需管理员 + usbipd-win） |
+| picocom 打不开 / 乱码 | 确认 `/dev/ttyUSB0`、`-b 1500000`；dialout 组；见 scripts-reference § picocom |
 
 维护速查：[PROJECT_MEMORY.md](../PROJECT_MEMORY.md)

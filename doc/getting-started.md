@@ -2,7 +2,7 @@
 
 从零开始在 **STM32F103C8T6 核心板** 上点亮 PC13 LED，并可看串口日志。命令与 CLI 输出为英文。
 
-日常「改代码 → 编译 → 烧录」见 [编写 → 编译 → 下载](workflow-write-build-flash.md)。
+日常「改代码 → 编译 → 烧录」及**烧写脚本位置**见 [编写 → 编译 → 下载](workflow-write-build-flash.md#烧写脚本在哪里)。
 
 ## 前置
 
@@ -106,6 +106,29 @@ PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 | 波特率 | **1500000** 8N1 |
 
 应看到 `Stm32 manual reg demo start` 与周期 `LED on` / `LED off`（字符串指 GPIO 电平，非灯物理亮灭；低电平点亮板上 LED）。
+
+若使用 **CH341**，且需在 Windows COM 与 WSL `/dev/ttyUSB0` 之间切换：
+
+```bash
+./scripts/serial-ch341-switch.sh to-win    # Windows 串口助手
+./scripts/serial-ch341-switch.sh to-wsl    # WSL 终端读串口
+./scripts/serial-ch341-switch.sh status
+```
+
+WSL 下用 **picocom**（波特率与固件一致；demo 默认 **1500000**）：
+
+```bash
+picocom -b 1500000 /dev/ttyUSB0
+```
+
+Windows 下 Agent 读串口（自动找 CH341 COM，勿写死端口）：
+
+```bash
+./scripts/serial-ch341-read.sh
+./scripts/serial-ch341-read.sh --baud 115200   # 固件波特已改时
+```
+
+需 [usbipd-win](https://github.com/dorssel/usbipd-win) 与管理员权限。说明：[scripts-reference.md § serial-ch341](scripts-reference.md#serial-ch341-switchsh--ch341-串口宿主切换windows--wsl)。
 
 ---
 

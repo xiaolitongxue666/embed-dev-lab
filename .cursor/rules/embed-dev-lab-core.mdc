@@ -12,3 +12,4 @@ alwaysApply: true
 - 禁止未经用户确认的全片 Flash 擦除 / mass erase
 - 注释：`src/`、`startup/`、`linker/` 中文；`third_party/**` vendor 英文；CLI 日志英文
 - 流程：`doc/workflow-write-build-flash.md`；摘要：`AGENTS.md`
+- 串口宿主切换与读日志：规则 `serial-ch341.mdc`；`serial-ch341-switch.sh` / `serial-ch341-read.sh`；详解 `doc/scripts-reference.md`

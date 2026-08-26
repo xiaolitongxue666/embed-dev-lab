@@ -140,12 +140,21 @@ probe-rs chip info --chip STM32F103C8Tx
 
 ### 一键脚本烧录
 
+烧写脚本位置（主路径）：
+
+| 文件 | 作用 |
+|------|------|
+| [`scripts/build.sh`](../scripts/build.sh) | `flash` → probe-rs download + reset；`flash-openocd` 烧 HEX |
+| [`scripts/build-flash.sh`](../scripts/build-flash.sh) | 一键 build + flash（不 configure） |
+
 ```bash
 ./scripts/build.sh f103-manual-reg build
 ./scripts/build.sh f103-manual-reg flash
+# 或
+./scripts/build-flash.sh f103-manual-reg
 ```
 
-`flash` **不会**自动编译；修改源码后须先 `build`。
+`flash` **不会**自动编译；修改源码后须先 `build`。完整地图见 [workflow-write-build-flash.md § 烧写脚本在哪里](workflow-write-build-flash.md#烧写脚本在哪里)。
 
 ---
 

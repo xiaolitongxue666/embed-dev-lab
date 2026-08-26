@@ -5,10 +5,10 @@
 ## 推荐阅读顺序
 
 1. [快速上手](getting-started.md) — bootstrap → 接线 → 烧录 → 看 LED / 串口  
-2. [编写 → 编译 → 下载](workflow-write-build-flash.md) — 日常改代码与两工程命令  
+2. [编写 → 编译 → 下载](workflow-write-build-flash.md) — 日常改代码、**烧写脚本在哪里**、两工程命令  
 3. [probe-rs 指南](probe-rs.md) — CLI、WinUSB、ST-Link、排错  
 4. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
-5. [脚本参考](scripts-reference.md) — 全脚本与自动化链路  
+5. [脚本参考](scripts-reference.md) — 全脚本、烧写入口、CH341 宿主切换、WSL picocom、自动化链路  
 6. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
 7. [f103-cmsis-hal 模块](projects/f103-cmsis-hal.md) — CubeIDE 风格对照（CMSIS+HAL）  
 8. [f103-manual-reg 从零手写构建](learn/f103-manual-build-from-scratch.md) — 文件编写顺序、CMSIS 对照、验收清单  

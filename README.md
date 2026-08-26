@@ -101,6 +101,8 @@ embed-dev-lab/
 │   ├── bootstrap.sh                # 一键环境 + 编译
 │   ├── build.sh                    # 模块 configure / build / flash
 │   ├── build-flash.sh              # 一键 build + flash
+│   ├── serial-ch341-switch.sh      # CH341 串口 Windows ↔ WSL
+│   ├── serial-ch341-read.sh        # Windows Agent 读串口（自动 COM）
 │   ├── install-tools.sh            # 分 OS 安装入口
 │   ├── install-mcp-skills.sh       # embedded-debugger MCP + Skill
 │   ├── fetch-stm32f103-docs.sh     # 下载 DS5319 + RM0008 PDF
@@ -167,7 +169,10 @@ embed-dev-lab/
 | 脚本 | 作用 | 是否烧录 |
 |------|------|----------|
 | [`bootstrap.sh`](scripts/bootstrap.sh) | 装工具 → PATH → 扩展 → 校验 → 编译 → clangd | 否 |
-| [`build.sh`](scripts/build.sh) | 模块 configure / build / flash / clean | 仅 `flash` 动作 |
+| [`build.sh`](scripts/build.sh) | 模块 configure / build / **flash**（真正烧录）/ clean | 仅 `flash` / `flash-openocd` |
+| [`build-flash.sh`](scripts/build-flash.sh) | 一键 build + flash（包装 `build.sh`，不 configure） | 是 |
+| [`serial-ch341-switch.sh`](scripts/serial-ch341-switch.sh) | CH341 串口 Windows ↔ WSL（usbipd-win）；端口/波特可变 | — |
+| [`serial-ch341-read.sh`](scripts/serial-ch341-read.sh) | Windows Agent 读串口（自动 COM + `--baud`） | — |
 | [`install-tools.sh`](scripts/install-tools.sh) | 分 OS 安装（windows / linux / macos） | — |
 | [`install-mcp-skills.sh`](scripts/install-mcp-skills.sh) | embedded-debugger MCP + 项目 Skill | — |
 | [`fetch-stm32f103-docs.sh`](scripts/fetch-stm32f103-docs.sh) | 下载 DS5319 + RM0008 PDF | — |
@@ -201,6 +206,8 @@ embed-dev-lab/
 | 脚本 | 典型用途 |
 |------|----------|
 | [`env-check.sh`](scripts/env-check.sh) | 校验 cmake / ninja / gcc / clangd / probe-rs / 扩展 / probe |
+| [`serial-ch341-switch.sh`](scripts/serial-ch341-switch.sh) | CH341 Windows ↔ WSL；COM/波特可变 |
+| [`serial-ch341-read.sh`](scripts/serial-ch341-read.sh) | Win Agent 读串口：自动认 CH341 COM，`--baud` / `EMBED_SERIAL_BAUD` |
 | [`setup-path.sh`](scripts/setup-path.sh) | 写入 User PATH + `~/.bashrc` embed-dev-lab 块 |
 | [`setup-clangd.sh`](scripts/setup-clangd.sh) | 同步 `compile_commands.json`、写 clangd 配置 |
 | [`install-extensions.sh`](scripts/install-extensions.sh) | 安装 [`.vscode/extensions.json`](.vscode/extensions.json) 扩展 |

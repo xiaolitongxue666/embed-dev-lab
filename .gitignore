@@ -29,6 +29,12 @@ graphify-out/
 temp_args.json
 ERROR.md
 
+# --- Codegraph 本地索引（SQLite / daemon，体积大，勿入库）---
+.codegraph/
+
+# --- 异常 TEMP 落盘（如 node-compile-cache 误写到仓库根 undefined/）---
+undefined/
+
 # --- 应用层文档（可提交）---
 #   doc/projects/                    固件小工程说明（与 projects/<name>/ 对应）
 #   projects/README.md               应用层代码入口说明

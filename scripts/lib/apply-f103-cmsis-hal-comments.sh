@@ -75,6 +75,7 @@ apply_f103_cmsis_hal_comments() {
 **' "$linker"
     fi
     sed -i \
+      -e 's|128KByte FLASH, 20KByte RAM|64KByte FLASH, 20KByte RAM (embed-dev-lab C8; CMSIS template was 128K)|' \
       -e 's|/\* Entry Point \*/|/* 程序入口符号 */|' \
       -e 's|/\* Highest address of the user mode stack \*/|/* 主栈顶（满递减栈上界） */|' \
       -e 's|/\* end of RAM \*/|/* RAM 末尾；C8T6：0x20005000 */|' \
@@ -210,6 +211,8 @@ apply_f103_third_party_embed_notes() {
     "Flash 等待周期；ClockConfig 时 FLASH_LATENCY_2"
   inject_third_party_embed_note "$hal_src/stm32f1xx_hal_flash_ex.c" \
     "Flash 扩展操作；RCC 配置依赖"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_uart.c" \
+    "USART 阻塞发送；usart.c USART1_WriteStr → HAL_UART_Transmit"
 
   log_ok "Applied f103-cmsis-hal third_party embed notes"
 }

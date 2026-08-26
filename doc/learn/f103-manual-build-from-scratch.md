@@ -260,7 +260,7 @@ embed_mcu_add_executable(f103-manual-reg
 | 路径 | 典型组合 | 本仓库 |
 |------|----------|--------|
 | **手写兼容（本 demo）** | 自写 startup/system + 寄存器 `main` | [`f103-manual-reg`](../../projects/f103-manual-reg/) |
-| **官方 CMSIS + HAL** | `#include stm32f103xb.h` + HAL `MX_*_Init` | 占位 [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/README.md) |
+| **官方 CMSIS + HAL** | `#include stm32f103xb.h` + HAL `MX_*_Init` | CubeIDE 风格对照 [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/README.md) |
 | **CubeMX 生成** | 引用 CMSIS 模板 + `SystemClock_Config()`（HAL_RCC_*） | 未采用；Cube 引用而非从零生成 startup |
 
 两种裸机路径均符合 Cortex-M3 架构；本仓库取轻量化路径，便于对照手册学 MMIO。判定标准见 [cmsis-overview.md §4](cmsis-overview.md#42-本仓库实例对照)。

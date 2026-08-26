@@ -21,10 +21,10 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 ./scripts/build-flash.sh f103-cmsis-hal
 ```
 
-| 工程 | 实现 | 产物 |
-|------|------|------|
-| `f103-manual-reg` | 全手写寄存器，无 CMSIS/HAL | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
-| `f103-cmsis-hal` | CMSIS+HAL 最小子集；CMSIS 链接脚本 | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+| 工程 | 实现 | 串口 | 产物 |
+|------|------|------|------|
+| `f103-manual-reg` | 全手写寄存器，无 CMSIS/HAL | `printf` + `syscalls.c` | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| `f103-cmsis-hal` | CubeIDE 风格对照；CMSIS+HAL 最小子集（HAL Src 9 个 `.c`） | `HAL_UART_Transmit`（无 printf） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
 
 | 项 | 值 |
 |----|-----|
@@ -32,6 +32,8 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 | download 格式 | `--binary-format elf`（勿用废弃的 `--format`） |
 
 一键环境：`./scripts/bootstrap.sh`（默认不含 MCP；加 `--with-mcp` 安装 embedded-debugger）。
+
+编写 → 编译 → 下载：[`doc/workflow-write-build-flash.md`](doc/workflow-write-build-flash.md)。`flash` 不 configure；`clean` 后须先 `./scripts/build.sh <module>`。
 
 ## 硬件要点（F103 PC13）
 
@@ -62,10 +64,12 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 
 | 文档 | 路径 |
 |------|------|
+| 编写/编译/下载流程 | `doc/workflow-write-build-flash.md` |
 | 快速上手 | `doc/getting-started.md` |
 | 应用层模块 | `doc/projects/` · `projects/README.md` |
 | probe-rs | `doc/probe-rs.md` |
 | CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
+| 裸机 printf / nosys / HAL 串口 | `doc/learn/newlib-nosys-stdio-retarget.md` |
 | ST F1 软件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |
 | STM32CubeF1 参考 | https://github.com/STMicroelectronics/STM32CubeF1 |
 | HAL submodule | `vendor-pack/stm32f1xx-hal-driver` · `v1.1.8` · `./scripts/fetch-cmsis.sh` |
@@ -79,7 +83,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 
 - **源码注释**：`f103-manual-reg` 与 `f103-cmsis-hal` 的工程维护文件（`src/`、`startup/`、`linker/`）中文；`third_party/**` 保持 vendor 英文  
 - **仅改注释**：翻译/注释任务不得改动代码逻辑  
-- **fetch 后恢复**：`fetch-f103-cmsis-hal-deps.sh` 拷贝 CMSIS 模板后会调用 `apply-f103-cmsis-hal-comments.sh` 恢复中文注释  
+- **fetch 后恢复**：`fetch-f103-cmsis-hal-deps.sh` 拷贝后调用 `scripts/lib/apply-f103-cmsis-hal-comments.sh` 恢复中文注释  
 - **终端 / CLI / 日志**：英文  
 
 ## 代理

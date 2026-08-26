@@ -5,7 +5,7 @@
 | 项 | 说明 |
 |----|------|
 | 芯片 | STM32F103C8T6（64 KB Flash / 20 KB RAM） |
-| 实现 | HAL API（`HAL_GPIO_*`、`HAL_RCC_*` 等）；`third_party` **vendored 并入构建**（8 个 HAL `.c` 链入 `.elf`） |
+| 实现 | CubeIDE 风格对照（`MX_*` / MSP / `hal_conf`）；`third_party` **vendored 并入构建**（9 个 HAL `.c` 链入 `.elf`） |
 | 构建 | `./scripts/build.sh f103-cmsis-hal`（CMake Preset + `embed_mcu_add_executable`，同 manual-reg） |
 | 链接脚本 | CMSIS [`linker/STM32F103XB_FLASH.ld`](linker/STM32F103XB_FLASH.ld)（C8 64K 裁剪；非 manual-reg 手写版） |
 | 长文档 | [`doc/projects/f103-cmsis-hal.md`](../../doc/projects/f103-cmsis-hal.md) |
@@ -37,17 +37,17 @@
 | **CMSIS 头** | **仅 7 个** → `third_party/cmsis/Include/` | PC13 demo 编译所需最小 Core+Device 头 |
 | **CMSIS 模板** | **不在 third_party** | `startup/`、`linker/`、`src/system_stm32f1xx.c` 单独拷贝到工程根目录 |
 | **HAL Inc** | **全部** `stm32f1xx_hal*.h` + `stm32f1xx_ll*.h` + `Legacy/` | 避免 `#include` 缺依赖；**多数无对应 .c，不占 Flash** |
-| **HAL Src** | **仅 8 个 .c** → `third_party/hal/Src/` | CMake 编译并链入 `f103-cmsis-hal.elf` |
+| **HAL Src** | **仅 9 个 .c** → `third_party/hal/Src/` | CMake 编译并链入 `f103-cmsis-hal.elf` |
 
 ```text
 vendor-pack/cmsis-core + cmsis-device-f1 + stm32f1xx-hal-driver   ← 完整 CMSIS/HAL（submodule，拷贝源）
         ↓ fetch 按需裁剪
 projects/f103-cmsis-hal/third_party/             ← 工程内 vendored 最小子集
-        ↓ CMake 仅链入 8 个 HAL .c
+        ↓ CMake 仅链入 9 个 HAL .c
 build/f103-cmsis-hal.elf                         ← 烧录到板子
 ```
 
-UART、SPI、TIM 等 HAL 模块在 `hal/Inc/` 中虽有头文件，但 **无对应 `.c` 被链接**，因此不会增大固件体积。详见 [`third_party/README.md`](third_party/README.md)。
+SPI、TIM 等未启用的 HAL 模块在 `hal/Inc/` 中虽有头文件，但 **无对应 `.c` 被链接**，因此不会增大固件体积。**UART 已链入** `stm32f1xx_hal_uart.c`。详见 [`third_party/README.md`](third_party/README.md)。
 
 ## 构建与烧录
 
@@ -195,8 +195,8 @@ f103-cmsis-hal/
   src/main.c              ├── compile (.c/.s → .o)
   src/stm32f1xx_hal_msp.c │
   src/stm32f1xx_it.c      │
-  third_party/hal/Src/    │   （8 个 HAL .c）
-       × 8                ──┘
+  third_party/hal/Src/    │   （9 个 HAL .c）
+       × 9                ──┘
                               │
                               ▼
                     linker/STM32F103XB_FLASH.ld

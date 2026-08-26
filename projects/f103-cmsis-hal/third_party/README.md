@@ -20,17 +20,17 @@
 | `third_party/cmsis/Include/` | **7 个头文件**（见 [`cmsis/README.md`](cmsis/README.md)） | 否（编译期 `#include`） |
 | `startup/` · `linker/` · `src/system_stm32f1xx.c` | CMSIS GCC 模板（**不在 third_party 内**） | startup/system 是 |
 | `third_party/hal/Inc/` | **全部** `stm32f1xx_hal*.h`、`stm32f1xx_ll*.h`、`Legacy/*.h` | 否（仅声明；避免缺头文件） |
-| `third_party/hal/Src/` | **仅 8 个 .c**（GPIO/RCC/PWR/Flash/Cortex 等） | **是** |
+| `third_party/hal/Src/` | **仅 9 个 .c**（GPIO/RCC/PWR/Flash/Cortex/UART 等） | **是** |
 
 ```text
 vendor-pack/cmsis-core + cmsis-device-f1 + stm32f1xx-hal-driver
         ↓ fetch 按需裁剪（非整包复制）
 third_party/  +  startup/ + linker/ + src/system_stm32f1xx.c
-        ↓ CMake：8 个 HAL .c + 工程 src/startup
+        ↓ CMake：9 个 HAL .c + 工程 src/startup
 f103-cmsis-hal.elf
 ```
 
-**结论**：`third_party` 是工程内 **最小 vendored 依赖** — CMSIS 只留 7 个必需头；HAL **头全拷、实现只拷 8 个 .c**。扩展外设（如 UART）时须在 fetch 脚本的 `HAL_SRC_FILES` 与 `CMakeLists.txt` 中追加对应 `.c`。
+**结论**：`third_party` 是工程内 **最小 vendored 依赖** — CMSIS 只留 7 个必需头；HAL **头全拷、实现只拷 9 个 .c**（含 `hal_uart.c`）。新增外设模块时须在 fetch 脚本的 `HAL_SRC_FILES` 与 `CMakeLists.txt` 中追加对应 `.c`。
 
 ## 目录结构
 
@@ -43,7 +43,7 @@ third_party/
 └── hal/
     ├── README.md
     ├── Inc/            ← ST HAL 头（拷贝 ref 中全部 stm32f1xx_hal*.h / ll*.h）
-    └── Src/            ← 本 demo 实际参与链接的 8 个 HAL 源文件
+    └── Src/            ← 本 demo 实际参与链接的 9 个 HAL 源文件
 ```
 
 ## 版本与来源
@@ -56,7 +56,7 @@ third_party/
 
 ## 编译参与范围
 
-CMake [`CMakeLists.txt`](../CMakeLists.txt) 仅链接 **8 个 HAL .c**；`hal/Inc` 中其余头文件供 `#include` 依赖解析，**不进入 .text**。
+CMake [`CMakeLists.txt`](../CMakeLists.txt) 仅链接 **9 个 HAL .c**；`hal/Inc` 中其余头文件供 `#include` 依赖解析，**不进入 .text**。
 
 | 路径 | 本 demo 用途 |
 |------|----------------|
@@ -68,8 +68,11 @@ CMake [`CMakeLists.txt`](../CMakeLists.txt) 仅链接 **8 个 HAL .c**；`hal/In
 | `hal/Src/stm32f1xx_hal_pwr.c` | `HAL_PWR_EnableBkUpAccess`（Backup 域） |
 | `hal/Src/stm32f1xx_hal_flash.c` | Flash 等待周期（LATENCY_2） |
 | `hal/Src/stm32f1xx_hal_flash_ex.c` | Flash 扩展操作 |
+| `hal/Src/stm32f1xx_hal_uart.c` | `HAL_UART_Transmit`（USART1） |
 
 工程维护配置在 **`src/stm32f1xx_hal_conf.h`**（模块裁剪、`assert_param`），不在 `third_party` 内。
+
+`HAL_DMA_MODULE_ENABLED` 在 conf 中开启但**未**链入 `hal_dma.c`：当前仅阻塞 UART；若启用 UART DMA，须同步 fetch/`CMakeLists.txt`/conf。
 
 ## 注释与语言约定
 

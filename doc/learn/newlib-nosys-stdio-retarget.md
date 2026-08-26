@@ -103,7 +103,7 @@ arm-none-eabi-nm projects/f103-manual-reg/build/f103-manual-reg.elf | grep _writ
 
 | | `printf` + `_write` | `HAL_UART_Transmit` / `WriteStr` |
 |---|----------------------|----------------------------------|
-| **Flash** | 链 libc，Debug 约 **30 KB** text 量级 | 约 **6 KB** 量级（本仓库 HAL demo 实测） |
+| **Flash** | 纯字符串常优化为 `puts`，Debug 约 **8 KB** text；带格式符的 `printf` 接近 **30 KB** | 约 **6 KB** 量级（本仓库 HAL demo 实测） |
 | **依赖** | `syscalls.c`、常需 `_sbrk`、链接脚本 `end` | 仅 HAL UART |
 | **格式化** | 支持 `%d` `%x` 等 | 仅字符串；要格式可先 `snprintf` 再发 |
 | **适用** | 学习 newlib 重定向、调试信息多 | HAL 最小 demo、体积敏感 |

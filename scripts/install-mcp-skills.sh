@@ -251,20 +251,12 @@ install_global_skills() {
 
 write_agents_md_hint() {
   local agents_md="$ROOT/AGENTS.md"
+  # AGENTS.md is maintained in-repo as SSOT; never append a short stale template
   if [[ -f "$agents_md" ]] && grep -q "embed-dev-lab Skill" "$agents_md" 2>/dev/null; then
+    log_info "AGENTS.md already present; leaving unchanged"
     return 0
   fi
-  cat >>"$agents_md" <<'EOF'
-
-## embed-dev-lab Skill (Codex / 无 MCP Agent)
-
-- 构建：`./scripts/build.sh f103-manual-reg build`；烧录：`flash`（需先 build）
-- probe-rs chip：`STM32F103C8Tx`；CLI 使用 `--binary-format elf`
-- PC13 属于 Backup 域：配置前须 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`
-- 禁止未经确认的全片 Flash 擦除
-- 详见 `skills/embed-dev-lab/SKILL.md` 与 `doc/probe-rs.md`
-EOF
-  log_info "Appended skill hint to AGENTS.md (for Codex)"
+  log_warn "AGENTS.md missing or incomplete; restore from git (do not invent a short stub)"
 }
 
 build_embedded_debugger_mcp() {

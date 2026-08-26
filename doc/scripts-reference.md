@@ -4,12 +4,14 @@
 
 ## 自动化总览
 
+日常流程见 [编写 → 编译 → 下载](workflow-write-build-flash.md)。
+
 ```mermaid
 flowchart TB
     subgraph bootstrap_flow [bootstrap.sh]
         B1[install-tools.sh] --> B2[setup-path 内嵌刷新]
         B2 --> B3[install-extensions.sh 可选]
-        B3 --> B4[env-check.sh --tools-only]
+        B3 --> B4[env-check.sh]
         B4 --> B5["build.sh f103-manual-reg"]
         B5 --> B6[setup-clangd.sh]
     end
@@ -23,6 +25,8 @@ flowchart TB
         I2 --> I3[probe-rs-debugger flash+debug]
     end
 ```
+
+`env-check`：完整 bootstrap（装扩展）时检查扩展；`--skip-extensions` 或 `--build-only` 时用 `--tools-only`。
 
 ---
 
@@ -55,10 +59,14 @@ flowchart TB
 |--------|------|
 | `all`（默认） | configure + build + sync compile_commands + clangd |
 | `configure` | 仅 CMake configure |
-| `build` | 仅 ninja build |
+| `build` | 仅 ninja build（**不** configure；`build/` 须已存在） |
 | `flash` | probe-rs download + reset（**不编译**） |
 | `flash-openocd` | OpenOCD 烧录 hex |
 | `clean` | 删除 build/ 与根 compile_commands.json |
+
+**`clean` 之后**须先 `./scripts/build.sh <module>`（`all`），不要只用 `build` 或 `build-flash.sh`。
+
+`f103-cmsis-hal` 首次 configure 前须：`./scripts/fetch-f103-cmsis-hal-deps.sh`。
 
 示例：
 
@@ -68,6 +76,7 @@ flowchart TB
 ./scripts/build.sh f103-manual-reg flash
 ./scripts/build.sh f103-manual-reg build && ./scripts/build.sh f103-manual-reg flash
 ./scripts/build-flash.sh f103-manual-reg   # 同上；编译失败时暂停
+./scripts/fetch-f103-cmsis-hal-deps.sh && ./scripts/build.sh f103-cmsis-hal
 ./scripts/build-flash.sh f103-cmsis-hal
 ```
 
@@ -75,7 +84,7 @@ flowchart TB
 
 ### build-flash.sh — 一键编译并烧录
 
-依次执行 `build.sh build` → `build.sh flash`。编译失败时 **ninja/gcc 报错原样输出**，并在交互终端 **暂停等待 Enter**。
+依次执行 `build.sh build` → `build.sh flash`（**不** configure）。`build/` 不存在时会失败并提示先跑 `build.sh <module>`。编译失败时 **ninja/gcc 报错原样输出**，并在交互终端 **暂停等待 Enter**。
 
 ```bash
 ./scripts/build-flash.sh              # 默认 f103-manual-reg
@@ -85,6 +94,7 @@ flowchart TB
 
 | 步骤 | 行为 |
 |------|------|
+| `build/` 缺失 | 明确错误，指向 `./scripts/build.sh <module>` |
 | build 失败 | 打印编译错误，`Press Enter to exit...`，exit 1 |
 | build 成功 | probe-rs download + reset |
 

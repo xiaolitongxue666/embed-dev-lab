@@ -4,7 +4,7 @@
 **  File        : STM32F103XB_FLASH.ld
 **
 **  Abstract    : Linker script for STM32F103xB Device with
-**                128KByte FLASH, 20KByte RAM
+**                64KByte FLASH, 20KByte RAM (embed-dev-lab C8 裁剪；CMSIS 模板原为 128K)
 **
 **                Set heap size, stack size and stack location according
 **                to application requirements.

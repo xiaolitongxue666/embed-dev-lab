@@ -1,6 +1,8 @@
 # 快速上手
 
-从零开始在 **STM32F103C8T6 核心板** 上点亮 PC13 LED。命令与 CLI 输出为英文。
+从零开始在 **STM32F103C8T6 核心板** 上点亮 PC13 LED，并可看串口日志。命令与 CLI 输出为英文。
+
+日常「改代码 → 编译 → 烧录」见 [编写 → 编译 → 下载](workflow-write-build-flash.md)。
 
 ## 前置
 
@@ -8,7 +10,7 @@
 |------|------|
 | OS | Windows（Git Bash）/ Linux / macOS |
 | IDE | Cursor 或 VS Code（推荐） |
-| 硬件 | ST-Link V2、F103 核心板、USB 线、杜邦线 |
+| 硬件 | ST-Link V2、F103 核心板、USB 线、杜邦线；可选 USB-TTL（串口） |
 
 Windows 请安装 [Git for Windows](https://git-scm.com/download/win)，Cursor 终端默认 **Git Bash**。
 
@@ -21,7 +23,7 @@ git clone --recursive <repo-url>
 cd embed-dev-lab
 ```
 
-若已普通 clone、需拉取 CMSIS 子模块（core + device-f1）：
+若已普通 clone、需拉取 CMSIS 子模块（**core + device-f1 + HAL driver**）：
 
 ```bash
 ./scripts/fetch-cmsis.sh
@@ -29,11 +31,19 @@ cd embed-dev-lab
 
 ## 步骤 2：一键环境 + 编译
 
+脚本默认使用 HTTP 代理 `http://127.0.0.1:7890`。无本地代理时：
+
+```bash
+./scripts/bootstrap.sh --no-proxy
+```
+
+有代理或可忽略：
+
 ```bash
 ./scripts/bootstrap.sh
 ```
 
-等价于：安装工具 → 配置 PATH → 安装扩展 → 校验 → 编译 `f103-manual-reg` → 配置 clangd。
+等价于：安装工具 → 配置 PATH → 安装扩展 → 校验 → 编译 `f103-manual-reg` → 配置 clangd。**不含烧录。**
 
 若工具已装好：
 
@@ -74,19 +84,47 @@ Linux 配置 udev；macOS 跳过。
 ./scripts/build.sh f103-manual-reg flash
 ```
 
+或一键：
+
+```bash
+./scripts/build-flash.sh f103-manual-reg
+```
+
 或 Run Task → **Build and Flash F103**。
 
-## 步骤 6：验证
+## 步骤 6：验证 LED
 
 PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
 若无闪烁：按板载 **RESET**；见 [f103-manual-reg 模块](projects/f103-manual-reg.md) 与 [probe-rs.md 排错](probe-rs.md#故障排查)。
 
+## 步骤 7（可选）：串口日志
+
+| 项 | 值 |
+|----|-----|
+| USB-TTL | **RX←PA9**，TX→PA10，**GND 共地** |
+| 波特率 | **1500000** 8N1 |
+
+应看到 `Stm32 manual reg demo start` 与周期 `LED on` / `LED off`（字符串指 GPIO 电平，非灯物理亮灭；低电平点亮板上 LED）。
+
 ---
+
+## 可选：f103-cmsis-hal
+
+CubeIDE 风格对照工程（HAL），行为对齐 manual-reg：
+
+```bash
+./scripts/fetch-cmsis.sh
+./scripts/fetch-f103-cmsis-hal-deps.sh
+./scripts/build.sh f103-cmsis-hal
+./scripts/build.sh f103-cmsis-hal flash
+```
+
+详见 [f103-cmsis-hal](projects/f103-cmsis-hal.md) 与 [编写 → 编译 → 下载](workflow-write-build-flash.md)。
 
 ## 可选：IDE 调试
 
-1. F5 → **F103 Probe-rs Debug**
+1. F5 → **F103 Probe-rs Debug**（manual-reg）或 **F103 CMSIS-HAL Probe-rs Debug**
 2. 自动编译、烧录、断点
 
 详见 [ide-debug.md](ide-debug.md)。
@@ -95,6 +133,7 @@ PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
 ## 下一步
 
+- [编写 → 编译 → 下载](workflow-write-build-flash.md)
 - [probe-rs 详细说明](probe-rs.md)
 - [脚本完整参考](scripts-reference.md)
 - [f103-manual-reg 源码说明](projects/f103-manual-reg.md)

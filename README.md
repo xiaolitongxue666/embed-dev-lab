@@ -12,7 +12,7 @@ Demo 目标：**STM32F103C8T6** PC13 LED 闪烁（[`projects/f103-manual-reg`](p
 ## 快速开始
 
 ```bash
-# 1. 一键：装工具 + 编译 demo（不含烧录）
+# 1. 一键：装工具 + 编译 demo（不含烧录；无本地代理加 --no-proxy）
 ./scripts/bootstrap.sh
 
 # 2. 确认 ST-Link（Windows 见 doc/probe-rs.md）
@@ -20,9 +20,10 @@ probe-rs list
 
 # 3. 编译 + 烧录
 ./scripts/build.sh f103-manual-reg build && ./scripts/build.sh f103-manual-reg flash
+# 或：./scripts/build-flash.sh f103-manual-reg
 ```
 
-完整步骤：[doc/getting-started.md](doc/getting-started.md)
+完整步骤：[doc/getting-started.md](doc/getting-started.md) · 日常流程：[doc/workflow-write-build-flash.md](doc/workflow-write-build-flash.md)
 
 ---
 
@@ -71,7 +72,7 @@ flowchart TB
 | 层级 | 路径 | 职责 |
 |------|------|------|
 | 入口 | [`README.md`](README.md)、[`doc/`](doc/) | 项目地图与人类文档 |
-| 应用 | [`projects/`](projects/)（源码）、[`doc/projects/`](doc/projects/)（说明） | 固件小工程（`f103-manual-reg`、`f103-cmsis-hal` 占位） |
+| 应用 | [`projects/`](projects/)（源码）、[`doc/projects/`](doc/projects/)（说明） | 固件小工程（`f103-manual-reg`、`f103-cmsis-hal`） |
 | 构建 | [`cmake/`](cmake/)、[`scripts/build.sh`](scripts/build.sh) | 工具链、MCU 抽象、编译烧录 |
 | 环境 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) 等 | 安装工具、PATH、校验 |
 | Agent | [`.cursor/`](.cursor/)、[`skills/`](skills/)、[`AGENTS.md`](AGENTS.md) | MCP、Skill、无 MCP Agent 摘要 |
@@ -84,6 +85,7 @@ embed-dev-lab/
 ├── doc/                            # 使用文档（中文）
 │   ├── README.md                   # 文档索引
 │   ├── getting-started.md          # 快速上手
+│   ├── workflow-write-build-flash.md  # 编写 → 编译 → 下载
 │   ├── probe-rs.md                 # probe-rs CLI / ST-Link / WinUSB
 │   ├── ide-debug.md                # IDE 扩展与调试
 │   ├── scripts-reference.md        # 脚本说明与自动化链路
@@ -102,30 +104,36 @@ embed-dev-lab/
 │   ├── install-tools.sh            # 分 OS 安装入口
 │   ├── install-mcp-skills.sh       # embedded-debugger MCP + Skill
 │   ├── fetch-stm32f103-docs.sh     # 下载 DS5319 + RM0008 PDF
-│   ├── fetch-cmsis.sh              # 初始化 cmsis-core + cmsis-device-f1 submodule
+│   ├── fetch-cmsis.sh              # 初始化 cmsis-core + cmsis-device-f1 + HAL submodule
 │   ├── fetch-cmsis-core.sh         # 兼容别名 → fetch-cmsis.sh
+│   ├── fetch-f103-cmsis-hal-deps.sh # cmsis-hal third_party 最小子集
 │   ├── fetch-stm32cubef1.sh        # 获取 STM32CubeF1 固件包
 │   ├── env-check.sh                # 工具链与扩展校验
 │   ├── setup-path.sh               # User PATH + bashrc
 │   ├── setup-clangd.sh             # compile_commands + clangd
 │   ├── install-extensions.sh       # 安装 .vscode/extensions.json
 │   ├── install/                    # windows | linux | macos | stlink-winusb
-│   └── lib/                        # 公共 shell 库
+│   └── lib/                        # 公共 shell 库（含 apply-f103-cmsis-hal-comments）
 ├── cmake/
 │   ├── toolchain-arm-none-eabi.cmake
 │   └── mcu-config.cmake            # embed_mcu_add_executable()
 ├── projects/
 │   ├── README.md                   # 固件小工程索引
-│   ├── f103-manual-reg/            # 全手写寄存器 PC13 闪烁
+│   ├── f103-manual-reg/            # 全手写寄存器 PC13 闪烁 + printf
 │   │   ├── src/
 │   │   ├── startup/
 │   │   └── linker/
-│   └── f103-cmsis-hal/             # CMSIS+HAL 占位（仅 README）
+│   └── f103-cmsis-hal/             # CubeIDE 风格对照（CMSIS+HAL 最小子集）
+│       ├── src/
+│       ├── startup/
+│       ├── linker/
+│       └── third_party/
 ├── skills/
 │   └── embed-dev-lab/SKILL.md      # 项目 Skill 源文件（可提交）
 ├── .cursor/
 │   ├── mcp.json                    # embedded-debugger MCP 配置
-│   └── skills/embed-dev-lab/       # Cursor Skill 注册
+│   ├── rules/                      # Cursor 项目规则
+│   └── skills/embed-dev-lab/       # Cursor Skill 注册（与 skills/ 同步）
 ├── .vscode/                        # launch.json / tasks.json / extensions.json
 ├── AGENTS.md                       # Codex 等无 MCP Agent 的 Skill 摘要
 ├── .gitmodules                     # cmsis-core / cmsis-device-f1 / stm32f1xx-hal-driver submodule
@@ -165,6 +173,7 @@ embed-dev-lab/
 | [`fetch-stm32f103-docs.sh`](scripts/fetch-stm32f103-docs.sh) | 下载 DS5319 + RM0008 PDF | — |
 | [`fetch-cmsis.sh`](scripts/fetch-cmsis.sh) | 初始化 `cmsis-core` + `cmsis-device-f1` + `stm32f1xx-hal-driver` submodule | — |
 | [`fetch-cmsis-core.sh`](scripts/fetch-cmsis-core.sh) | 同上（兼容别名） | — |
+| [`fetch-f103-cmsis-hal-deps.sh`](scripts/fetch-f103-cmsis-hal-deps.sh) | 拷贝 cmsis-hal 最小 CMSIS/HAL 子集至 `third_party/` | — |
 | [`fetch-stm32cubef1.sh`](scripts/fetch-stm32cubef1.sh) | 获取 STM32CubeF1 至 `vendor-pack/STM32CubeF1/` | — |
 
 **bootstrap 常用参数：**
@@ -387,11 +396,13 @@ probe-rs list
 | 文档 | 说明 |
 |------|------|
 | [doc/getting-started.md](doc/getting-started.md) | 从零到 LED 闪烁 |
+| [doc/workflow-write-build-flash.md](doc/workflow-write-build-flash.md) | 编写 → 编译 → 下载 |
 | [doc/probe-rs.md](doc/probe-rs.md) | probe-rs CLI、驱动、排错 |
 | [doc/ide-debug.md](doc/ide-debug.md) | probe-rs-debugger 等扩展 |
 | [doc/scripts-reference.md](doc/scripts-reference.md) | 脚本完整参考 |
 | [doc/mcp-skills.md](doc/mcp-skills.md) | MCP 与 Skill 安装 |
-| [doc/projects/f103-manual-reg.md](doc/projects/f103-manual-reg.md) | F103 demo 模块 |
+| [doc/projects/f103-manual-reg.md](doc/projects/f103-manual-reg.md) | F103 manual-reg 模块 |
+| [doc/projects/f103-cmsis-hal.md](doc/projects/f103-cmsis-hal.md) | F103 cmsis-hal 模块 |
 | [doc/learn/cmsis-overview.md](doc/learn/cmsis-overview.md) | CMSIS 分层、手写兼容边界、与 HAL 关系 |
 | [doc/learn/interrupt-vector-table-and-nvic.md](doc/learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、与 startup 关系 |
 | [doc/reference/stm32f103/](doc/reference/stm32f103/) | ST 官方 Datasheet / RM |

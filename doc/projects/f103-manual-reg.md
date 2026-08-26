@@ -79,9 +79,9 @@ Reset
 
 probe-rs chip：**`STM32F103C8Tx`**
 
-### 体积参考（含 printf / libc）
+### 体积参考（含 newlib / 串口）
 
-引入 `printf` 后链接 **libc.a**，Flash 占用显著大于「仅 LED」版本（Debug 构建约 **30 KB text**，以 `arm-none-eabi-size` 为准）。C8 64 KB Flash 仍足够本 demo；新增功能时注意 map 中 `.text` 总量。
+Debug 构建下：源码写 `printf("...")` 时，GCC 常将**纯字符串**优化为 `puts()`，实测 `.text` 约 **8 KB**（`arm-none-eabi-size`）。引入带格式符的 `printf("%d", x)` 后才会链接更多 libc，接近 **30 KB** 量级。C8 64 KB Flash 仍足够本 demo；新增功能时注意 map 中 `.text` 总量。
 
 工具链链接：`--specs=nosys.specs -nostartfiles`（[`toolchain-arm-none-eabi.cmake`](../../cmake/toolchain-arm-none-eabi.cmake)）。详见 [编译流程](../learn/f103-module-build-flow.md)。
 

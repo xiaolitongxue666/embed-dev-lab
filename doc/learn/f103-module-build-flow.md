@@ -2,6 +2,8 @@
 
 整理自 embed-dev-lab 开发过程中的问答，说明 `startup/` 汇编与 `src/` C 文件如何通过 CMake 与链接脚本合并为单一固件。运行时启动语义见 [STM32 裸机启动与时钟](stm32-bare-metal-bootstrap.md) Q5/Q11/Q12。
 
+`f103-cmsis-hal` **共用**同一 `./scripts/build.sh` / `embed_mcu_add_executable()` 框架；日常命令见 [编写 → 编译 → 下载](../workflow-write-build-flash.md)。
+
 ## 1. 端到端流程总览
 
 日常构建入口：
@@ -271,7 +273,7 @@ LOAD .../startup/startup_stm32f103xb.s.obj
 | `Reset_Handler` | startup.obj |
 | `_write_r` / `vfprintf` 等 | libc.a |
 
-`.isr_vector` 仍在 Flash `0x08000000`（链接脚本段名决定，与 `LOAD` 顺序无关）。Debug 构建 `.text` 总量约 **30 KB**（`arm-none-eabi-size`）；仅 LED、无 libc 时约 **0.6 KB** 量级——**勿**用旧 map 中的固定地址做绝对对照，以当前 `f103-manual-reg.map` 为准。
+`.isr_vector` 仍在 Flash `0x08000000`（链接脚本段名决定，与 `LOAD` 顺序无关）。当前 Debug 构建：纯字符串 `printf` 常被优化为 `puts`，`.text` 约 **8 KB**（`arm-none-eabi-size`）；带格式符的 `printf` 才接近 **30 KB**。仅 LED、无 libc 时约 **0.6 KB** 量级——**勿**用旧 map 中的固定地址做绝对对照，以当前 `f103-manual-reg.map` 为准。
 
 **④ 向量表与 `Reset_Handler`**
 

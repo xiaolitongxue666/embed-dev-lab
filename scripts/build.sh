@@ -36,9 +36,17 @@ usage() {
   cat <<EOF
 Usage: ./scripts/build.sh <module> [configure|build|flash|flash-openocd|clean|all]
 
+Modules: f103-manual-reg | f103-cmsis-hal
+Notes:
+  flash does NOT compile; change code then build first
+  build does NOT configure; after clean run without action (all) first
+  f103-cmsis-hal: run ./scripts/fetch-f103-cmsis-hal-deps.sh before first configure
+
 Examples:
   ./scripts/build.sh f103-manual-reg
+  ./scripts/build.sh f103-manual-reg build
   ./scripts/build.sh f103-manual-reg flash
+  ./scripts/build.sh f103-cmsis-hal
   ./scripts/build.sh f103-manual-reg flash-openocd
   ./scripts/build.sh f103-manual-reg clean
 EOF

@@ -48,7 +48,7 @@ ST-Link WinUSB 见 [probe-rs.md](probe-rs.md)。
 | **CodeWhale** | `--global` → `~/.codewhale/mcp.json` | `~/.codewhale/skills/` |
 | **Codex** | **不支持 MCP**（跳过） | 读 `AGENTS.md` + `skills/embed-dev-lab/SKILL.md` |
 
-与全局 [agent-config](https://github.com/) 的 codebase-memory / graphify **合并而非覆盖**（`mcp-merge.py` 仅新增 `embedded-debugger` 键）。
+全局 MCP 配置若已有其他 server，安装脚本 **合并而非覆盖**（`mcp-merge.py` 仅新增 `embedded-debugger` 键）。
 
 ## embedded-debugger MCP 能力
 

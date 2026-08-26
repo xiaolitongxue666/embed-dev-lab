@@ -1,0 +1,14 @@
+---
+description: f103-manual-reg — 全手写寄存器，禁止链接 CMSIS/HAL
+globs: projects/f103-manual-reg/**
+alwaysApply: false
+---
+
+# f103-manual-reg
+
+- **不** `#include` / 链接官方 CMSIS Device 头或 HAL
+- 串口：`printf` → `syscalls.c` `_write` → `USART1_Write`；勿改成仅 HAL 路径
+- PC13：先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再写 `GPIOC_CRH`
+- 时钟在 `SystemInit`（`system_stm32f1xx.c`）升至 72 MHz，进 `main` 前完成
+- 无 SysTick 应用实现（向量表 weak → Default_Handler）
+- 构建：`./scripts/build.sh f103-manual-reg build`；文档：`doc/projects/f103-manual-reg.md`

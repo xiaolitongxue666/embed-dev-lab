@@ -56,6 +56,19 @@ esac
 
 log_info "Build and flash: $MODULE"
 
+MODULE_DIR="$ROOT/projects/$MODULE"
+BUILD_DIR="$MODULE_DIR/build"
+
+if [[ ! -d "$MODULE_DIR" ]]; then
+  die "Module not found: $MODULE_DIR"
+fi
+
+if [[ ! -d "$BUILD_DIR" ]]; then
+  log_fail "Build directory missing: $BUILD_DIR"
+  log_fail "build-flash does not configure. Run first: ./scripts/build.sh $MODULE"
+  exit 1
+fi
+
 if ! bash "$ROOT/scripts/build.sh" "$MODULE" build; then
   pause_on_build_failure
   exit 1

@@ -1,13 +1,13 @@
 # f103-cmsis-hal 工程
 
-**STM32F103C8T6** 核心板 **PC13 LED 闪烁** demo，使用 **CMSIS + HAL** 实现，功能对齐 [`f103-manual-reg`](f103-manual-reg.md)。
+**STM32F103C8T6** 核心板 **PC13 LED 闪烁** demo，使用 **CMSIS + HAL** 的 **CubeIDE 风格对照**实现（`MX_*` / MSP / `hal_conf` / `stm32f1xx_it.c`），**不是** CubeMX 生成工程、也不是占位。功能对齐 [`f103-manual-reg`](f103-manual-reg.md)。
 
 ## 模块定位
 
 | 项 | 说明 |
 |----|------|
 | 目标芯片 | STM32F103C8T6（Cortex-M3，Medium-density F103xB） |
-| 实现方式 | 工程内 vendored 最小 **CMSIS-Core/Device** + **STM32F1 HAL**；`HAL_GPIO_*` / `HAL_RCC_*` |
+| 实现方式 | 工程内 vendored 最小 **CMSIS-Core/Device** + **STM32F1 HAL**（Src **9** 个 `.c`）；`HAL_GPIO_*` / `HAL_RCC_*` / `HAL_UART_*` |
 | 构建框架 | 与 `f103-manual-reg` **相同**：`CMakePresets.json` + `embed_mcu_add_executable()` + `./scripts/build.sh` |
 | 链接脚本 | **CMSIS 官方** `linker/STM32F103XB_FLASH.ld`（自 `cmsis-device-f1` 拷贝，C8 64K 裁剪） |
 | 对照工程 | [`f103-manual-reg`](f103-manual-reg.md)（全手写寄存器，不链接 CMSIS/HAL） |
@@ -51,7 +51,7 @@ projects/f103-cmsis-hal/
 | CMSIS | **7 个头文件** → `third_party/cmsis/Include/` | 最小 Core+Device 头 |
 | CMSIS 模板 | `startup/`、`linker/`、`src/system_stm32f1xx.c` | 不在 `third_party/` 内 |
 | HAL Inc | **全部** `hal*.h` / `ll*.h` | 仅 `#include` 依赖；无 `.c` 的不占 Flash |
-| HAL Src | **8 个 .c** | CMake 链入固件 |
+| HAL Src | **9 个 .c** | CMake 链入固件 |
 
 带注释的完整目录树与逐文件说明见工程 [`README.md`](../../projects/f103-cmsis-hal/README.md)；third_party 细则见 [`third_party/README.md`](../../projects/f103-cmsis-hal/third_party/README.md)。
 
@@ -77,12 +77,19 @@ probe-rs chip：**`STM32F103C8Tx`**
 
 | 行为 | f103-manual-reg | f103-cmsis-hal |
 |------|-----------------|----------------|
-| 系统时钟 | 手写 RCC → HSE×9 72 MHz | `HAL_RCC_OscConfig` / `HAL_RCC_ClockConfig` |
+| 系统时钟 | `SystemInit` 内手写 RCC → 进 `main` 前已是 72 MHz | CMSIS `SystemInit` **不配 PLL**；`main` 内 `SystemClock_Config`（HAL） |
 | PC13 Backup 域 | `PWREN` + `DBP` + `GPIOC_CRH` | `HAL_PWR_EnableBkUpAccess` + `HAL_GPIO_Init` |
 | 闪烁 | `PCout` + 忙等 | `HAL_GPIO_WritePin` + 同等忙等 |
+| SysTick | 无应用实现（weak Default_Handler） | `SysTick_Handler` → `HAL_IncTick`（闪烁仍用忙等） |
 | 串口输出 | `printf` + `syscalls.c` | `USART1_WriteStr` → `HAL_UART_Transmit`（不链 libc I/O） |
 | 链接脚本 | 手写 `STM32F103C8_FLASH.ld` | CMSIS `STM32F103XB_FLASH.ld` |
 | startup | 精简手写 | CMSIS 官方（跳过 `__libc_init_array`） |
+
+### LED 极性与串口文案
+
+多数核心板 **低电平点亮**。两工程均打印 `LED on` 后置高（灯灭）、`LED off` 后置低（灯亮），与厂商例程一致；字符串指 **GPIO 电平**，不是灯物理亮灭。
+
+`HAL_DMA_MODULE_ENABLED` 在 conf 中开启但未链 `hal_dma.c`：当前仅阻塞 UART；启用 DMA 须同步 fetch/CMake。
 
 ## PC13 与 Backup 域
 
@@ -108,7 +115,7 @@ USART1_WriteStr("...\n")  →  HAL_UART_Transmit(&huart1, ...)  →  PA9
 |----|------|
 | 需要 `%d` 等格式化 | 可链 libc 并参考 [f103-manual-reg § printf](f103-manual-reg.md#printf-与-newlib-syscall) 增加 `syscalls.c` |
 | 引脚 / 波特率 | PA9 TX，1500000 8N1；`\n` 在 `USART1_WriteStr` 内补 `\r` |
-| Flash 参考 | Debug 约 **6 KB** text（无 libc I/O）；manual-reg 用 printf 约 **30 KB** |
+| Flash 参考 | Debug 约 **6 KB** text（无 libc I/O）；manual-reg 纯字符串走 `puts` 约 **8 KB**，带格式符的 `printf` 才接近 **30 KB** |
 
 概念总览：[裸机 newlib、nosys 与串口输出 §5](../learn/newlib-nosys-stdio-retarget.md#5-printf-与-hal_uart_transmit-如何选)
 

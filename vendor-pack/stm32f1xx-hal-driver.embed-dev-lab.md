@@ -48,6 +48,6 @@ git submodule update --init vendor-pack/stm32f1xx-hal-driver
 
 [`projects/f103-manual-reg`](../projects/f103-manual-reg/) **不链接**本 submodule；纯寄存器实现。
 
-[`projects/f103-cmsis-hal`](../projects/f103-cmsis-hal/) 通过 `./scripts/fetch-f103-cmsis-hal-deps.sh` 从本 submodule **按需裁剪**拷贝至 [`third_party/`](../projects/f103-cmsis-hal/third_party/)（Inc 全拷、Src 仅 8 个 `.c` 链入 `.elf`）；**完整 HAL 仓库在本 submodule**，`third_party/hal/` 不是完整上游。
+[`projects/f103-cmsis-hal`](../projects/f103-cmsis-hal/) 通过 `./scripts/fetch-f103-cmsis-hal-deps.sh` 从本 submodule **按需裁剪**拷贝至 [`third_party/`](../projects/f103-cmsis-hal/third_party/)（Inc 全拷、Src 仅 9 个 `.c` 链入 `.elf`）；**完整 HAL 仓库在本 submodule**，`third_party/hal/` 不是完整上游。
 
 归纳文档：[ST F1 软件仓库归纳](../doc/learn/stm32-cmsis-component-repos.md)

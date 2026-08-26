@@ -7,16 +7,17 @@
  *          USART1（PA9/PA10）1500000 bps；串口用 HAL_UART_Transmit（usart.c），不用 printf
  *
  * 启动与初始化顺序（Reset 后）：
- *   1. startup：SystemInit → 拷贝 .data → 清零 .bss
- *   2. main：HAL_Init → SystemClock_Config → MX_GPIO_Init → MX_USART1_UART_Init → 闪烁循环
+ *   1. startup：SystemInit（本工程不配 PLL）→ 拷贝 .data → 清零 .bss
+ *   2. main：HAL_Init（含 SysTick）→ SystemClock_Config → MX_GPIO_Init → MX_USART1_UART_Init → 闪烁循环
  *
  * HAL 与 manual-reg 对照：
- *   | 步骤           | manual-reg              | 本文件（HAL）                    |
- *   |----------------|-------------------------|----------------------------------|
- *   | 系统时钟       | 手写 RCC 寄存器         | HAL_RCC_OscConfig/ClockConfig    |
- *   | Backup 域 PC13 | PWREN + DBP + GPIOC_CRH | HAL_PWR + HAL_GPIO_Init          |
- *   | LED 翻转       | PCout 位带              | HAL_GPIO_WritePin                |
- *   | 串口输出       | printf → syscalls       | USART1_WriteStr → HAL_UART_Transmit|
+ *   | 步骤           | manual-reg                         | 本文件（HAL）                         |
+ *   |----------------|------------------------------------|---------------------------------------|
+ *   | 系统时钟时机   | SystemInit 内升至 72 MHz（进 main 前） | main 内 SystemClock_Config（HAL）   |
+ *   | Backup 域 PC13 | PWREN + DBP + GPIOC_CRH            | HAL_PWR + HAL_GPIO_Init               |
+ *   | SysTick        | 无（Default_Handler）              | SysTick_Handler → HAL_IncTick         |
+ *   | LED 翻转       | PCout 位带                         | HAL_GPIO_WritePin                     |
+ *   | 串口输出       | printf → syscalls                  | USART1_WriteStr → HAL_UART_Transmit   |
  *
  * @see     doc/projects/f103-cmsis-hal.md
  * @see     doc/learn/newlib-nosys-stdio-retarget.md — HAL 与 printf 分层、为何本工程不用 _write

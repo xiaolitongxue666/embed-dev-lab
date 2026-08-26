@@ -44,7 +44,7 @@ Options:
   --with-extensions   Install Cursor/VSCode extensions (default: on)
   --skip-extensions   Skip extension install (offline / slow network)
   --with-mcp          Install embedded-debugger MCP + project Skill (requires Rust/cargo)
-  --strict-extensions Fail bootstrap if required extensions missing (default: on; alias)
+  --strict-extensions Reserved (currently unused; default: off)
   --strict-env        env-check must pass extensions section too
   --module <name>     Module to build (default: f103-manual-reg; also: f103-cmsis-hal)
   --proxy <url>       HTTP proxy for downloads (default: http://127.0.0.1:7890)

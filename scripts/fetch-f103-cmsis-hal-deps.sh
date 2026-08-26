@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# 为 f103-cmsis-hal 拷贝 PC13 闪烁所需最小 CMSIS + HAL 子集
+# 为 f103-cmsis-hal 拷贝 GPIO + UART + 72 MHz 所需最小 CMSIS + HAL 子集
 # 参考源：vendor-pack CMSIS + HAL submodules（stm32f1xx-hal-driver@v1.1.8）
+# HAL Src：9 个 .c（含 stm32f1xx_hal_uart.c）
 # 用法: ./scripts/fetch-f103-cmsis-hal-deps.sh [--verify-only]
 # -----------------------------------------------------------------------------
 
@@ -70,7 +71,7 @@ CMSIS_DEVICE_HEADERS=(
   system_stm32f1xx.h
 )
 
-# HAL sources for GPIO blink + 72 MHz clock + backup domain
+# HAL sources: GPIO blink + UART + 72 MHz clock + backup domain (9 files)
 HAL_SRC_FILES=(
   stm32f1xx_hal.c
   stm32f1xx_hal_cortex.c
@@ -185,5 +186,7 @@ bash "$ROOT/scripts/fetch-cmsis.sh"
 copy_cmsis_headers
 copy_templates
 copy_hal_minimal
+# copy_hal_minimal 覆盖 HAL 文件，须在其后再次注入 third_party 顶注释
+apply_f103_third_party_embed_notes "$ROOT"
 verify_paths
 log_ok "f103-cmsis-hal dependencies ready"

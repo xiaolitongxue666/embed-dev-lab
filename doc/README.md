@@ -9,7 +9,7 @@
 3. [probe-rs 指南](probe-rs.md) — CLI、WinUSB、ST-Link、排错  
 4. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 5. [脚本参考](scripts-reference.md) — 全脚本、烧写入口、CH341 宿主切换、WSL picocom、自动化链路  
-6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — I2C OLED+触摸、SPI LSM6DSO、引脚核对、采购  
+6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DSO、引脚核对、采购  
 7. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
 8. [f103-cmsis-hal 模块](projects/f103-cmsis-hal.md) — CubeIDE 风格对照（CMSIS+HAL）  
 9. [f103-manual-reg 从零手写构建](learn/f103-manual-build-from-scratch.md) — 文件编写顺序、CMSIS 对照、验收清单  
@@ -38,7 +38,7 @@
 
 | 文档 | 内容 |
 |------|------|
-| [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | I2C OLED+FT6236、SPI LSM6DSO、可选 BMP280；接线与采购 |
+| [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | 1.3″ SH1106 I2C、SPI LSM6DSO、可选 BMP280；触控暂缓；接线与采购 |
 
 ## 文档列表
 

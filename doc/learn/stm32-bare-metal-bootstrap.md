@@ -217,22 +217,35 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 - 上电/复位后，Cortex-M3 从向量表基址读**中断向量表**（Flash 启动：逻辑 `0x00000000/+4`，别名到物理 `0x08000000/+4`）；第二项为 `Reset_Handler` 入口。详见 **[内存映射与启动流程](stm32f103-memory-boot-map.md)** 与 **[中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)**。
 - `Reset_Handler` 完成 C 运行环境最小初始化后，用 `bl SystemInit` 跳转；链接阶段解析到 [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 中的同名函数。
 
-**调用链**
+**调用链（对照本仓库源码）**
 
 ```text
-复位 → 向量表 g_pfnVectors → Reset_Handler
-     → 设 MSP → 拷贝 .data → 清零 .bss → SystemInit → main
+硬件复位
+  → g_pfnVectors @ 0x08000000          startup_stm32f103xb.s
+       [0] _estack → MSP
+       [1] Reset_Handler → PC
+  → Reset_Handler
+       mov sp, _estack
+       拷贝 .data（_sidata → _sdata.._edata）
+       清零 .bss（_sbss.._ebss）
+  → bl SystemInit                      system_stm32f1xx.c
+       RCC 恢复接近复位态
+       SetSysClockTo72()：HSE×PLL×9 → 72 MHz（失败则 HSI 8 MHz）
+  → bl main                            main.c
+       GPIOC_Init / USART1_Init / SPI1_Init / LSM6DS3 …
+  → 若 main 返回：b . 死循环
 ```
-
-**与本仓库**
 
 | 位置 | 作用 |
 |------|------|
-| [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表第二项指向 `Reset_Handler`；第 90 行 `bl SystemInit` |
-| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()` 定义：RCC 复位默认化 + `SetSysClockTo72()` |
-| [`main.c`](../../projects/f103-manual-reg/src/main.c) | 注释说明时钟已在 startup 阶段完成；业务代码直接使用已配置好的主频 |
+| [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表第二项指向 `Reset_Handler`；末尾 `bl SystemInit` / `bl main` |
+| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：RCC 复位默认化 + `SetSysClockTo72()` |
+| [`main.c`](../../projects/f103-manual-reg/src/main.c) | 仅业务初始化；假定时钟已由 startup 配好 |
+| [`f103-manual-reg.md`](../projects/f103-manual-reg.md) § 启动与时钟 | 模块文档中的同链表格与 mermaid |
 
-`bl`（branch with link）等价于 x86 的 `call`：把返回地址写入 `lr`（r14），再跳转到 `SystemInit`。
+`bl`（branch with link）等价于 x86 的 `call`：把返回地址写入 `lr`（r14），再跳转到目标。链接加 `-nostartfiles`，无 gcc crt0；`.data`/`.bss` 初始化全由 `Reset_Handler` 完成。
+
+模块总览：[f103-manual-reg 模块文档](../projects/f103-manual-reg.md)。
 
 ---
 

@@ -5,8 +5,26 @@
  * @target  STM32F103C8T6
  * @ref     核心板测试程序(PC13闪烁)/USER/system_stm32f10x.c — SetSysClockTo72
  *
- * @note    由 startup_stm32f103xb.s 在 main 之前调用。
- *          HSE 8 MHz × PLL9 → SYSCLK 72 MHz；HSE 超时则保持复位默认 HSI 8 MHz。
+ * 调用时机（勿在 main.c 中再次调用）：
+ *   startup_stm32f103xb.s::Reset_Handler
+ *     → 设 SP / 拷贝 .data / 清 .bss
+ *     → bl SystemInit          ← 本文件
+ *     → bl main
+ *
+ * 本函数职责：
+ *   1. 将 RCC 恢复为接近复位默认态（开 HSI、清 CFGR 分频/PLL 配置等）
+ *   2. SetSysClockTo72()：HSE 8 MHz × PLL×9 → SYSCLK 72 MHz
+ *      APB2 = HCLK = 72 MHz（USART1 / SPI1 时钟源）
+ *      APB1 = HCLK/2 = 36 MHz
+ *   3. HSE 启动超时则直接 return，保持 HSI 8 MHz；main 仍会执行
+ *
+ * 下游依赖（HSE 成功时）：
+ *   usart.c 按 PCLK2=72 MHz 写 BRR → 1500000 bps
+ *   spi.c  按 PCLK2=72 MHz、DIV16 → SCK ≈ 4.5 MHz
+ *
+ * @see     doc/projects/f103-manual-reg.md § 启动与时钟
+ * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
+ * @see     doc/reference/stm32f103/md/topics/rcc-clock-hse-pll.md
  */
 
 #include "system_stm32f1xx.h"
@@ -91,7 +109,10 @@ static void SetSysClockTo72(void)
 }
 
 /**
- * @brief  复位后时钟与向量表默认化，并尝试升频至 72 MHz
+ * @brief  复位后时钟与 RCC 默认化，并尝试升频至 72 MHz
+ *
+ * 唯一调用点：startup_stm32f103xb.s 中 Reset_Handler 的 `bl SystemInit`
+ *（在拷贝 .data、清零 .bss 之后，进入 main 之前）。
  *
  * 先将 RCC 恢复至数据手册规定的复位状态，再调用 SetSysClockTo72。
  * 与 ST CMSIS SystemInit 前半段行为一致。

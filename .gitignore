@@ -145,6 +145,8 @@ vendor-pack/STLink/STLink/*.bin
 # --- ST 官方 PDF（本地 fetch，不全量进库）---
 doc/reference/stm32f103/pdf/*.pdf
 !doc/reference/stm32f103/pdf/.gitkeep
+doc/reference/lsm6ds3/pdf/*.pdf
+!doc/reference/lsm6ds3/pdf/.gitkeep
 
 # --- MCP 构建缓存（embedded-debugger-mcp cargo build）---
 .tools/

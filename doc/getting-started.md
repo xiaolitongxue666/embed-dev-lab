@@ -157,7 +157,8 @@ CubeIDE 风格对照工程（HAL），行为对齐 manual-reg：
 ## 下一步
 
 - [编写 → 编译 → 下载](workflow-write-build-flash.md)
-- [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DSO 计划接线与采购
+- [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DS3 接线与采购
+- [LSM6DS3 参考](reference/lsm6ds3/README.md) — DocID026899 中文精选
 - [probe-rs 详细说明](probe-rs.md)
 - [脚本完整参考](scripts-reference.md)
 - [f103-manual-reg 源码说明](projects/f103-manual-reg.md)

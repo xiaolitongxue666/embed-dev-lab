@@ -1,9 +1,33 @@
 /**
  * @file    startup_stm32f103xb.s
- * @brief   STM32F103xB 启动代码：向量表、Reset 处理、默认异常处理
+ * @brief   STM32F103xB 启动代码：向量表、Reset_Handler、默认异常处理
  *
  * @target  STM32F103C8T6（Cortex-M3）
- * @note    Reset_Handler 流程：设栈 → 拷贝 .data → 清零 .bss → SystemInit → main
+ *
+ * 本文件是固件中最先执行的代码（上电/复位后硬件读向量表再进 Reset_Handler）。
+ *
+ * 完整启动链（与本工程源码对应）：
+ *
+ *   1. 硬件复位
+ *        Flash 启动：逻辑 0x00000000 别名到物理 0x08000000
+ *        读 g_pfnVectors[0] → 初始 MSP（_estack，见 linker/STM32F103C8_FLASH.ld）
+ *        读 g_pfnVectors[1] → PC = Reset_Handler
+ *   2. Reset_Handler（本文件）
+ *        设 SP → 拷贝 .data（Flash LMA → RAM VMA）→ 清零 .bss
+ *   3. bl SystemInit
+ *        → projects/.../src/system_stm32f1xx.c
+ *        → HSE 8 MHz × PLL×9 → SYSCLK 72 MHz（失败则保持 HSI 8 MHz）
+ *   4. bl main
+ *        → projects/.../src/main.c
+ *        → GPIOC / USART1 / SPI1 / LSM6DS3 …
+ *   5. 若 main 返回：b . 死循环（正常固件不应返回）
+ *
+ * 不使用工具链 crt0（链接 -nostartfiles）；C 运行时最小初始化全部由本文件完成。
+ *
+ * @see     doc/projects/f103-manual-reg.md § 启动与时钟
+ * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
+ * @see     doc/learn/stm32f103-memory-boot-map.md
+ * @see     doc/learn/linker-vma-lma.md
  */
 
 .syntax unified
@@ -32,7 +56,7 @@
 .size g_pfnVectors, .-g_pfnVectors
 g_pfnVectors:
     .word _estack              /* 0  初始 MSP；满递减栈，此后 push 时 SP 减小 */
-    .word Reset_Handler        /* 1  复位 */
+    .word Reset_Handler        /* 1  复位入口：本工程最先执行的指令所在函数 */
     .word NMI_Handler          /* 2  不可屏蔽中断 */
     .word HardFault_Handler    /* 3  硬 fault */
     .word MemManage_Handler    /* 4  存储器管理 fault */
@@ -49,8 +73,11 @@ g_pfnVectors:
     .word SysTick_Handler      /* 15 SysTick */
 
 /* -------------------------------------------------------------------------- */
-/* 复位处理：C 运行时环境最小初始化                                            */
-/* -------------------------------------------------------------------------- */
+/* Reset_Handler：C 运行时就绪 → SystemInit → main
+ *
+ * 顺序不可调换：未拷贝 .data / 未清 .bss 前不可进 C；未 SystemInit 前
+ * USART1 波特率按 72 MHz 计算会错（若仍停在 HSI 8 MHz）。
+ * -------------------------------------------------------------------------- */
 .section .text.Reset_Handler
 .weak Reset_Handler
 .type Reset_Handler, %function
@@ -89,7 +116,9 @@ LoopFillZerobss:
     cmp r2, r4
     bcc FillZerobss
 
-    bl SystemInit              /* 系统时钟（system_stm32f1xx.c） */
+    /* 链接解析到 system_stm32f1xx.c::SystemInit；main 内不再调用 */
+    bl SystemInit
+    /* 链接解析到 main.c::main（LED / USART1 / SPI1 LSM6DS3） */
     bl main
     b .                        /* main 不应返回；若返回则死循环 */
 

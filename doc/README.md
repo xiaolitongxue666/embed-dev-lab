@@ -9,7 +9,7 @@
 3. [probe-rs 指南](probe-rs.md) — CLI、WinUSB、ST-Link、排错  
 4. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 5. [脚本参考](scripts-reference.md) — 全脚本、烧写入口、CH341 宿主切换、WSL picocom、自动化链路  
-6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DSO、引脚核对、采购  
+6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DS3、引脚核对、采购  
 7. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
 8. [f103-cmsis-hal 模块](projects/f103-cmsis-hal.md) — CubeIDE 风格对照（CMSIS+HAL）  
 9. [f103-manual-reg 从零手写构建](learn/f103-manual-build-from-scratch.md) — 文件编写顺序、CMSIS 对照、验收清单  
@@ -20,25 +20,26 @@
 14. [STM32F103 MMIO 基础](learn/stm32f103-mmio-basics.md) — 外设寄存器、PC13 点灯  
 15. [链接器 Map 文件](learn/linker-map-file.md) — 内存布局报告、段与符号  
 16. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008  
-17. [STM32 裸机入门笔记](learn/stm32-bare-metal-bootstrap.md) — startup、SystemInit、RCC、HSE  
-18. [CMSIS 标准与手写裸机边界](learn/cmsis-overview.md) — 分层、手写兼容判定、与 HAL 关系  
-19. [ST F1 软件仓库归纳](learn/stm32-cmsis-component-repos.md) — CMSIS / HAL / STM32CubeF1  
-20. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表、NVIC、与 startup 关系  
-21. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
+17. [LSM6DS3 官方参考](reference/lsm6ds3/README.md) — DocID026899 中文精选 + SPI/寄存器  
+18. [STM32 裸机入门笔记](learn/stm32-bare-metal-bootstrap.md) — startup、SystemInit、RCC、HSE  
+19. [CMSIS 标准与手写裸机边界](learn/cmsis-overview.md) — 分层、手写兼容判定、与 HAL 关系  
+20. [ST F1 软件仓库归纳](learn/stm32-cmsis-component-repos.md) — CMSIS / HAL / STM32CubeF1  
+21. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表、NVIC、与 startup 关系  
+22. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
 
 ## 应用层
 
 | 文档 | 内容 |
 |------|------|
 | [projects/README.md](projects/README.md) | 固件小工程索引（与 `projects/` 目录对应） |
-| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 PC13 全手写寄存器 demo |
+| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 LED + USART + SPI LSM6DS3 手写寄存器 demo |
 | [projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md) | CMSIS+HAL CubeIDE 风格对照 demo |
 
 ## 硬件
 
 | 文档 | 内容 |
 |------|------|
-| [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | 1.3″ SH1106 I2C、SPI LSM6DSO、可选 BMP280；触控暂缓；接线与采购 |
+| [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | 1.3″ SH1106 I2C、SPI LSM6DS3、可选 BMP280；触控暂缓；接线与采购 |
 
 ## 文档列表
 
@@ -50,7 +51,7 @@
 | [probe-rs.md](probe-rs.md) | probe-rs CLI 与驱动 |
 | [ide-debug.md](ide-debug.md) | Cursor/VS Code 插件与调试 |
 | [scripts-reference.md](scripts-reference.md) | scripts/ 脚本说明 |
-| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 PC13 全手写寄存器 demo |
+| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 LED + USART + SPI LSM6DS3 手写寄存器 demo |
 | [projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md) | CMSIS+HAL CubeIDE 风格对照 |
 | [learn/f103-manual-build-from-scratch.md](learn/f103-manual-build-from-scratch.md) | 从零手写：文件顺序、CMSIS 对照、验收清单 |
 | [learn/f103-module-build-flow.md](learn/f103-module-build-flow.md) | CMake 构建、.c/.s 链接、startup 与链接脚本协作 |
@@ -60,6 +61,7 @@
 | [learn/stm32f103-mmio-basics.md](learn/stm32f103-mmio-basics.md) | MMIO、PC13 点灯、PPB vs ST 外设 |
 | [learn/linker-map-file.md](learn/linker-map-file.md) | 链接器 map：段/符号、排查与优化 |
 | [reference/stm32f103/](reference/stm32f103/README.md) | ST 官方 Datasheet / RM + 精选主题 |
+| [reference/lsm6ds3/](reference/lsm6ds3/README.md) | LSM6DS3 DocID026899 中文精选 + SPI/寄存器 |
 | [learn/stm32-bare-metal-bootstrap.md](learn/stm32-bare-metal-bootstrap.md) | startup、SystemInit、RCC、HSE |
 | [learn/cmsis-overview.md](learn/cmsis-overview.md) | CMSIS 分层、手写兼容边界、与 HAL 关系 |
 | [learn/stm32-cmsis-component-repos.md](learn/stm32-cmsis-component-repos.md) | ST F1：cmsis-core / cmsis-device-f1 / HAL / CubeF1 |

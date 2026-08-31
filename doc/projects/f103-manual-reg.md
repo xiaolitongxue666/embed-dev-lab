@@ -150,6 +150,30 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | 手册精选 | [doc/reference/lsm6ds3/](../reference/lsm6ds3/README.md) |
 | 板级接线 | [硬件外设](../hardware/stm32f103-peripherals.md)；源码表见 [`spi.c`](../../projects/f103-manual-reg/src/spi.c) 头注释 |
 
+### 软 SPI vs 硬件 SPI（本工程）
+
+物理上都是标准 **4 线**（SCK / MOSI / MISO / CS）。差别在**谁产生时序**：
+
+| 做法 | 软件做什么 | 谁移位 / 打 SCK |
+|------|------------|-----------------|
+| **软 SPI**（GPIO 模拟） | 自己翻 GPIO：拉 CS → 位写 MOSI、翻 SCK、读 MISO | CPU 循环（bit-bang） |
+| **硬件 SPI**（本仓库） | 配 `CR1`；写 `DR` 发字节；读 `SR`/`DR` 收；GPIO 拉 CS | 片内 **SPI1** 外设 |
+
+`spi.c` 走硬件 SPI：PA5/6/7 复用到 SPI1，PA4 仍是普通 GPIO 片选。习惯「直接操作四根线」时，那是软 SPI 视角；这里软件入口换成寄存器，线上仍是那四根。
+
+### 信号线 vs 片内寄存器（勿混名）
+
+标准 **4 线 SPI** 指杜邦线上的信号；`spi.c` 里的 `CR1` / `SR` / `DR` 是 **MCU SPI1 外设的 MMIO**（RM0008 正式名），与 USART 的 `SR`/`DR` 同类，**不是** SCK/MOSI 的别名。
+
+| 层 | 名字 | 作用 |
+|----|------|------|
+| 板级信号 | SCK、MOSI、MISO、CS | 时钟 / 主机出 / 主机入 / 片选（本工程 CS=GPIO PA4） |
+| 片内寄存器 | `SPI1_CR1` | Control Register 1：主从、CPOL/CPHA、分频、SPE |
+| 片内寄存器 | `SPI1_SR` | Status Register：`TXE` / `RXNE` |
+| 片内寄存器 | `SPI1_DR` | Data Register：写→经 MOSI 发出；读←经 MISO 收到 |
+
+软件写 `CR1`/`DR`、读 `SR` → SPI 硬件再驱动 SCK/MOSI/MISO；详细注释见 [`spi.c`](../../projects/f103-manual-reg/src/spi.c) 文件头。
+
 ### 模块丝印 ↔ MCU 引脚
 
 | 模块丝印 | MCU | 方向 / 说明 |

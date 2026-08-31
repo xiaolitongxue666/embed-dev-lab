@@ -4,7 +4,48 @@
  *
  * @target  STM32F103C8T6，SPI1 默认映射 PA5(SCK)/PA6(MISO)/PA7(MOSI)，PA4 作 GPIO CS
  *
- * 硬件接线（LSM6DS3 / LSM6DS3TR 模块丝印 → MCU）：
+ * ---------------------------------------------------------------------------
+ * 实现方式：硬件 SPI（不是 GPIO 模拟）
+ *
+ * 常见「直接操作四根线」多半是 **软 SPI / bit-bang**：用普通 GPIO 自己
+ * 翻转 SCK、一位一位写 MOSI、读 MISO、拉 CS——移位时序由 CPU 循环完成。
+ *
+ * 本文件用的是 **单片机自带的硬件 SPI1**：物理上仍是同一套 4 线，但移位
+ * 与产生 SCK 由片内 SPI 外设完成。软件只写 CR1/SR/DR（及 GPIO 拉 CS），
+ * 再由硬件去驱动 SCK/MOSI/MISO。
+ *
+ * | 做法 | 软件写什么 | 谁产生 SCK / 移位 |
+ * |------|------------|-------------------|
+ * | 软 SPI（GPIO 模拟） | 自己翻 GPIO：CS → MOSI/SCK 位操作 → 读 MISO | CPU 循环 |
+ * | 硬件 SPI（本文件） | 配 CR1；写 DR 发字节；读 SR/DR 收字节；GPIO 拉 CS | 片内 SPI1 |
+ *
+ * 引脚映射（仍是标准 4 线）：
+ *   PA5 → SCK，PA7 → MOSI，PA6 → MISO（复用到 SPI1）
+ *   PA4 → CS（普通 GPIO，软件 CsLow/CsHigh，与软 SPI「先拉 CS」相同）
+ *
+ * ---------------------------------------------------------------------------
+ * 两层命名（信号线 ≠ 寄存器）
+ *
+ * 【板级 / 协议层】杜邦线上的标准名：
+ *   SCK（SCLK）  主机输出时钟，决定通信速率
+ *   MOSI         Master Out Slave In（主机发 → 从机收）
+ *   MISO         Master In Slave Out（从机发 → 主机收）
+ *   CS / NSS     片选，低有效；本工程用 GPIO 软件拉
+ *
+ * 【MCU 外设层】RM0008 片内 SPI1 的 MMIO（与 USART 的 SR/DR 同类）：
+ *   CR1  Control Register 1 — 主从、CPOL/CPHA、波特分频、SPE
+ *   SR   Status Register    — TXE / RXNE
+ *   DR   Data Register      — 写=经 MOSI 发出；读=经 MISO 收到
+ *   （名称以手册为准，勿改成自造缩写；不是 SCK/MOSI 的别名）
+ *
+ * 对应关系：
+ *   写 CR1 → 设定如何产生 SCK、采样沿、速率
+ *   写 DR  → 硬件在 SCK 节拍下 MOSI 移出、MISO 移入
+ *   读 SR  → 判断发送缓冲空 / 接收缓冲满后再读写 DR
+ *   写 GPIO PA4 → 拉低/拉高 CS
+ * ---------------------------------------------------------------------------
+ *
+ * 硬件接线（LSM6DS3 / LSM6DS3TR 模块丝印 → MCU 标准 SPI 名）：
  *   模块 3V3 ← 核心板 3.3 V（勿接 VIN）
  *   模块 GND ← 核心板 GND（共地）
  *   模块 SCL ← PA5（SPI1_SCK）
@@ -20,6 +61,7 @@
  * Mode 3：CPOL=1（空闲高）、CPHA=1（第二边沿采样），对齐 LSM6DS3 手册时序图。
  *
  * @see     doc/hardware/stm32f103-peripherals.md
+ * @see     doc/projects/f103-manual-reg.md（软 SPI vs 硬件 SPI）
  * @see     doc/reference/lsm6ds3/md/topics/electrical-spi-timing.md
  * @see     RM0008 SPI 章（SPI1 基址 0x40013000）
  */
@@ -38,10 +80,13 @@
 #define GPIOA_BSRR    (*(volatile unsigned int *)(GPIOA_BASE + 0x10U))
 #define GPIOA_BRR     (*(volatile unsigned int *)(GPIOA_BASE + 0x14U))
 
-/** @brief SPI1 基地址（APB2） */
+/** @brief SPI1 基地址（APB2）；以下为硬件 SPI 控制器寄存器，非软 SPI 的 GPIO 别名 */
 #define SPI1_BASE     0x40013000U
+/** @brief CR1：Control Register 1（配置主从、Mode、分频、SPE） */
 #define SPI1_CR1      (*(volatile unsigned int *)(SPI1_BASE + 0x00U))
+/** @brief SR：Status Register（TXE / RXNE） */
 #define SPI1_SR       (*(volatile unsigned int *)(SPI1_BASE + 0x08U))
+/** @brief DR：Data Register（写→硬件经 MOSI 发出；读←硬件经 MISO 收到） */
 #define SPI1_DR       (*(volatile unsigned int *)(SPI1_BASE + 0x0CU))
 
 /* RCC_APB2ENR */

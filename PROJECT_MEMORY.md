@@ -19,7 +19,7 @@
 17) Vector table manual-reg: 16 core exceptions only; extend IRQs before enabling peripherals.
 18) clangd: setup-clangd.sh syncs root compile_commands.json after build. MCP: install-mcp-skills.sh; Codex has no MCP.
 19) Proxy default http://127.0.0.1:7890; --no-proxy to disable.
-20) Power/SWD: board MicroUSB powers MCU; ST-Link SWD only + 3.3V/5V→breadboard (never board VDD); GND ties board+breadboard+CH341; WinUSB via stlink-winusb-windows.sh; doc/hardware/power-and-common-ground.md + hardware-power.mdc.
+20) Power/SWD: board MicroUSB powers MCU; ST-Link SWD + 3.3V→breadboard (scheme A: 5V idle; never board VDD); star GND on breadboard rail (ST-Link/CH341/board SWD/peripherals; no series ground); WinUSB via stlink-winusb-windows.sh; doc/hardware/power-and-common-ground.md + hardware-power.mdc.
 21) Docs entry: doc/README.md; power-and-common-ground.md; probe-rs.md; scripts-reference.md; getting-started.md. Learn: gpio-eight-modes / gpio-protection / uart-ttl-rs232-rs485 / swd-vs-usart; gpio-cnf-mode.md.
 22) HAL_DMA_MODULE_ENABLED may be on without linking hal_dma.c; UART is blocking only.
 23) Pinout/FT (DS5319 Table 5): PA0–PA7, PB0/PB1, PB5, PC13–15 not FT; PA8–15 and PB2–4/PB6–15 are FT among common GPIOs; ADC channels = ADC12_INx; do not trust web “all GPIO 5V-tolerant” tables; USART2/3 remap pins absent on LQFP48. VMA/LMA: linker-vma-lma.md; DS5319 pin plan, RM0008 registers.

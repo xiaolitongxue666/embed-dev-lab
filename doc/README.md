@@ -10,7 +10,7 @@
 4. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 5. [脚本参考](scripts-reference.md) — 全脚本、烧写入口、CH341 宿主切换、WSL picocom、自动化链路  
 6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DS3、引脚核对、采购  
-   · [供电、共地与 SWD](hardware/power-and-common-ground.md) — 蓝板 MicroUSB、ST-Link 给面包板供电、共地  
+   · [供电、共地与 SWD](hardware/power-and-common-ground.md) — 蓝板 MicroUSB、ST-Link 3.3V→面包板、GND 星型汇集  
    · [C8T6 引脚总表](hardware/stm32f103c8t6-pinout.md) — 丝印 / FT / USART·SWD / 本仓库占用  
 7. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
 8. [f103-cmsis-hal 模块](projects/f103-cmsis-hal.md) — CubeIDE 风格对照（CMSIS+HAL）  
@@ -46,7 +46,7 @@
 | 文档 | 内容 |
 |------|------|
 | [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | 1.3″ SH1106 I2C、SPI LSM6DS3、可选 BMP280；触控暂缓；接线与采购 |
-| [hardware/power-and-common-ground.md](hardware/power-and-common-ground.md) | 蓝板 MicroUSB 独立供电、ST-Link→面包板电源轨、共地、负载上限 |
+| [hardware/power-and-common-ground.md](hardware/power-and-common-ground.md) | 蓝板 MicroUSB 独立供电、ST-Link 3.3V→面包板、面包板 GND 轨星型汇集、负载上限 |
 | [hardware/stm32f103c8t6-pinout.md](hardware/stm32f103c8t6-pinout.md) | C8T6 / LQFP48 丝印引脚总表、FT、USART/SWD、本仓库占用 |
 
 ## 文档列表

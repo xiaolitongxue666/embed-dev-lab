@@ -69,17 +69,17 @@ Linux 配置 udev；macOS 跳过。
 | 路径 | 说明 |
 |------|------|
 | 电脑 USB → 蓝板 MicroUSB | **MCU 独立供电**（必须） |
-| 电脑 USB → ST-Link USB | 调试器供电；其 3.3V/5V **只**拉到面包板外设，**禁止**接到蓝板电源脚 |
+| 电脑 USB → ST-Link USB | 调试器供电；其 **3.3V / GND 只**拉到面包板（方案 A：5V 闲置），**禁止**接到蓝板电源脚 |
 
 **SWD**（信号 + 共地；调试下载，**不是**串口，见 [swd-vs-usart.md](learn/swd-vs-usart.md)）：
 
-| ST-Link | 板子 |
-|---------|------|
-| SWDIO | PA13 |
-| SWCLK | PA14 |
-| GND | GND（**必须**；与面包板 / CH341 同一地） |
+| ST-Link / 地 | 接到 |
+|--------------|------|
+| SWDIO | 蓝板 PA13 |
+| SWCLK | 蓝板 PA14 |
+| GND | **面包板 GND 轨**（再从该轨短线到蓝板 SWD GND；CH341 GND 也直接进该轨） |
 
-接外设时：ST-Link **3.3V / 5V / GND** → 面包板电源轨；当前传感器走 3.3V 轨。
+接外设时：ST-Link **3.3V / GND** → 面包板电源轨；当前传感器走 3.3V 轨。共地星型接法见 [供电与共地](hardware/power-and-common-ground.md)。
 
 确保蓝板已由 MicroUSB 供电后再烧录。
 
@@ -108,7 +108,7 @@ PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
 | 项 | 值 |
 |----|-----|
-| USB-TTL | **RX←PA9**，TX→PA10，**GND 共地**（CH341 = USB↔TTL，见 [uart-ttl-rs232-rs485.md](learn/uart-ttl-rs232-rs485.md)） |
+| USB-TTL | **RX←PA9**，TX→PA10，**GND→面包板 GND 轨**（CH341 = USB↔TTL，见 [uart-ttl-rs232-rs485.md](learn/uart-ttl-rs232-rs485.md)） |
 | 波特率 | **1500000** 8N1 |
 
 应看到 `Stm32 manual reg demo start` 与周期 `LED on` / `LED off`（字符串指 GPIO 电平，非灯物理亮灭；低电平点亮板上 LED）。
@@ -164,7 +164,7 @@ CubeIDE 风格对照工程（HAL），行为对齐 manual-reg：
 
 - [编写 → 编译 → 下载](workflow-write-build-flash.md)
 - [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DS3 接线与采购
-- [供电、共地与 SWD](hardware/power-and-common-ground.md) — 蓝板 MicroUSB、ST-Link→面包板、共地
+- [供电、共地与 SWD](hardware/power-and-common-ground.md) — 蓝板 MicroUSB、ST-Link 3.3V→面包板、GND 星型汇集
 - [LSM6DS3 参考](reference/lsm6ds3/README.md) — DocID026899 中文精选
 - [probe-rs 详细说明](probe-rs.md)
 - [脚本完整参考](scripts-reference.md)

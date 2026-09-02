@@ -18,7 +18,7 @@
 
 - **Serial Wire**：2 根线（**PA13 = SWDIO**、**PA14 = SWCLK**），用于下载程序、断点调试
 - 与 ST-Link **虚拟串口（VCP）** 相互独立；SWD 通道本身 **不能** 收发 USART 数据
-- SWD 只传调试信号；MCU 供电来自蓝板 **MicroUSB**；ST-Link 的 3.3V/5V **不接蓝板**，只给面包板外设（见 [供电与共地](../hardware/power-and-common-ground.md)）
+- SWD 只传调试信号；MCU 供电来自蓝板 **MicroUSB**；ST-Link 的 3.3V **不接蓝板**，只给面包板外设（方案 A：5V 闲置）。GND 经面包板轨星型汇集（见 [供电与共地](../hardware/power-and-common-ground.md)）
 - 可选：Serial Wire（启用 SWD，推荐）、JTAG、No Debug（关闭调试接口）
 
 > 开启 SWD ≠ 开启串口；串口 USART 需要单独配置外设。

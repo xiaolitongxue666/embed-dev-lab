@@ -179,7 +179,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | 模块丝印 | MCU | 方向 / 说明 |
 |----------|-----|-------------|
 | `3V3` | 面包板 3.3V 轨（ST-Link 3.3V） | 供电（**勿接 VIN** / 勿接蓝板电源） |
-| `GND` | 面包板 GND | 与蓝板 / ST-Link / CH341 共地 |
+| `GND` | 面包板 GND 轨 | 与 ST-Link / CH341 / 蓝板 SWD 星型共地 |
 | `SCL` | PA5 | ← SPI1_SCK |
 | `SDA` | PA7 | ← SPI1_MOSI（SDI） |
 | `SAO` | PA6 | → SPI1_MISO（SDO） |
@@ -193,7 +193,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | 外设 | USART1（APB2，PCLK2 作波特率时钟） |
 | 引脚 | PA9=TX，PA10=RX（F103 默认映射，无 AFIO 重映射） |
 | 帧格式 | 1500000 bps，8N1 |
-| CH341 | 模块 **RX←PA9**，**TX→PA10**，**GND 共地** |
+| CH341 | 模块 **RX←PA9**，**TX→PA10**，**GND→面包板 GND 轨** |
 | Windows ↔ WSL | `./scripts/serial-ch341-switch.sh status\|to-win\|to-wsl`；WSL 读串口：`picocom -b 1500000 /dev/ttyUSB0`（见 [scripts-reference § picocom](../scripts-reference.md#wsl-下用-picocom-读串口1500000-8n1)） |
 | 实现 | [`usart.c`](../../projects/f103-manual-reg/src/usart.c) 写 RCC/GPIOA/USART1 寄存器；`USART1_Write` 轮询 `SR.TXE` 写 `DR` |
 

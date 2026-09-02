@@ -50,6 +50,13 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 
 多数核心板 **低电平点亮** PC13 LED。
 
+## 供电与共地
+
+- 蓝板：**MicroUSB** 独立供电 MCU
+- ST-Link：SWD（PA13/PA14）；**3.3V → 面包板**（方案 A：5V 闲置）；**禁止**接到蓝板电源脚
+- GND：**面包板 GND 轨汇集** ST-Link / CH341 / 蓝板 SWD / 外设；禁止地线串联
+- 规则：`.cursor/rules/hardware-power.mdc`；详解：[`doc/hardware/power-and-common-ground.md`](doc/hardware/power-and-common-ground.md)
+
 ## 串口验证（CH341）
 
 烧录后看日志遵循 `.cursor/rules/serial-ch341.mdc`（**波特率与 COM/tty 名会变**）：

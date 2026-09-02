@@ -36,7 +36,7 @@ STM32F103 核心板 USART1 引脚实际是 **3.3 V CMOS**，与传统 5 V TTL �
 | 引脚 | PA9 = TX，PA10 = RX（默认映射，复用功能） |
 | 引脚电平 | 3.3 V CMOS（习惯称 TTL 兼容） |
 | USB 适配 | **CH341 USB-TTL**（USB ↔ TTL，**不是** RS232） |
-| 接线 | 模块 **RX ← PA9**，TX → PA10，**GND 共地** |
+| 接线 | 模块 **RX ← PA9**，TX → PA10，**GND→面包板 GND 轨** |
 | 波特 | 以固件为准（demo 常见 1500000 8N1） |
 
 规则与脚本： [`.cursor/rules/serial-ch341.mdc`](../../.cursor/rules/serial-ch341.mdc) · [`doc/scripts-reference.md`](../scripts-reference.md)。

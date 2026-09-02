@@ -75,7 +75,7 @@
 
 勿把 PA13/PA14 当串口。概念：[swd-vs-usart.md](../learn/swd-vs-usart.md)；电平：[uart-ttl-rs232-rs485.md](../learn/uart-ttl-rs232-rs485.md)。
 
-CH341：RX←PA9，TX→PA10，GND 共地。
+CH341：RX←PA9，TX→PA10，GND→面包板 GND 轨。
 
 ---
 
@@ -86,7 +86,7 @@ CH341：RX←PA9，TX→PA10，GND 共地。
 | PA13 | SWDIO |
 | PA14 | SWCLK |
 
-ST-Link：SWDIO→PA13，SWCLK→PA14，GND→GND（与面包板共地）。蓝板由 **MicroUSB 独立供电**；ST-Link 的 3.3V/5V **只**接到面包板外设电源轨，**禁止**接到蓝板电源脚。见 [供电与共地](power-and-common-ground.md)。
+ST-Link：SWDIO→PA13，SWCLK→PA14；GND 与 3.3V 进面包板轨（方案 A：5V 闲置）；蓝板 SWD GND 从面包板轨短线接入。蓝板由 **MicroUSB 独立供电**；ST-Link 电源 **禁止**接到蓝板电源脚。见 [供电与共地](power-and-common-ground.md)。
 
 复位后为 SWJ（另占 PA15/PB3/PB4）；本仓库只要求保留 PA13/PA14。
 

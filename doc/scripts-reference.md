@@ -130,7 +130,7 @@ flowchart TB
 | `to-win`（默认宿主侧） | Windows COM 口 | 串口助手 **1500000** 8N1 |
 | `to-wsl` | WSL `/dev/ttyUSB0` | `picocom -b 1500000 /dev/ttyUSB0`（见下节） |
 
-硬件接线不变：CH341 **RX←PA9**，TX→PA10，GND 共地。烧录仍用 ST-Link（与串口宿主无关）。
+硬件接线不变：CH341 **RX←PA9**，TX→PA10，GND→面包板 GND 轨。烧录仍用 ST-Link（与串口宿主无关）。
 
 **端口名与波特率会变**：COM 编号随插拔变化；固件改波特后须传 `--baud` / `EMBED_SERIAL_BAUD`。Windows Agent 读串口用下一节脚本（自动认 CH341），勿写死 `COM5` / 假定永远 `1500000`。
 

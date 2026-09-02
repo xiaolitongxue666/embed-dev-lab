@@ -65,7 +65,7 @@ SPI、TIM 等未启用的 HAL 模块在 `hal/Inc/` 中虽有头文件，但 **�
 
 | 项 | 说明 |
 |----|------|
-| 引脚 | PA9 TX，PA10 RX；CH341 RX←PA9，GND 共地 |
+| 引脚 | PA9 TX，PA10 RX；CH341 RX←PA9，GND→面包板 GND 轨 |
 | 波特率 | 1500000 8N1 |
 | 换行 | 字符串写 `\n`；`USART1_WriteStr` 自动补 `\r` |
 

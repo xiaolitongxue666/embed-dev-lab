@@ -18,5 +18,5 @@
 - Windows Agent 读串口：`./scripts/serial-ch341-read.sh [--baud N]`（自动找 CH341 COM；波特/端口可变）
 - WSL：`picocom -b <固件波特> /dev/ttyUSB*`
 - 规则：`.cursor/rules/serial-ch341.mdc`；详解：`doc/scripts-reference.md`
-- 供电 / 共地：`.cursor/rules/hardware-power.mdc`；`doc/hardware/power-and-common-ground.md`（蓝板 MicroUSB；ST-Link→面包板 3.3V/5V；共地）
+- 供电 / 共地：`.cursor/rules/hardware-power.mdc`；`doc/hardware/power-and-common-ground.md`（蓝板 MicroUSB；ST-Link 3.3V→面包板，方案 A 5V 闲置；面包板 GND 轨星型汇集）
 - 流程：`doc/workflow-write-build-flash.md`（烧写入口：`scripts/build.sh` / `build-flash.sh`）；详见 `skills/embed-dev-lab/SKILL.md` 与 `doc/probe-rs.md`

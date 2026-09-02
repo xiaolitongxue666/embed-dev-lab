@@ -27,7 +27,7 @@
 - SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c)
 - HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI）
 
-全部当前模块 **3.3 V** 供电、GND 共地。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / 5V / GND** 拉到面包板作外设电源轨——**禁止**把 ST-Link 电源接到蓝板。详解：[供电、共地与 SWD](power-and-common-ground.md)。
+全部当前模块 **3.3 V** 供电。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / GND** 拉到面包板（方案 A：5V 闲置）——**禁止**把 ST-Link 电源接到蓝板。共地以面包板 GND 轨为汇集点。详解：[供电、共地与 SWD](power-and-common-ground.md)。
 
 ---
 
@@ -55,8 +55,8 @@
 | BMP280（可选） | I2C1；温度气压多从机 | SCL→PB6，SDA→PB7；VCC/GND | 约 3–6 | [淘宝搜索：BMP280 气压温度传感器模块 I2C 3.3V](https://s.taobao.com/search?q=BMP280%20%E6%B0%94%E5%8E%8B%E6%B8%A9%E5%BA%A6%E4%BC%A0%E6%84%9F%E5%99%A8%E6%A8%A1%E5%9D%97%20I2C%203.3V) |
 | 830 孔面包板 | 实验底板 | — | 约 3.4–12 | [淘宝搜索：830孔面包板 带电源轨](https://s.taobao.com/search?q=830%E5%AD%94%E9%9D%A2%E5%8C%85%E6%9D%BF%20%E5%B8%A6%E7%94%B5%E6%BA%90%E8%BD%A8) |
 | 40P 杜邦线套装 | 接线 | — | 约 6–8 | [淘宝搜索：40P杜邦线 公对公+公对母+母对母](https://s.taobao.com/search?q=40P%E6%9D%9C%E9%82%A6%E7%BA%BF%20%E5%85%AC%E5%AF%B9%E5%85%AC%2B%E5%85%AC%E5%AF%B9%E6%AF%8D%2B%E6%AF%8D%E5%AF%B9%E6%AF%8D) |
-| ST-Link V2（迷你 5Pin） | SWD + 面包板电源轨 | SWDIO→PA13，SWCLK→PA14，GND→蓝板+面包板；**3.3V/5V→面包板**（勿接蓝板电源） | 已有 | [供电与共地](power-and-common-ground.md) |
-| CH341 USB-TTL | 串口日志（已用） | RX←PA9，TX→PA10，GND 共地 | 已有 | 见 [串口规则](../scripts-reference.md) |
+| ST-Link V2（迷你 5Pin） | SWD + 面包板电源轨 | SWDIO→PA13，SWCLK→PA14；GND/3.3V→面包板轨（方案 A：5V 闲置；勿接蓝板电源） | 已有 | [供电与共地](power-and-common-ground.md) |
+| CH341 USB-TTL | 串口日志（已用） | RX←PA9，TX→PA10，GND→面包板 GND 轨 | 已有 | 见 [串口规则](../scripts-reference.md) |
 
 ### 采购核对
 
@@ -160,20 +160,21 @@ PB6, PB7          I2C1：SH1106 + 可选 BMP280（计划）
                       │    ST-Link V2      │
                       │ SWDIO ─────────────┼───> 蓝板 PA13
                       │ SWCLK ─────────────┼───> 蓝板 PA14
-                      │ GND   ──┬──────────┼───> 蓝板 GND（共地，必须）
-                      │         └──────────┼───> 面包板 GND 轨
+                      │ GND ───────────────┼───> 面包板 GND 轨（汇集点）
                       │ 3.3V ──────────────┼───> 面包板 3.3V 轨
-                      │ 5V ────────────────┼───> 面包板 5V 轨（标 5V 模块）
+                      │ 5V                 │    方案 A 闲置（标 5V 模块才接 5V 轨）
                       └────────────────────┘
                       【禁止】ST-Link 3.3V/5V → 蓝板任何电源脚
+                      【禁止】ST-Link GND → 蓝板 → 面包板（地线串联）
 
 ┌─────────────────────────────────────────────────────────────┐
 │  830 面包板                                                  │
 │  +3.3V 轨 ←── ST-Link 3.3V                                   │
-│  +5V 轨   ←── ST-Link 5V（当前模块不用）                     │
-│  GND 轨   ←── ST-Link GND（与蓝板 / CH341 同一地）           │
+│  +5V 轨   ←── 方案 A：ST-Link 5V 闲置                        │
+│  GND 轨   ←── ST-Link GND、CH341 GND、蓝板 SWD GND、外设 GND │
 │                                                              │
 │  STM32F103C8T6 蓝板（MicroUSB 供电；不接 ST-Link 电源）     │
+│    SWD GND ← 面包板 GND 轨（短线）                           │
 │    PB6  → I2C1_SCL ──┬── SH1106 SCL [/ BMP280] [/ FT6236]  │
 │    PB7  → I2C1_SDA ──┴── SH1106 SDA [/ BMP280] [/ FT6236]  │
 │    PB0  → FT6236 INT   （暂不接线）                          │
@@ -192,9 +193,9 @@ PB6, PB7          I2C1：SH1106 + 可选 BMP280（计划）
 │  BMP280（可选）：VCC/GND→3.3V 轨；SCL/SDA→PB6/PB7           │
 └─────────────────────────────────────────────────────────────┘
 
-供电：电脑 USB → 蓝板 MicroUSB（MCU）；电脑 USB → ST-Link → 面包板 3.3V/5V/GND（外设）
-共地：蓝板 GND ↔ ST-Link GND ↔ 面包板 GND ↔ CH341 GND
-串口：CH341 GND 必须进公共地，否则乱码
+供电：电脑 USB → 蓝板 MicroUSB（MCU）；电脑 USB → ST-Link → 面包板 3.3V（外设；5V 方案 A 闲置）
+共地：面包板 GND 轨汇集 ST-Link / CH341 / 蓝板 SWD / 外设（星型，禁止串联）
+串口：CH341 GND 必须直接进面包板 GND 轨，否则乱码
 SPI：专给 IMU；屏幕不占 SPI
 ```
 
@@ -203,7 +204,7 @@ SPI：专给 IMU；屏幕不占 SPI
 ## 7. 注意事项
 
 1. **电压**：当前模块一律 3.3 V，接面包板 3.3V 轨（ST-Link），勿接 5 V / VIN（LSM6DS3 `Vdd` 1.71–3.6 V）。蓝板 MicroUSB 独立供电；ST-Link 电源勿接蓝板。
-2. **共地**：蓝板 / 面包板 / ST-Link / CH341 的 GND 必须连通（[供电与共地](power-and-common-ground.md)）。
+2. **共地**：面包板 GND 轨为汇集点；ST-Link / CH341 / 蓝板 SWD / 外设 GND 均接该轨，禁止串联（[供电与共地](power-and-common-ground.md)）。
 3. **SWD**：PA13、PA14 保持调试功能（[SWD ≠ USART](../learn/swd-vs-usart.md)）；只接信号 + GND，不接 ST-Link 电源到蓝板。
 4. **I2C**：SCL/SDA 需上拉（多数模块已焊 ~4.7–10 kΩ）；缺上拉则总线卡死。多从机靠不同 7 位地址区分。
 5. **SH1106**：常见 128×64 可视区，片内 GDDRAM 多为 **132×64**，驱动须按 SH1106 处理列偏移；勿直接套用 SSD1306 初始化序列。

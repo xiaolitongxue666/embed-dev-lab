@@ -137,6 +137,12 @@ int main(void)
         if (led_phase >= 200U) {
             led_phase = 0U;
             PCout(LED_PIN) ^= 1U;
+            /* 字符串指 GPIO 电平：高=LED on（灯灭），低=LED off（灯亮） */
+            if (PCout(LED_PIN) != 0U) {
+                printf("LED on\n");
+            } else {
+                printf("LED off\n");
+            }
         }
 
         delay(0x7FFFU);

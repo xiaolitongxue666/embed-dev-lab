@@ -1,6 +1,6 @@
 ---
 name: embed-dev-lab
-description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup 域 PC13、CH341 串口 Windows↔WSL、Win serial-ch341-read、WSL picocom、脚本与 MCP 安全约束。在 embed-dev-lab 仓库内开发 F103 裸机/嵌入式任务、验证串口日志时使用。
+description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup 域 PC13、供电共地、CH341 串口 Windows↔WSL、Win serial-ch341-read、WSL picocom、脚本与 MCP 安全约束。在 embed-dev-lab 仓库内开发 F103 裸机/嵌入式任务、验证串口日志时使用。
 ---
 
 # embed-dev-lab 嵌入式开发 Skill
@@ -50,6 +50,13 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 
 多数核心板 **低电平点亮** PC13 LED。
 
+## 供电与共地
+
+- 蓝板：**MicroUSB** 独立供电 MCU
+- ST-Link：SWD（PA13/PA14 + GND）；**3.3V/5V → 面包板**；**禁止**接到蓝板电源脚
+- GND：蓝板 + 面包板 + CH341 必须连通
+- 规则：`.cursor/rules/hardware-power.mdc`；详解：[`doc/hardware/power-and-common-ground.md`](doc/hardware/power-and-common-ground.md)
+
 ## 串口验证（CH341）
 
 烧录后看日志遵循 `.cursor/rules/serial-ch341.mdc`（**波特率与 COM/tty 名会变**）：
@@ -81,6 +88,8 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 | 编写/编译/下载流程 | `doc/workflow-write-build-flash.md` |
 | 快速上手 | `doc/getting-started.md` |
 | 应用层模块 | `doc/projects/` · `projects/README.md` |
+| F103 硬件外设与接线 | `doc/hardware/stm32f103-peripherals.md` |
+| 供电、共地与 SWD | `doc/hardware/power-and-common-ground.md` |
 | probe-rs | `doc/probe-rs.md` |
 | CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
 | GPIO 八种模式 | `doc/learn/gpio-eight-modes.md` |

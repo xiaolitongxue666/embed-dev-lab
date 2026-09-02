@@ -52,14 +52,15 @@
  * ---------------------------------------------------------------------------
  *
  * 硬件接线（LSM6DS3 / LSM6DS3TR 模块丝印 → MCU 标准 SPI 名）：
- *   模块 3V3 ← 核心板 3.3 V（勿接 VIN）
- *   模块 GND ← 核心板 GND（共地）
+ *   模块 3V3 ← 面包板 3.3V 轨（ST-Link 3.3V，勿接蓝板电源/VIN）
+ *   模块 GND ← 面包板 GND（与蓝板/ST-Link/CH341 共地）
  *   模块 SCL ← PA5（SPI1_SCK）
  *   模块 SDA ← PA7（SPI1_MOSI / SDI）
  *   模块 SAO → PA6（SPI1_MISO / SDO）
  *   模块 CS  ← PA4（GPIO 软件片选，低有效）
  *   INT1 / INT2 / OCS / SCX / SDX 本 demo 不接
  *
+ * 供电规范：doc/hardware/power-and-common-ground.md
  * 时钟前提（system_stm32f1xx.c）：
  *   SYSCLK 72 MHz，APB2 不分频 → PCLK2 = 72 MHz（SPI1 时钟源）
  *   BR = DIV16 → SCK ≈ 4.5 MHz（低于 LSM6DS3 10 MHz 上限）

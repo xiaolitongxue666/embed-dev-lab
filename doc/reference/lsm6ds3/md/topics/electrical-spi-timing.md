@@ -17,7 +17,7 @@ Table 4（PDF p.23）：
 | `Vdd` | 模拟供电 | 1.71 | 1.8 | 3.6 | V |
 | `Vdd_IO` | IO 供电 | 1.62 | — | Vdd+0.1 | V |
 
-本仓库模块接线：**核心板 3.3 V → 模块 `3V3`**，GND 共地；**不要接 `VIN`**（板载 LDO 输入侧）。禁止 5 V。
+本仓库模块接线：**面包板 3.3V 轨（ST-Link 3.3V）→ 模块 `3V3`**，GND 与蓝板 / ST-Link / CH341 共地；**不要接 `VIN`**（板载 LDO 输入侧）。禁止 5 V。蓝板由 MicroUSB 独立供电，见 [供电与共地](../../../hardware/power-and-common-ground.md)。
 
 ## 上电 boot（约 20 ms）
 

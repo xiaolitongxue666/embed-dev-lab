@@ -178,8 +178,8 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 
 | 模块丝印 | MCU | 方向 / 说明 |
 |----------|-----|-------------|
-| `3V3` | 核心板 3.3 V | 供电（**勿接 VIN**） |
-| `GND` | GND | 共地 |
+| `3V3` | 面包板 3.3V 轨（ST-Link 3.3V） | 供电（**勿接 VIN** / 勿接蓝板电源） |
+| `GND` | 面包板 GND | 与蓝板 / ST-Link / CH341 共地 |
 | `SCL` | PA5 | ← SPI1_SCK |
 | `SDA` | PA7 | ← SPI1_MOSI（SDI） |
 | `SAO` | PA6 | → SPI1_MISO（SDO） |

@@ -86,7 +86,7 @@ CH341：RX←PA9，TX→PA10，GND 共地。
 | PA13 | SWDIO |
 | PA14 | SWCLK |
 
-ST-Link：SWDIO→PA13，SWCLK→PA14，GND→GND。外设由核心板 USB 供电时 **ST-Link 3.3V 悬空**（避免双源顶牛）。仅 LED、板子无 USB 电时，仍可按 [getting-started.md](../getting-started.md) 由 ST-Link 供电。
+ST-Link：SWDIO→PA13，SWCLK→PA14，GND→GND（与面包板共地）。蓝板由 **MicroUSB 独立供电**；ST-Link 的 3.3V/5V **只**接到面包板外设电源轨，**禁止**接到蓝板电源脚。见 [供电与共地](power-and-common-ground.md)。
 
 复位后为 SWJ（另占 PA15/PB3/PB4）；本仓库只要求保留 PA13/PA14。
 

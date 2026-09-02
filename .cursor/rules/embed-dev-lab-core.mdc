@@ -25,3 +25,4 @@ alwaysApply: true
 - 注释：`src/`、`startup/`、`linker/` 中文；`third_party/**` vendor 英文；CLI 日志英文
 - 流程：`doc/workflow-write-build-flash.md`；摘要：`AGENTS.md`
 - 串口宿主切换与读日志：规则 `serial-ch341.mdc`；`serial-ch341-switch.sh` / `serial-ch341-read.sh`；详解 `doc/scripts-reference.md`
+- 供电 / 共地 / SWD：规则 `hardware-power.mdc`；详解 `doc/hardware/power-and-common-ground.md`（蓝板 MicroUSB；ST-Link 3.3V/5V→面包板；GND 连通蓝板+面包板+CH341）

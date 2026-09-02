@@ -4,7 +4,7 @@
 
 完整引脚总表（丝印 / FT / 复用 / 本仓库占用）：[stm32f103c8t6-pinout.md](stm32f103c8t6-pinout.md) · 官方 Table 5 摘录：[lqfp48-pinout.md](../reference/stm32f103/md/topics/lqfp48-pinout.md)
 
-相关流程：[快速上手](../getting-started.md) · [编写 → 编译 → 下载](../workflow-write-build-flash.md) · [官方手册索引](../reference/stm32f103/README.md) · [LSM6DS3 参考](../reference/lsm6ds3/README.md)
+相关流程：[快速上手](../getting-started.md) · [供电、共地与 SWD](power-and-common-ground.md) · [编写 → 编译 → 下载](../workflow-write-build-flash.md) · [官方手册索引](../reference/stm32f103/README.md) · [LSM6DS3 参考](../reference/lsm6ds3/README.md)
 
 ---
 
@@ -27,7 +27,7 @@
 - SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c)
 - HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI）
 
-全部模块 **3.3 V** 供电、GND 共地；ST-Link 仅下载调试。外设接入后由核心板 **USB 供电**，ST-Link **3.3V 悬空**（避免双源顶牛）。仅 LED demo、板子无 USB 电时，仍可按 [快速上手](../getting-started.md) 由 ST-Link 供电。
+全部当前模块 **3.3 V** 供电、GND 共地。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / 5V / GND** 拉到面包板作外设电源轨——**禁止**把 ST-Link 电源接到蓝板。详解：[供电、共地与 SWD](power-and-common-ground.md)。
 
 ---
 
@@ -51,11 +51,11 @@
 |------|-------------|----------|--------------|----------|
 | SH1106 1.3 寸 OLED（4 针 IIC） | I2C1；显示 / 精简动画点阵 | VCC→3.3V，GND→GND；SCL→PB6，SDA→PB7 | 约 **11**（商品页 upstream 价位；随 SKU 波动） | [淘宝商品 id=797013563341](https://item.taobao.com/item.htm?id=797013563341) · [搜索：1.3寸OLED 4针 SH1106 IIC](https://s.taobao.com/search?q=1.3%E5%AF%B8OLED%204%E9%92%88%20SH1106%20IIC) |
 | FT6236U 触摸盖板 | I2C1 + GPIO；坐标与 INT | SCL/SDA→PB6/PB7；INT→PB0；RST→PB1；VCC/GND | **暂不采购**；零售 0.96″ 稀缺，≥2.3″ 面板约 30+ | [淘宝搜索：FT6236U 电容触摸盖板 I2C 带INT RST 3.3V](https://s.taobao.com/search?q=FT6236U%20%E7%94%B5%E5%AE%B9%E8%A7%A6%E6%91%B8%E7%9B%96%E6%9D%BF%20I2C%20%E5%B8%A6INT%20RST%203.3V) |
-| LSM6DS3 / LSM6DS3TR 模块 | SPI1 全双工；六轴 IMU（非存储） | **丝印**：SCL←PA5，SDA←PA7，SAO→PA6，CS←PA4；**3V3**/GND（勿接 VIN） | 已有模块 | 丝印见模块背面；手册 [reference/lsm6ds3](../reference/lsm6ds3/README.md) |
+| LSM6DS3 / LSM6DS3TR 模块 | SPI1 全双工；六轴 IMU（非存储） | **丝印**：SCL←PA5，SDA←PA7，SAO→PA6，CS←PA4；**3V3**/GND→面包板 3.3V 轨（ST-Link，勿接 VIN） | 已有模块 | 丝印见模块背面；手册 [reference/lsm6ds3](../reference/lsm6ds3/README.md) |
 | BMP280（可选） | I2C1；温度气压多从机 | SCL→PB6，SDA→PB7；VCC/GND | 约 3–6 | [淘宝搜索：BMP280 气压温度传感器模块 I2C 3.3V](https://s.taobao.com/search?q=BMP280%20%E6%B0%94%E5%8E%8B%E6%B8%A9%E5%BA%A6%E4%BC%A0%E6%84%9F%E5%99%A8%E6%A8%A1%E5%9D%97%20I2C%203.3V) |
 | 830 孔面包板 | 实验底板 | — | 约 3.4–12 | [淘宝搜索：830孔面包板 带电源轨](https://s.taobao.com/search?q=830%E5%AD%94%E9%9D%A2%E5%8C%85%E6%9D%BF%20%E5%B8%A6%E7%94%B5%E6%BA%90%E8%BD%A8) |
 | 40P 杜邦线套装 | 接线 | — | 约 6–8 | [淘宝搜索：40P杜邦线 公对公+公对母+母对母](https://s.taobao.com/search?q=40P%E6%9D%9C%E9%82%A6%E7%BA%BF%20%E5%85%AC%E5%AF%B9%E5%85%AC%2B%E5%85%AC%E5%AF%B9%E6%AF%8D%2B%E6%AF%8D%E5%AF%B9%E6%AF%8D) |
-| ST-Link V2 | SWD 下载调试 | SWDIO→PA13，SWCLK→PA14，GND→GND；**3.3V 悬空** | 已有 | 无需购买 |
+| ST-Link V2（迷你 5Pin） | SWD + 面包板电源轨 | SWDIO→PA13，SWCLK→PA14，GND→蓝板+面包板；**3.3V/5V→面包板**（勿接蓝板电源） | 已有 | [供电与共地](power-and-common-ground.md) |
 | CH341 USB-TTL | 串口日志（已用） | RX←PA9，TX→PA10，GND 共地 | 已有 | 见 [串口规则](../scripts-reference.md) |
 
 ### 采购核对
@@ -63,10 +63,10 @@
 - OLED 买 **1.3 寸、4 针 IIC、驱动 SH1106**（分辨率多为 128×64）；**不要**买成 7 针 SPI，也**不要**默认当 SSD1306 驱动（GDDRAM 布局不同，错驱动会花屏/偏移）。
 - 指定链接：[item.taobao.com/item.htm?id=797013563341](https://item.taobao.com/item.htm?id=797013563341)；下单选 **4 针 SH1106 IIC** SKU。
 - **触控暂不启用**：FT6236 条目保留，当前阶段不接线、不采购；日后若启用，注意盖板尺寸需匹配 1.3″ 有效区。
-- LSM6DS3 走 **SPI** 须接满 SCK / MOSI / MISO / CS；供电接 **3V3** 勿接 VIN；勿买 W25Q/TF 当「SPI 练习」。
+- LSM6DS3 走 **SPI** 须接满 SCK / MOSI / MISO / CS；供电接面包板 **3V3** 勿接 VIN；勿买 W25Q/TF 当「SPI 练习」。
 - BMP280：I2C 模式时 CSB 接高（多数模块已处理）；SDO 决定地址 `0x76`/`0x77`。
 - 模块丝印 **VCC/GND 顺序不一**，以板上丝印为准。
-- 全部选 **3.3 V**；禁止模块 VCC 接 5 V。
+- 当前采购模块一律选 **3.3 V**（接面包板 3.3V 轨）；禁止把 3.3V 模块 VCC 接 5 V。面包板 5V 轨仅给明确标 5V 的外设（见 [供电与共地](power-and-common-ground.md)）。
 
 ### LSM6DS3 模块焊接（不必焊满全部焊盘）
 
@@ -74,7 +74,7 @@
 
 | 类别 | 丝印（以模块背面为准） | 是否必须焊/接 |
 |------|------------------------|---------------|
-| 供电 | `3V3`、`GND` | **必须**（`3V3` 接核心板 3.3 V，**勿接 VIN**） |
+| 供电 | `3V3`、`GND` | **必须**（`3V3` 接面包板 3.3V 轨 / ST-Link 3.3V，**勿接 VIN**） |
 | SPI 四线 | `SCL`、`SDA`、`SAO`、`CS` | **必须**（→ PA5 / PA7 / PA6 / PA4） |
 | 本 demo 不用 | `INT1`、`INT2`、`OCS`、`SCX`、`SDX` 等 | **可不焊、不接**（固件未用中断 / Sensor Hub） |
 | 其他供电丝印 | `VIN`（若有） | **不接** |
@@ -150,21 +150,30 @@ PB6, PB7          I2C1：SH1106 + 可选 BMP280（计划）
 
 ## 6. 连接图与供电
 
+规范全文：[供电、共地与 SWD](power-and-common-ground.md)。
+
 ```
+电脑 USB ──┬──> 蓝板 MicroUSB（MCU 独立供电）
+           └──> ST-Link USB
+
                       ┌────────────────────┐
                       │    ST-Link V2      │
-                      │ SWDIO ─────────────┼───> PA13
-                      │ SWCLK ─────────────┼───> PA14
-                      │ GND   ─────────────┼───> 面包板 GND
-                      │ 【3.3V 悬空，禁止接外设】│
+                      │ SWDIO ─────────────┼───> 蓝板 PA13
+                      │ SWCLK ─────────────┼───> 蓝板 PA14
+                      │ GND   ──┬──────────┼───> 蓝板 GND（共地，必须）
+                      │         └──────────┼───> 面包板 GND 轨
+                      │ 3.3V ──────────────┼───> 面包板 3.3V 轨
+                      │ 5V ────────────────┼───> 面包板 5V 轨（标 5V 模块）
                       └────────────────────┘
+                      【禁止】ST-Link 3.3V/5V → 蓝板任何电源脚
 
 ┌─────────────────────────────────────────────────────────────┐
 │  830 面包板                                                  │
-│  +3.3V 轨 ←── 核心板 3.3V（USB 供电）                        │
-│  GND 轨   ←── 核心板 GND（与 ST-Link / CH341 共地）          │
+│  +3.3V 轨 ←── ST-Link 3.3V                                   │
+│  +5V 轨   ←── ST-Link 5V（当前模块不用）                     │
+│  GND 轨   ←── ST-Link GND（与蓝板 / CH341 同一地）           │
 │                                                              │
-│  STM32F103C8T6 核心板                                        │
+│  STM32F103C8T6 蓝板（MicroUSB 供电；不接 ST-Link 电源）     │
 │    PB6  → I2C1_SCL ──┬── SH1106 SCL [/ BMP280] [/ FT6236]  │
 │    PB7  → I2C1_SDA ──┴── SH1106 SDA [/ BMP280] [/ FT6236]  │
 │    PB0  → FT6236 INT   （暂不接线）                          │
@@ -177,14 +186,15 @@ PB6, PB7          I2C1：SH1106 + 可选 BMP280（计划）
 │    PA10 ← CH341 TX（USART1_RX）                              │
 │    PC13 → 板载 LED                                           │
 │                                                              │
-│  1.3″ SH1106 4 针：VCC/GND→电源轨；SCL/SDA→PB6/PB7         │
+│  1.3″ SH1106 4 针：VCC/GND→3.3V 轨；SCL/SDA→PB6/PB7        │
 │  FT6236：当前阶段不接；日后 INT→PB0，RST→PB1                │
-│  LSM6DS3：3V3/GND→电源轨（勿接 VIN）；四线 SPI 如上         │
-│  BMP280（可选）：VCC/GND→电源轨；SCL/SDA→PB6/PB7             │
+│  LSM6DS3：3V3/GND→3.3V 轨（勿接 VIN）；四线 SPI 如上        │
+│  BMP280（可选）：VCC/GND→3.3V 轨；SCL/SDA→PB6/PB7           │
 └─────────────────────────────────────────────────────────────┘
 
-供电：电脑 USB → 核心板 USB 口 → 板上 3.3V → 外设
-串口：CH341 GND 必须与 MCU 共地，否则乱码
+供电：电脑 USB → 蓝板 MicroUSB（MCU）；电脑 USB → ST-Link → 面包板 3.3V/5V/GND（外设）
+共地：蓝板 GND ↔ ST-Link GND ↔ 面包板 GND ↔ CH341 GND
+串口：CH341 GND 必须进公共地，否则乱码
 SPI：专给 IMU；屏幕不占 SPI
 ```
 
@@ -192,9 +202,9 @@ SPI：专给 IMU；屏幕不占 SPI
 
 ## 7. 注意事项
 
-1. **电压**：模块一律 3.3 V，勿接 5 V（LSM6DS3 `Vdd` 1.71–3.6 V）；模块供电接 **3V3** 勿接 VIN。
-2. **共地**：I2C / SPI / 串口 / SWD 的 GND 必须连通。
-3. **SWD**：PA13、PA14 保持调试功能（[SWD ≠ USART](../learn/swd-vs-usart.md)）。
+1. **电压**：当前模块一律 3.3 V，接面包板 3.3V 轨（ST-Link），勿接 5 V / VIN（LSM6DS3 `Vdd` 1.71–3.6 V）。蓝板 MicroUSB 独立供电；ST-Link 电源勿接蓝板。
+2. **共地**：蓝板 / 面包板 / ST-Link / CH341 的 GND 必须连通（[供电与共地](power-and-common-ground.md)）。
+3. **SWD**：PA13、PA14 保持调试功能（[SWD ≠ USART](../learn/swd-vs-usart.md)）；只接信号 + GND，不接 ST-Link 电源到蓝板。
 4. **I2C**：SCL/SDA 需上拉（多数模块已焊 ~4.7–10 kΩ）；缺上拉则总线卡死。多从机靠不同 7 位地址区分。
 5. **SH1106**：常见 128×64 可视区，片内 GDDRAM 多为 **132×64**，驱动须按 SH1106 处理列偏移；勿直接套用 SSD1306 初始化序列。
 6. **触控**：条目保留，**当前阶段不启用**；日后叠装时 INT 下降沿置标志，主循环再 I2C 读坐标。

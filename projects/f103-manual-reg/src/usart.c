@@ -16,7 +16,7 @@
  * 硬件接线（CH341 USB-TTL）：
  *   模块 RX ← PA9（MCU 发）
  *   模块 TX → PA10（MCU 收，本 demo 仅 printf 发送）
- *   GND 共地
+ *   GND 共地（与蓝板 / 面包板 / ST-Link 同一地）
  *   CH341 为 USB↔TTL 转换；MCU 脚仍是 3.3 V CMOS（习惯称 TTL），不是 RS232
  *
  * 引脚事实（DS5319 Table 5）：

@@ -3,7 +3,7 @@
  * @brief   USART1 初始化与字符串发送（HAL_UART_Transmit）
  *
  * @note    USART1 挂 APB2；SYSCLK 72 MHz 时 PCLK2=72 MHz，1500000 bps 分频整除。
- *          硬件：CH341 RX←PA9，CH341 TX→PA10，GND 共地。
+ *          硬件：CH341 RX←PA9，CH341 TX→PA10，GND 共地（与蓝板/面包板/ST-Link 同一地）。
  *          PA9/PA10：DS5319 标 FT；默认映射，勿 USART1_REMAP；勿用 PA13/PA14（SWD）。
  *
  * 与 printf / syscalls 的关系（本工程选型）：

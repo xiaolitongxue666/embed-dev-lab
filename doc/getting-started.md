@@ -64,18 +64,24 @@ Linux 配置 udev；macOS 跳过。
 
 ## 步骤 4：接线
 
-**USB**：ST-Link USB → PC
+**供电**（两套电源互相独立，见 [供电与共地](hardware/power-and-common-ground.md)）：
 
-**SWD**（四线；调试下载，**不是**串口，见 [swd-vs-usart.md](learn/swd-vs-usart.md)）：
+| 路径 | 说明 |
+|------|------|
+| 电脑 USB → 蓝板 MicroUSB | **MCU 独立供电**（必须） |
+| 电脑 USB → ST-Link USB | 调试器供电；其 3.3V/5V **只**拉到面包板外设，**禁止**接到蓝板电源脚 |
+
+**SWD**（信号 + 共地；调试下载，**不是**串口，见 [swd-vs-usart.md](learn/swd-vs-usart.md)）：
 
 | ST-Link | 板子 |
 |---------|------|
 | SWDIO | PA13 |
 | SWCLK | PA14 |
-| GND | GND |
-| 3.3V | 3.3V |
+| GND | GND（**必须**；与面包板 / CH341 同一地） |
 
-确保板子 **3.3V 供电**。
+接外设时：ST-Link **3.3V / 5V / GND** → 面包板电源轨；当前传感器走 3.3V 轨。
+
+确保蓝板已由 MicroUSB 供电后再烧录。
 
 ## 步骤 5：编译 + 烧录
 
@@ -158,6 +164,7 @@ CubeIDE 风格对照工程（HAL），行为对齐 manual-reg：
 
 - [编写 → 编译 → 下载](workflow-write-build-flash.md)
 - [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DS3 接线与采购
+- [供电、共地与 SWD](hardware/power-and-common-ground.md) — 蓝板 MicroUSB、ST-Link→面包板、共地
 - [LSM6DS3 参考](reference/lsm6ds3/README.md) — DocID026899 中文精选
 - [probe-rs 详细说明](probe-rs.md)
 - [脚本完整参考](scripts-reference.md)

@@ -100,16 +100,19 @@ sudo udevadm trigger
 - ST-Link 的 **USB 口** 必须接 PC（可经 USB Hub / 扩展坞；本项目实机验证绿联 USB 扩展可用）
 - **USB 枚举** 与 SWD 四线无关；`probe-rs list` 只看 USB
 
-### SWD（调试器 ↔ F103 核心板）
+### SWD（调试器 ↔ F103 蓝板）
+
+蓝板由 **MicroUSB 独立供电**；ST-Link **不要**把 3.3V/5V 接到蓝板电源脚。详解：[供电与共地](hardware/power-and-common-ground.md)。
 
 | ST-Link | F103 | 说明 |
 |---------|------|------|
 | SWDIO | PA13 | 数据 |
 | SWCLK | PA14 | 时钟 |
-| GND | GND | 必须共地 |
-| 3.3V | 3.3V | 板子另有稳定 3.3V 供电时可只接前三线 |
+| GND | GND | **必须**共地（并连通面包板 GND） |
 
-烧录前确认板子 **3.3V 供电**，否则可能写 Flash 成功但程序不运行。
+烧录前确认蓝板 **MicroUSB 已供电**，否则可能写 Flash 成功但程序不运行。
+
+接外设时：ST-Link 3.3V / 5V → 面包板电源轨（当前模块用 3.3V）。
 
 ---
 

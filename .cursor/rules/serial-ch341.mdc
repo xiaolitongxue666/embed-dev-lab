@@ -14,6 +14,7 @@ alwaysApply: true
 | 帧格式 | 8N1 无流控；**波特率以当前固件为准**（demo 常见 **1500000**，会改） |
 | COM / tty | **端口名会变**（如 COM3→COM5；WSL 多为 `/dev/ttyUSB0`，勿写死） |
 | 与 SWD | 独立：烧录用 ST-Link；看日志才需串口 |
+| 共地 | CH341 **GND 必须**进公共地（蓝板 / 面包板 / ST-Link）；见 `hardware-power.mdc` |
 
 改波特后：对照工程 `usart.c` / HAL 初始化，用 `--baud` 或 `EMBED_SERIAL_BAUD`，**不要**假定永远是 1500000。
 

@@ -4,6 +4,7 @@
  *
  * @note    USART1 挂 APB2；SYSCLK 72 MHz 时 PCLK2=72 MHz，1500000 bps 分频整除。
  *          硬件：CH341 RX←PA9，CH341 TX→PA10，GND 共地。
+ *          PA9/PA10：DS5319 标 FT；默认映射，勿 USART1_REMAP；勿用 PA13/PA14（SWD）。
  *
  * 与 printf / syscalls 的关系（本工程选型）：
  *   - HAL 不提供 printf；stdout 也不会自动接到 UART。
@@ -14,6 +15,8 @@
  * `\n` 自动补 `\r`，适配 Windows 串口助手（同 manual-reg 的 _write 行为）。
  *
  * @see     doc/learn/newlib-nosys-stdio-retarget.md
+ * @see     doc/hardware/stm32f103c8t6-pinout.md
+ * @see     doc/reference/stm32f103/md/topics/lqfp48-pinout.md
  */
 
 #include "usart.h"

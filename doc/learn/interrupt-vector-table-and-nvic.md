@@ -118,12 +118,36 @@ Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定
 
 **NVIC** 全称 **Nested Vectored Interrupt Controller（嵌套向量中断控制器）**，是 **Cortex-M 内核内置的硬件模块**，不是 STM32 等芯片厂商在 `0x40000000` 外设总线上实现的那种 GPIO/RCC 类外设。NVIC 的 control/status 寄存器位于 ARM **PPB（Private Peripheral Bus）** 区 **`0xE000xxxx`**，与 ST 外设地址段不同；SoC 分层见 [memory-boot-map §2.1](stm32f103-memory-boot-map.md#21-soc-分层cpu-内核-vs-st-外设-vs-ppb)、[MMIO 基础 §7](stm32f103-mmio-basics.md#7-ppb-与-st-外设与-mmio-的关系)。
 
+名称拆解：
+
+| 词 | 含义 |
+|----|------|
+| **Nested** | 支持 **中断嵌套**（高优先级可打断低优先级） |
+| **Vectored** | **向量中断**：每个中断有独立入口地址（查向量表） |
+| **Controller** | 内核侧中断管理控制器 |
+
 简单理解：
 
 - 中断向量表是存在 Flash 里的「中断服务函数地址对照表」
 - NVIC 是负责查表、判优先级、控制跳转、处理嵌套的硬件执行者
 
 startup 里手写的 `g_pfnVectors`，本质上就是给 NVIC 使用的地址索引表。
+
+### ISR 与 EXTI（配套概念）
+
+| 缩写 | 全称 | 说明 |
+|------|------|------|
+| **ISR** | Interrupt Service Routine | **中断服务程序**（如 `USART1_IRQHandler`、`EXTI0_IRQHandler`） |
+| **EXTI** | External Interrupt / Event controller | STM32 **片上外设**（RM0008 §10），检测 GPIO 等边沿并产生中断/事件请求 |
+
+**NVIC 不产生中断信号。** 外设（USART、TIM、**EXTI** 等）产生中断请求，送给 NVIC；NVIC 负责使能、优先级、挂起与嵌套，再查向量表跳进 ISR。
+
+```text
+GPIO 边沿 → EXTI（配置线、边沿、屏蔽）→ 请求 → NVIC → 向量表 → EXTI_IRQHandler（ISR）
+USART 收满 → USART 外设中断请求 → NVIC → USART1_IRQHandler
+```
+
+EXTI 章节索引：[rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§10 External interrupt/event controller）。本仓库 `f103-manual-reg` 当前未启用外设 NVIC；`f103-cmsis-hal` 的 startup 已含完整 IRQ 弱符号，demo 亦未开外设中断。
 
 ---
 
@@ -240,5 +264,5 @@ NVIC 属于 Cortex-M 内核外设，其寄存器定义与标准操作函数归�
 | Flash / RAM 内存映射 | [memory-map-medium-density.md](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
 | 启动重映射、BOOT、完整加载流程 | [stm32f103-memory-boot-map.md](stm32f103-memory-boot-map.md) |
 | MMIO、PPB vs ST 外设 | [stm32f103-mmio-basics.md](stm32f103-mmio-basics.md) |
-| RM0008 NVIC 章节 | [rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§9 Nested vectored interrupt controller） |
+| RM0008 §9 NVIC、§10 EXTI | [rm0008-index.md](../reference/stm32f103/md/rm0008-index.md) |
 | 本模块 startup 源码 | [`projects/f103-manual-reg/startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) |

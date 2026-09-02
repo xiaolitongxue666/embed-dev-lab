@@ -101,7 +101,7 @@ ELF 须已存在且为最新：`projects/<module>/build/<module>.elf`。
 | 波特率 | **1500000** 8N1 |
 | USB-TTL | 模块 **RX←PA9**，TX→PA10，**GND 共地** |
 
-串口与 SWD 独立：烧录只需 ST-Link；看日志需 USB-TTL（常见 CH341）。
+串口与 SWD 独立：烧录只需 ST-Link；看日志需 USB-TTL（常见 CH341）。SWD ≠ 串口：[swd-vs-usart.md](learn/swd-vs-usart.md)；TTL vs RS232：[uart-ttl-rs232-rs485.md](learn/uart-ttl-rs232-rs485.md)。
 
 **CH341 在 Windows / WSL 间切换**（usbipd-win）：
 

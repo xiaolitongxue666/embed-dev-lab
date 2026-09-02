@@ -83,6 +83,10 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 | 应用层模块 | `doc/projects/` · `projects/README.md` |
 | probe-rs | `doc/probe-rs.md` |
 | CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
+| GPIO 八种模式 | `doc/learn/gpio-eight-modes.md` |
+| GPIO 保护与负压 | `doc/learn/gpio-protection-and-negative-voltage.md` |
+| UART / TTL / RS232 / RS485 | `doc/learn/uart-ttl-rs232-rs485.md` |
+| SWD ≠ USART | `doc/learn/swd-vs-usart.md` |
 | 裸机 printf / nosys / HAL 串口 | `doc/learn/newlib-nosys-stdio-retarget.md` |
 | ST F1 软件仓库归纳 | `doc/learn/stm32-cmsis-component-repos.md` |
 | STM32CubeF1 参考 | https://github.com/STMicroelectronics/STM32CubeF1 |

@@ -17,6 +17,7 @@
 - `RCC_BASE = 0x40021000`，`PWR_BASE = 0x40007000`，`GPIOC_BASE = 0x40011000`
 - `RCC_APB1ENR.PWREN` bit 28，`PWR_CR.DBP` bit 8
 - `RCC_APB2ENR.IOPCEN` bit 4
+- LQFP48 引脚 / FT / remap：[topics/lqfp48-pinout.md](topics/lqfp48-pinout.md)（对照 DS5319 Table 5）
 
 若 ST 发布新版本导致页码偏移，请重新运行 `./scripts/fetch-stm32f103-docs.sh --force` 并对照 PDF 更新 topic 页码。
 

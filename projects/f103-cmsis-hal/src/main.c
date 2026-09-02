@@ -4,7 +4,8 @@
  *
  * @target  STM32F103C8T6（Medium-density F103xB，64 KB Flash / 20 KB RAM）
  * @note    行为对齐 f103-manual-reg：HSE→72 MHz、Backup 域 PC13、低电平点亮
- *          USART1（PA9/PA10）1500000 bps；串口用 HAL_UART_Transmit（usart.c），不用 printf
+ *          USART1（PA9/PA10，FT）1500000 bps；串口用 HAL_UART_Transmit（usart.c），不用 printf
+ *          PC13 非 FT；PA13/PA14 保留 SWD
  *
  * 启动与初始化顺序（Reset 后）：
  *   1. startup：SystemInit（本工程不配 PLL）→ 拷贝 .data → 清零 .bss
@@ -20,8 +21,10 @@
  *   | 串口输出       | printf → syscalls                  | USART1_WriteStr → HAL_UART_Transmit   |
  *
  * @see     doc/projects/f103-cmsis-hal.md
+ * @see     doc/hardware/stm32f103c8t6-pinout.md
  * @see     doc/learn/newlib-nosys-stdio-retarget.md — HAL 与 printf 分层、为何本工程不用 _write
  * @see     doc/reference/stm32f103/md/topics/backup-domain-pc13.md
+ * @see     doc/learn/gpio-eight-modes.md — PC13 推挽；USART MSP 复用/浮空
  */
 
 #include "main.h"
@@ -112,6 +115,9 @@ static void SystemClock_Config(void)
  *   4. HAL_GPIO_Init — 推挽输出、高速
  *
  * 若跳过步骤 1–2，GPIOC 配置写入无效，LED 不亮（与 manual-reg 现象一致）。
+ *
+ * @see doc/learn/gpio-eight-modes.md
+ * @see doc/reference/stm32f103/md/topics/backup-domain-pc13.md
  */
 static void MX_GPIO_Init(void)
 {

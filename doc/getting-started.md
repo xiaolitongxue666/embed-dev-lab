@@ -66,7 +66,7 @@ Linux 配置 udev；macOS 跳过。
 
 **USB**：ST-Link USB → PC
 
-**SWD**（四线）：
+**SWD**（四线；调试下载，**不是**串口，见 [swd-vs-usart.md](learn/swd-vs-usart.md)）：
 
 | ST-Link | 板子 |
 |---------|------|
@@ -102,7 +102,7 @@ PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
 
 | 项 | 值 |
 |----|-----|
-| USB-TTL | **RX←PA9**，TX→PA10，**GND 共地** |
+| USB-TTL | **RX←PA9**，TX→PA10，**GND 共地**（CH341 = USB↔TTL，见 [uart-ttl-rs232-rs485.md](learn/uart-ttl-rs232-rs485.md)） |
 | 波特率 | **1500000** 8N1 |
 
 应看到 `Stm32 manual reg demo start` 与周期 `LED on` / `LED off`（字符串指 GPIO 电平，非灯物理亮灭；低电平点亮板上 LED）。

@@ -48,6 +48,8 @@ PDF **不提交 Git**（见根目录 `.gitignore`）。首次使用或更新文�
 | [md/datasheet-index.md](md/datasheet-index.md) | DS5319 目录索引 |
 | [md/rm0008-index.md](md/rm0008-index.md) | RM0008 目录索引（标注 F103 相关章节） |
 | [md/topics/backup-domain-pc13.md](md/topics/backup-domain-pc13.md) | Backup 域、PWR、PC13 GPIO |
+| [md/topics/lqfp48-pinout.md](md/topics/lqfp48-pinout.md) | LQFP48 引脚、FT、Default/Remap（DS5319 Table 5） |
+| [md/topics/gpio-cnf-mode.md](md/topics/gpio-cnf-mode.md) | CRL/CRH 的 CNF/MODE 编码 |
 | [md/topics/rcc-clock-hse-pll.md](md/topics/rcc-clock-hse-pll.md) | RCC、HSE→72 MHz |
 | [md/topics/memory-map-medium-density.md](md/topics/memory-map-medium-density.md) | 64K Flash / 20K RAM |
 

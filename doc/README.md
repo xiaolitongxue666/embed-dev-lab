@@ -10,6 +10,7 @@
 4. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 5. [脚本参考](scripts-reference.md) — 全脚本、烧写入口、CH341 宿主切换、WSL picocom、自动化链路  
 6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DS3、引脚核对、采购  
+   · [C8T6 引脚总表](hardware/stm32f103c8t6-pinout.md) — 丝印 / FT / USART·SWD / 本仓库占用  
 7. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
 8. [f103-cmsis-hal 模块](projects/f103-cmsis-hal.md) — CubeIDE 风格对照（CMSIS+HAL）  
 9. [f103-manual-reg 从零手写构建](learn/f103-manual-build-from-scratch.md) — 文件编写顺序、CMSIS 对照、验收清单  
@@ -24,8 +25,12 @@
 18. [STM32 裸机入门笔记](learn/stm32-bare-metal-bootstrap.md) — startup、SystemInit、RCC、HSE  
 19. [CMSIS 标准与手写裸机边界](learn/cmsis-overview.md) — 分层、手写兼容判定、与 HAL 关系  
 20. [ST F1 软件仓库归纳](learn/stm32-cmsis-component-repos.md) — CMSIS / HAL / STM32CubeF1  
-21. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表、NVIC、与 startup 关系  
-22. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
+21. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表、NVIC、ISR、EXTI  
+22. [GPIO 八种模式](learn/gpio-eight-modes.md) — CNF/MODE、浮空=高阻、本仓库对照  
+23. [GPIO 保护与负压](learn/gpio-protection-and-negative-voltage.md) — VSS、钳位、FT/TT  
+24. [UART / TTL / RS232 / RS485](learn/uart-ttl-rs232-rs485.md) — 外设 vs 电气标准、CH341  
+25. [SWD ≠ USART](learn/swd-vs-usart.md) — Serial Wire 与串口、PA13/PA14  
+26. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
 
 ## 应用层
 
@@ -40,6 +45,7 @@
 | 文档 | 内容 |
 |------|------|
 | [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | 1.3″ SH1106 I2C、SPI LSM6DS3、可选 BMP280；触控暂缓；接线与采购 |
+| [hardware/stm32f103c8t6-pinout.md](hardware/stm32f103c8t6-pinout.md) | C8T6 / LQFP48 丝印引脚总表、FT、USART/SWD、本仓库占用 |
 
 ## 文档列表
 
@@ -48,6 +54,7 @@
 | [getting-started.md](getting-started.md) | 新手线性流程 |
 | [workflow-write-build-flash.md](workflow-write-build-flash.md) | 编写 → 编译 → 下载 |
 | [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | F103 硬件外设与接线 |
+| [hardware/stm32f103c8t6-pinout.md](hardware/stm32f103c8t6-pinout.md) | C8T6 引脚总表（FT / 复用 / 占用） |
 | [probe-rs.md](probe-rs.md) | probe-rs CLI 与驱动 |
 | [ide-debug.md](ide-debug.md) | Cursor/VS Code 插件与调试 |
 | [scripts-reference.md](scripts-reference.md) | scripts/ 脚本说明 |
@@ -65,7 +72,11 @@
 | [learn/stm32-bare-metal-bootstrap.md](learn/stm32-bare-metal-bootstrap.md) | startup、SystemInit、RCC、HSE |
 | [learn/cmsis-overview.md](learn/cmsis-overview.md) | CMSIS 分层、手写兼容边界、与 HAL 关系 |
 | [learn/stm32-cmsis-component-repos.md](learn/stm32-cmsis-component-repos.md) | ST F1：cmsis-core / cmsis-device-f1 / HAL / CubeF1 |
-| [learn/interrupt-vector-table-and-nvic.md](learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC |
+| [learn/interrupt-vector-table-and-nvic.md](learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、ISR、EXTI |
+| [learn/gpio-eight-modes.md](learn/gpio-eight-modes.md) | GPIO 八态、CNF/MODE、浮空=高阻 |
+| [learn/gpio-protection-and-negative-voltage.md](learn/gpio-protection-and-negative-voltage.md) | VSS、钳位二极管、负压、FT/TT |
+| [learn/uart-ttl-rs232-rs485.md](learn/uart-ttl-rs232-rs485.md) | UART vs TTL vs RS232/485、CH341 |
+| [learn/swd-vs-usart.md](learn/swd-vs-usart.md) | SWD ≠ 串口、PA13/PA14 |
 | [learn/datasheet-vs-reference-manual.md](learn/datasheet-vs-reference-manual.md) | DS5319 与 RM0008 分工 |
 | [mcp-skills.md](mcp-skills.md) | embedded-debugger MCP + 项目 Skill |
 

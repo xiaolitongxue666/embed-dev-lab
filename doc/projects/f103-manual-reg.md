@@ -246,10 +246,11 @@ Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg
 
 | 项目 | 说明 |
 |------|------|
-| LED | PC13 |
-| 调试串口 | USART1：PA9 TX，PA10 RX |
-| IMU | SPI1：PA4 CS，PA5 SCK，PA6 MISO，PA7 MOSI → LSM6DS3 |
-| SWD | SWDIO=PA13，SWCLK=PA14 |
+| 引脚总表 | [C8T6 丝印总表](../hardware/stm32f103c8t6-pinout.md) · [LQFP48 官方摘录](../reference/stm32f103/md/topics/lqfp48-pinout.md) |
+| LED | PC13（推挽；非 FT；[GPIO 八态](../learn/gpio-eight-modes.md)） |
+| 调试串口 | USART1：PA9 TX，PA10 RX（FT；[UART/TTL](../learn/uart-ttl-rs232-rs485.md)） |
+| IMU | SPI1：PA4 CS，PA5 SCK，PA6 MISO，PA7 MOSI → LSM6DS3（PA4–PA7 **非 FT**） |
+| SWD | SWDIO=PA13，SWCLK=PA14（[SWD ≠ USART](../learn/swd-vs-usart.md)） |
 | 厂商例程 | `vendor-pack/STM32F103C8T6核心板/.../核心板测试程序(PC13闪烁)/` |
 
 ## 排错速查

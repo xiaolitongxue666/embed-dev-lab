@@ -165,3 +165,4 @@ USART1_WriteStr("...\n")  →  HAL_UART_Transmit(&huart1, ...)  →  PA9
 - [CMSIS 标准与手写裸机边界](../learn/cmsis-overview.md) §6
 - [f103-manual-reg 模块说明](f103-manual-reg.md)
 - [f103-manual-reg 编译流程](../learn/f103-module-build-flow.md)
+- [C8T6 引脚总表](../hardware/stm32f103c8t6-pinout.md) · [硬件接线](../hardware/stm32f103-peripherals.md)

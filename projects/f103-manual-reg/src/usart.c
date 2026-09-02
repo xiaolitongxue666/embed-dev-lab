@@ -17,10 +17,20 @@
  *   模块 RX ← PA9（MCU 发）
  *   模块 TX → PA10（MCU 收，本 demo 仅 printf 发送）
  *   GND 共地
+ *   CH341 为 USB↔TTL 转换；MCU 脚仍是 3.3 V CMOS（习惯称 TTL），不是 RS232
+ *
+ * 引脚事实（DS5319 Table 5）：
+ *   PA9/PA10 为 FT（5 V tolerant 输入）；输出仍为 3.3 V
+ *   勿用 PA13/PA14 作串口（SWD 占用）
+ *   勿置 USART1_REMAP（否则 TX/RX 改到 PB6/PB7，与计划 I2C1 冲突）
  *
  * printf 路径：syscalls.c 中 _write() → USART1_Write()；`\n` 在 _write 内补 `\r`
  *
+ * @see     doc/hardware/stm32f103c8t6-pinout.md
+ * @see     doc/reference/stm32f103/md/topics/lqfp48-pinout.md
  * @see     doc/learn/stm32f103-mmio-basics.md
+ * @see     doc/learn/gpio-eight-modes.md — PA9 复用推挽、PA10 浮空输入（高阻）
+ * @see     doc/learn/uart-ttl-rs232-rs485.md — UART 外设 vs TTL vs RS232/485
  */
 
 #include "usart.h"
@@ -75,7 +85,7 @@
 
 /**
  * PA10 = USART1_RX
- * CNF=01（浮空输入），MODE=00（输入模式）→ 半字节 0b0100 = 0x4
+ * CNF=01（浮空输入=高阻），MODE=00（输入模式）→ 半字节 0b0100 = 0x4
  * 位于 CRH[11:8]
  */
 #define GPIOA_CRH_PA10_MASK      (0xFU << 8)

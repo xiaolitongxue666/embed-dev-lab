@@ -95,7 +95,7 @@ embed-dev-lab/
 │   │   ├── f103-manual-reg.md
 │   │   └── f103-cmsis-hal.md
 │   ├── modules-f103-blink.md       # 重定向 stub → projects/f103-manual-reg.md
-│   ├── learn/                      # 学习笔记（CMSIS、编译流程、NVIC 等）
+│   ├── learn/                      # 学习笔记（CMSIS、GPIO、串口/SWD、NVIC 等）
 │   └── reference/stm32f103/        # ST 官方 PDF + 精选 MD
 ├── scripts/                        # 安装、PATH、构建、校验
 │   ├── bootstrap.sh                # 一键环境 + 编译
@@ -411,7 +411,11 @@ probe-rs list
 | [doc/projects/f103-manual-reg.md](doc/projects/f103-manual-reg.md) | F103 manual-reg 模块 |
 | [doc/projects/f103-cmsis-hal.md](doc/projects/f103-cmsis-hal.md) | F103 cmsis-hal 模块 |
 | [doc/learn/cmsis-overview.md](doc/learn/cmsis-overview.md) | CMSIS 分层、手写兼容边界、与 HAL 关系 |
-| [doc/learn/interrupt-vector-table-and-nvic.md](doc/learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、与 startup 关系 |
+| [doc/learn/interrupt-vector-table-and-nvic.md](doc/learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、ISR、EXTI |
+| [doc/learn/gpio-eight-modes.md](doc/learn/gpio-eight-modes.md) | GPIO 八态、CNF/MODE、浮空=高阻 |
+| [doc/learn/gpio-protection-and-negative-voltage.md](doc/learn/gpio-protection-and-negative-voltage.md) | VSS、钳位、负压、FT/TT |
+| [doc/learn/uart-ttl-rs232-rs485.md](doc/learn/uart-ttl-rs232-rs485.md) | UART vs TTL vs RS232/485、CH341 |
+| [doc/learn/swd-vs-usart.md](doc/learn/swd-vs-usart.md) | SWD ≠ 串口、PA13/PA14 |
 | [doc/reference/stm32f103/](doc/reference/stm32f103/) | ST 官方 Datasheet / RM |
 
 ### PATH 说明（Windows）

@@ -22,6 +22,12 @@
  * 引脚映射（仍是标准 4 线）：
  *   PA5 → SCK，PA7 → MOSI，PA6 → MISO（复用到 SPI1）
  *   PA4 → CS（普通 GPIO，软件 CsLow/CsHigh，与软 SPI「先拉 CS」相同）
+ *   PA4–PA7：DS5319 未标 FT（非 5 V 容忍）；本仓库模块统一 3.3 V
+ *   SPI1 默认映射；启用默认 USART2 会占 PA2–PA4 等，与 CS/SCK 冲突 → 本工程不开 USART2
+ *
+ * GPIO 半字节含义见 doc/learn/gpio-eight-modes.md（复用推挽 / 浮空输入 / 推挽）。
+ * 引脚总表：doc/hardware/stm32f103c8t6-pinout.md
+ * 官方 Table 5：doc/reference/stm32f103/md/topics/lqfp48-pinout.md
  *
  * ---------------------------------------------------------------------------
  * 两层命名（信号线 ≠ 寄存器）
@@ -104,7 +110,7 @@
 /** PA5/PA7 复用推挽 50 MHz：CNF=10 MODE=11 → 0xB */
 #define GPIOA_CRL_PA5_AF_PP  (0xBU << 20)
 #define GPIOA_CRL_PA7_AF_PP  (0xBU << 28)
-/** PA6 浮空输入：CNF=01 MODE=00 → 0x4 */
+/** PA6 浮空输入（高阻）：CNF=01 MODE=00 → 0x4 */
 #define GPIOA_CRL_PA6_IN_FLOAT (0x4U << 24)
 
 /* SPI_CR1 位 */

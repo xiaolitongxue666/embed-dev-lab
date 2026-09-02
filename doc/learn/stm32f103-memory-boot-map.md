@@ -254,3 +254,4 @@ ARM 汇编与 x86 启动职责对比见 [stm32-bare-metal-bootstrap.md Q12](stm3
 | 为什么链接脚本用 `0x08000000` 而复位提 `0x00000000` | [stm32-bare-metal-bootstrap.md Q13](stm32-bare-metal-bootstrap.md#q13为什么链接脚本用-0x08000000复位却从-0x00000000-读向量表) |
 | 链接 map 验证 | [linker-map-file.md](linker-map-file.md) |
 | DS5319 / RM0008 分工 | [datasheet-vs-reference-manual.md](datasheet-vs-reference-manual.md) |
+| BOOT0 / BOOT1 与板级丝印 | [stm32f103c8t6-pinout.md](../hardware/stm32f103c8t6-pinout.md) |

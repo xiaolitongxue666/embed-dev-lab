@@ -15,14 +15,17 @@
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
  *   3. WHO_AM_I → LSM6DS3_Init → 循环读 raw + LED
  *
- * 串口：USART1 PA9/PA10，1500000 bps；printf 经 syscalls.c → usart.c。
+ * 串口：USART1 PA9/PA10（FT），1500000 bps；printf 经 syscalls.c → usart.c。
  * SPI / LSM6DS3（模块丝印）：
  *   3V3/GND；SCL←PA5，SDA←PA7，SAO→PA6，CS←PA4；Mode 3。
- *   详表见 spi.c 头注释与 doc/hardware/stm32f103-peripherals.md。
+ *   PA4–PA7 手册未标 FT；详表见 spi.c 与引脚总表。
+ * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP。
  *
  * @see     doc/projects/f103-manual-reg.md § 启动与时钟 / 运行时初始化顺序
  * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
  * @see     doc/hardware/stm32f103-peripherals.md
+ * @see     doc/hardware/stm32f103c8t6-pinout.md
+ * @see     doc/learn/gpio-eight-modes.md — PC13 推挽输出
  */
 
 #include <stdio.h>
@@ -80,6 +83,7 @@ static void delay_boot_20ms(void)
 
 /**
  * @brief  初始化 PC13 为推挽输出（须先 PWREN + DBP）
+ * @see    doc/learn/gpio-eight-modes.md
  */
 static void GPIOC_Init(void)
 {

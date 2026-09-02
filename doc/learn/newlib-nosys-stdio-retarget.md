@@ -138,5 +138,7 @@ C 字符串 `\n`（LF）在 Windows 串口终端上往往只换行不回列首�
 |------|------|
 | [f103-manual-reg § printf](../projects/f103-manual-reg.md#printf-与-newlib-syscall) | 本仓库 printf 路径与堆 |
 | [f103-cmsis-hal § USART1](../projects/f103-cmsis-hal.md#usart1-串口输出) | HAL 直发、不用 printf |
+| [UART / TTL / RS232 / RS485](uart-ttl-rs232-rs485.md) | 外设 vs 电气标准、CH341 |
+| [SWD ≠ USART](swd-vs-usart.md) | 调试通道与串口独立 |
 | [f103-module-build-flow § map](../learn/f103-module-build-flow.md#32-f103-manual-regmap-精读链接顺序实证) | libnosys / libc 链接顺序 |
 | [CMSIS 与手写边界](cmsis-overview.md) | 为何不链 CMSIS 仍可用 newlib |

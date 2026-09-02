@@ -16,7 +16,7 @@
 | 4.4 PWR registers (PWR_CR DBP) | 62–65 | [backup-domain-pc13.md](topics/backup-domain-pc13.md) |
 | 5 Backup registers (BKP) | 66–70 | [backup-domain-pc13.md](topics/backup-domain-pc13.md) |
 | 6 RCC (medium-density) → 6.2 Clocks / 6.3 Registers | 74–102 | [rcc-clock-hse-pll.md](topics/rcc-clock-hse-pll.md) |
-| 8 GPIOs and AFIOs | 138–167 | [backup-domain-pc13.md](topics/backup-domain-pc13.md) |
+| 8 GPIOs and AFIOs | 138–167 | [gpio-cnf-mode.md](topics/gpio-cnf-mode.md) · [backup-domain-pc13.md](topics/backup-domain-pc13.md)；学习 [gpio-eight-modes](../../../learn/gpio-eight-modes.md) · [gpio-protection](../../../learn/gpio-protection-and-negative-voltage.md) |
 
 > **Connectivity line（F105/F107）** 使用第 7 章 RCC，**F103C8 请读第 6 章**。
 

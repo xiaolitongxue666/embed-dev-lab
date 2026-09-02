@@ -2,6 +2,8 @@
 
 > 目标芯片：STM32F103C8T6（LQFP48，64 KB Flash / 20 KB RAM）。本文记录**板级接线与采购**；`f103-manual-reg` 已实现 **PC13 LED + USART1 + SPI1 LSM6DS3**，其余「计划外设」尚未在代码中初始化。
 
+完整引脚总表（丝印 / FT / 复用 / 本仓库占用）：[stm32f103c8t6-pinout.md](stm32f103c8t6-pinout.md) · 官方 Table 5 摘录：[lqfp48-pinout.md](../reference/stm32f103/md/topics/lqfp48-pinout.md)
+
 相关流程：[快速上手](../getting-started.md) · [编写 → 编译 → 下载](../workflow-write-build-flash.md) · [官方手册索引](../reference/stm32f103/README.md) · [LSM6DS3 参考](../reference/lsm6ds3/README.md)
 
 ---
@@ -91,7 +93,7 @@
 
 | 模块 | MCU 引脚 | 功能 | 配置要点 | 备注 |
 |------|----------|------|----------|------|
-| 板载 LED | PC13 | GPIO 推挽输出 | Backup 域：先 PWREN + DBP | **已实现**；低电平点亮常见 |
+| 板载 LED | PC13 | GPIO 推挽输出 | Backup 域：先 PWREN + DBP | **已实现**；低电平点亮常见；八态见 [gpio-eight-modes.md](../learn/gpio-eight-modes.md) |
 | SH1106 / （FT6236） / BMP280 | PB6 | I2C1_SCL | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
 | SH1106 / （FT6236） / BMP280 | PB7 | I2C1_SDA | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
 | FT6236 | PB0 | INT | GPIO_EXTI，下降沿 | **暂不使用** |
@@ -100,9 +102,9 @@
 | LSM6DS3 | PA7 | SPI1_MOSI | SPI1 默认映射 | 主机→传感器（模块 `SDA`） |
 | LSM6DS3 | PA6 | SPI1_MISO | SPI1 默认映射 | 传感器→主机（模块 `SAO`） |
 | LSM6DS3 | PA4 | CS | GPIO 软件片选（低有效） | 不用硬件 NSS |
-| USART1 | PA9 | USART1_TX | 默认映射 | **已实现**；CH341 RX←PA9 |
+| USART1 | PA9 | USART1_TX | 默认映射 | **已实现**；CH341 RX←PA9；TTL 见 [uart-ttl-rs232-rs485.md](../learn/uart-ttl-rs232-rs485.md) |
 | USART1 | PA10 | USART1_RX | 默认映射 | **已实现**；CH341 TX→PA10 |
-| ST-Link | PA13 | SWDIO | Serial Wire | **禁止改普通 GPIO** |
+| ST-Link | PA13 | SWDIO | Serial Wire | **禁止改普通 GPIO**；概念见 [swd-vs-usart.md](../learn/swd-vs-usart.md) |
 | ST-Link | PA14 | SWCLK | Serial Wire | **禁止改普通 GPIO** |
 
 ### I2C 7 位从机地址（多从机，互不冲突）
@@ -192,7 +194,7 @@ SPI：专给 IMU；屏幕不占 SPI
 
 1. **电压**：模块一律 3.3 V，勿接 5 V（LSM6DS3 `Vdd` 1.71–3.6 V）；模块供电接 **3V3** 勿接 VIN。
 2. **共地**：I2C / SPI / 串口 / SWD 的 GND 必须连通。
-3. **SWD**：PA13、PA14 保持调试功能。
+3. **SWD**：PA13、PA14 保持调试功能（[SWD ≠ USART](../learn/swd-vs-usart.md)）。
 4. **I2C**：SCL/SDA 需上拉（多数模块已焊 ~4.7–10 kΩ）；缺上拉则总线卡死。多从机靠不同 7 位地址区分。
 5. **SH1106**：常见 128×64 可视区，片内 GDDRAM 多为 **132×64**，驱动须按 SH1106 处理列偏移；勿直接套用 SSD1306 初始化序列。
 6. **触控**：条目保留，**当前阶段不启用**；日后叠装时 INT 下降沿置标志，主循环再 I2C 读坐标。
@@ -208,7 +210,7 @@ SPI：专给 IMU；屏幕不占 SPI
 | 项 | 建议 |
 |----|------|
 | RCC | HSE 8 MHz × PLL×9 → 72 MHz（与现工程一致） |
-| SYS Debug | Serial Wire（保留 SWD） |
+| SYS Debug | Serial Wire（保留 SWD）；见 [swd-vs-usart.md](../learn/swd-vs-usart.md) |
 | USART1 | PA9/PA10 异步，**不 remap** |
 | SPI1 | Full-Duplex Master；PA5/PA6/PA7；软件 NSS=PA4；**Mode 3**（`f103-manual-reg` 已实现） |
 | I2C1 | PB6/PB7，**不 remap**；400 kHz Fast Mode（计划） |

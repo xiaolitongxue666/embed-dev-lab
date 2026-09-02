@@ -29,8 +29,12 @@ void HAL_GPIO_MspInit(GPIO_InitTypeDef *gpio_init_struct)
 }
 
 /**
- * @brief  USART1 MSP：PA9 TX（复用推挽）、PA10 RX（浮空输入）
- * @note   F103 默认映射，无需 AFIO USART1 重映射
+ * @brief  USART1 MSP：PA9 TX（复用推挽）、PA10 RX（浮空输入=高阻）
+ * @note   F103 默认映射，无需 AFIO USART1 重映射（remap 会抢 PB6/PB7）
+ *         PA9/PA10 为 FT；勿占用 PA13/PA14（SWD）
+ * @see    doc/learn/gpio-eight-modes.md
+ * @see    doc/learn/uart-ttl-rs232-rs485.md
+ * @see    doc/hardware/stm32f103c8t6-pinout.md
  */
 void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 {

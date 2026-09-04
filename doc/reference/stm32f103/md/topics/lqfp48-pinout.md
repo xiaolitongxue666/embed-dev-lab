@@ -82,7 +82,7 @@ DS5319 Table 5 脚注（摘要）：
 | Note | 要点 |
 |------|------|
 | **2** | `FT` = 5 V tolerant |
-| **5** | PC13–PC15 经 Backup 开关供电，灌/吸电流受限（约 3 mA）；输出建议 ≤ **2 MHz**、负载 ≤ 30 pF；**不宜作电流源驱动 LED**（板载 LED 见 Backup topic） |
+| **5** | PC13–PC15 经 Backup 开关供电，灌/吸电流受限（约 3 mA）；输出建议 ≤ **2 MHz**、负载 ≤ 30 pF；**不宜作电流源驱动 LED**（板载 LED 见 Backup topic；拉/灌见 [gpio-led-source-sink.md](../../../../learn/gpio-led-source-sink.md)） |
 | **6** | PC13–PC15 主功能依赖 Backup 域内容，不完全随主复位恢复 |
 | **7** | LQFP48 的 PD0/PD1 复位后为 **OSC_IN / OSC_OUT**；软件可 remap 出 PD0/PD1 GPIO（本仓库核心板接 8 MHz HSE，勿当普通 IO） |
 | **9** | 带 `(9)` 的复用可经 `AFIO_MAPR` 重映射到其它脚（封装须有该脚） |

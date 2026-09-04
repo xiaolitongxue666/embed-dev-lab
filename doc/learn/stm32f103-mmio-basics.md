@@ -170,6 +170,7 @@ flowchart LR
 |------|------|
 | PC13 / PWR / DBP 寄存器摘录 | [backup-domain-pc13.md](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
 | GPIO 八种模式（CNF/MODE） | [gpio-eight-modes.md](gpio-eight-modes.md) |
+| 拉/灌电流驱 LED | [gpio-led-source-sink.md](gpio-led-source-sink.md) |
 | CNF/MODE 官方摘录 | [gpio-cnf-mode.md](../reference/stm32f103/md/topics/gpio-cnf-mode.md) |
 | NVIC 与 PPB | [interrupt-vector-table-and-nvic.md](interrupt-vector-table-and-nvic.md) |
 | 内存映射、Boot、Flash 布局 | [stm32f103-memory-boot-map.md](stm32f103-memory-boot-map.md) |

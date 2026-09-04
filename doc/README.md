@@ -29,9 +29,10 @@
 21. [中断向量表与 NVIC](learn/interrupt-vector-table-and-nvic.md) — 向量表、NVIC、ISR、EXTI  
 22. [GPIO 八种模式](learn/gpio-eight-modes.md) — CNF/MODE、浮空=高阻、本仓库对照  
 23. [GPIO 保护与负压](learn/gpio-protection-and-negative-voltage.md) — VSS、钳位、FT/TT  
-24. [UART / TTL / RS232 / RS485](learn/uart-ttl-rs232-rs485.md) — 外设 vs 电气标准、CH341  
-25. [SWD ≠ USART](learn/swd-vs-usart.md) — Serial Wire 与串口、PA13/PA14  
-26. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
+24. [拉/灌电流驱 LED](learn/gpio-led-source-sink.md) — 推挽拓扑、限流电阻、DS5319 ±8/±20/PC13±3 mA  
+25. [UART / TTL / RS232 / RS485](learn/uart-ttl-rs232-rs485.md) — 外设 vs 电气标准、CH341  
+26. [SWD ≠ USART](learn/swd-vs-usart.md) — Serial Wire 与串口、PA13/PA14  
+27. [MCP 与 Skill](mcp-skills.md) — embedded-debugger MCP、项目 Skill 安装
 
 ## 应用层
 
@@ -78,6 +79,7 @@
 | [learn/interrupt-vector-table-and-nvic.md](learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、ISR、EXTI |
 | [learn/gpio-eight-modes.md](learn/gpio-eight-modes.md) | GPIO 八态、CNF/MODE、浮空=高阻 |
 | [learn/gpio-protection-and-negative-voltage.md](learn/gpio-protection-and-negative-voltage.md) | VSS、钳位二极管、负压、FT/TT |
+| [learn/gpio-led-source-sink.md](learn/gpio-led-source-sink.md) | 拉/灌电流驱 LED、限流电阻、PC13 ±3 mA |
 | [learn/uart-ttl-rs232-rs485.md](learn/uart-ttl-rs232-rs485.md) | UART vs TTL vs RS232/485、CH341 |
 | [learn/swd-vs-usart.md](learn/swd-vs-usart.md) | SWD ≠ 串口、PA13/PA14 |
 | [learn/datasheet-vs-reference-manual.md](learn/datasheet-vs-reference-manual.md) | DS5319 与 RM0008 分工 |

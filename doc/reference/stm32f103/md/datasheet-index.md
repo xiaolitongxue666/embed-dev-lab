@@ -19,7 +19,8 @@
 | 5.3.8 PLL characteristics | 56 | [rcc-clock-hse-pll.md](topics/rcc-clock-hse-pll.md) |
 | 5.3.9 Memory characteristics (Flash/SRAM) | 56 | [memory-map-medium-density.md](topics/memory-map-medium-density.md) |
 | 3 Pinouts（PC13、FT、LQFP48 等） | 21–33 | [lqfp48-pinout.md](topics/lqfp48-pinout.md)；板级丝印 [stm32f103c8t6-pinout.md](../../../hardware/stm32f103c8t6-pinout.md)；保护/FT [gpio-protection-and-negative-voltage.md](../../../learn/gpio-protection-and-negative-voltage.md) |
-| 5 Electrical characteristics（绝对最大值等） | 35+ | [gpio-protection-and-negative-voltage.md](../../../learn/gpio-protection-and-negative-voltage.md) |
+| 5 Electrical characteristics（绝对最大值等） | 35+ | [gpio-protection-and-negative-voltage.md](../../../learn/gpio-protection-and-negative-voltage.md)；I/O 拉/灌 [gpio-led-source-sink.md](../../../learn/gpio-led-source-sink.md) |
+| 5.3.13 I/O port characteristics（Table 7 电流、Table 37 VOL/VOH） | 36–37、63–64 | [gpio-led-source-sink.md](../../../learn/gpio-led-source-sink.md) |
 
 ## 完整目录（Rev 20）
 

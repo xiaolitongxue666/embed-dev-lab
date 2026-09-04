@@ -87,7 +87,7 @@ probe-rs chip：**`STM32F103C8Tx`**
 
 ### LED 极性与串口文案
 
-多数核心板 **低电平点亮**。两工程均打印 `LED on` 后置高（灯灭）、`LED off` 后置低（灯亮），与厂商例程一致；字符串指 **GPIO 电平**，不是灯物理亮灭。
+多数核心板 **灌电流、低电平点亮**。两工程均打印 `LED on` 后置高（灯灭）、`LED off` 后置低（灯亮），与厂商例程一致；字符串指 **GPIO 电平**，不是灯物理亮灭。拓扑与限流见 [gpio-led-source-sink.md](../learn/gpio-led-source-sink.md)。
 
 `HAL_DMA_MODULE_ENABLED` 在 conf 中开启但未链 `hal_dma.c`：当前仅阻塞 UART；启用 DMA 须同步 fetch/CMake。
 

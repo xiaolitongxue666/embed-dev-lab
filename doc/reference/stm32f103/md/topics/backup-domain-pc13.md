@@ -58,10 +58,12 @@ GPIOC_CRH    = ... PC13 推挽输出 ... // 4. 配置 PC13
 
 ## PC13 与 LED
 
-多数 **STM32F103C8 核心板** 将 LED 接 PC13，**低电平点亮**：
+多数 **STM32F103C8 核心板** 将 LED 接 PC13，**灌电流、低电平点亮**（`3.3 V → 板上限流电阻 → LED → PC13`）：
 
 - `PCout(13) = 0` → 亮  
 - `PCout(13) = 1` → 灭  
+
+PC13–PC15 经 Backup 开关，拉/灌约 **±3 mA**，不要再并联无电阻 LED，也不要把 PC13 当普通脚的 8 mA 电流源。拉/灌拓扑与电阻计算见 [gpio-led-source-sink.md](../../../../learn/gpio-led-source-sink.md)。
 
 位带宏见 [`gpioc_bitband.h`](../../../projects/f103-manual-reg/src/gpioc_bitband.h)（`GPIOC_ODR` @ `0x4001100C`）。
 
@@ -85,5 +87,6 @@ GPIOC_CRH    = ... PC13 推挽输出 ... // 4. 配置 PC13
 ## 延伸阅读
 
 - [stm32f103-mmio-basics.md](../../../../learn/stm32f103-mmio-basics.md) — MMIO、地址与 flip-flop  
+- [gpio-led-source-sink.md](../../../../learn/gpio-led-source-sink.md) — 拉/灌电流、限流、PC13 ±3 mA  
 - [rm0008-index.md](../rm0008-index.md) — §4 PWR、§5 BKP、§8 GPIO  
 - [f103-manual-reg 模块](../../../projects/f103-manual-reg.md) — 模块说明

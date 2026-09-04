@@ -126,7 +126,7 @@ picocom -b 1500000 /dev/ttyUSB0          # 默认 demo；固件改波特则改 -
 
 完整选项见 [`scripts-reference.md` § serial-ch341-read / picocom](scripts-reference.md#serial-ch341-readsh--windows-agent-读串口)。宿主切换见 [serial-ch341-switch.sh](scripts-reference.md#serial-ch341-switchsh--ch341-串口宿主切换windows--wsl)。
 
-多数核心板 PC13 **低电平点亮**。串口打印 `LED on` 时 GPIO 置高（灯灭），`LED off` 时置低（灯亮）——与厂商例程一致，见各工程 `doc/projects/`。
+多数核心板 PC13 **灌电流、低电平点亮**。串口打印 `LED on` 时 GPIO 置高（灯灭）、`LED off` 时置低（灯亮）——与厂商例程一致，见各工程 `doc/projects/`；拓扑见 [gpio-led-source-sink.md](learn/gpio-led-source-sink.md)。
 
 ## 环境与代理
 

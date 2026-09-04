@@ -94,7 +94,7 @@ ST-Link：SWDIO→PA13，SWCLK→PA14；GND 与 3.3V 进面包板轨（方案 A�
 
 ## 3. 板载固定资源
 
-1. **PC13**：板载 LED（多数低电平点亮）；非 FT；须 Backup 解锁，见 [backup-domain-pc13.md](../reference/stm32f103/md/topics/backup-domain-pc13.md)。
+1. **PC13**：板载 LED（多数灌电流、低电平点亮）；非 FT；须 Backup 解锁；拉/灌约 ±3 mA，见 [backup-domain-pc13.md](../reference/stm32f103/md/topics/backup-domain-pc13.md) 与 [gpio-led-source-sink.md](../learn/gpio-led-source-sink.md)。
 2. **PC14 / PC15**：LSE 32.768 kHz；不建议作普通 IO。
 3. **PD0 / PD1（OSC）**：8 MHz HSE；芯片脚通常未引出排针。
 4. **PB2 / BOOT0**：启动模式；尽量不作业务 IO。BOOT 表见 [stm32f103-memory-boot-map.md](../learn/stm32f103-memory-boot-map.md)。

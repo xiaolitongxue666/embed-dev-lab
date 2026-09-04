@@ -100,7 +100,7 @@ Linux 配置 udev；macOS 跳过。
 
 ## 步骤 6：验证 LED
 
-PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子低电平点亮）。
+PC13 连接 LED 应约 **1 秒周期闪烁**（多数板子灌电流、低电平点亮；拉/灌与限流见 [gpio-led-source-sink.md](learn/gpio-led-source-sink.md)）。
 
 若无闪烁：按板载 **RESET**；见 [f103-manual-reg 模块](projects/f103-manual-reg.md) 与 [probe-rs.md 排错](probe-rs.md#故障排查)。
 

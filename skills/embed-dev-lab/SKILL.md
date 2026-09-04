@@ -92,6 +92,7 @@ PC13 属于 **Backup 域**，GPIO 配置前必须：
 | CMSIS 与手写边界 | `doc/learn/cmsis-overview.md` |
 | GPIO 八种模式 | `doc/learn/gpio-eight-modes.md` |
 | GPIO 保护与负压 | `doc/learn/gpio-protection-and-negative-voltage.md` |
+| 拉/灌电流驱 LED | `doc/learn/gpio-led-source-sink.md` |
 | UART / TTL / RS232 / RS485 | `doc/learn/uart-ttl-rs232-rs485.md` |
 | SWD ≠ USART | `doc/learn/swd-vs-usart.md` |
 | 裸机 printf / nosys / HAL 串口 | `doc/learn/newlib-nosys-stdio-retarget.md` |

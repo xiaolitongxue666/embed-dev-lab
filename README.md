@@ -414,6 +414,7 @@ probe-rs list
 | [doc/learn/interrupt-vector-table-and-nvic.md](doc/learn/interrupt-vector-table-and-nvic.md) | 中断向量表、NVIC、ISR、EXTI |
 | [doc/learn/gpio-eight-modes.md](doc/learn/gpio-eight-modes.md) | GPIO 八态、CNF/MODE、浮空=高阻 |
 | [doc/learn/gpio-protection-and-negative-voltage.md](doc/learn/gpio-protection-and-negative-voltage.md) | VSS、钳位、负压、FT/TT |
+| [doc/learn/gpio-led-source-sink.md](doc/learn/gpio-led-source-sink.md) | 拉/灌电流驱 LED、限流、PC13 ±3 mA |
 | [doc/learn/uart-ttl-rs232-rs485.md](doc/learn/uart-ttl-rs232-rs485.md) | UART vs TTL vs RS232/485、CH341 |
 | [doc/learn/swd-vs-usart.md](doc/learn/swd-vs-usart.md) | SWD ≠ 串口、PA13/PA14 |
 | [doc/reference/stm32f103/](doc/reference/stm32f103/) | ST 官方 Datasheet / RM |

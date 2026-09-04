@@ -93,7 +93,7 @@
 
 | 模块 | MCU 引脚 | 功能 | 配置要点 | 备注 |
 |------|----------|------|----------|------|
-| 板载 LED | PC13 | GPIO 推挽输出 | Backup 域：先 PWREN + DBP | **已实现**；低电平点亮常见；八态见 [gpio-eight-modes.md](../learn/gpio-eight-modes.md) |
+| 板载 LED | PC13 | GPIO 推挽输出 | Backup 域：先 PWREN + DBP | **已实现**；灌电流、低电平点亮常见；±3 mA；拉/灌见 [gpio-led-source-sink.md](../learn/gpio-led-source-sink.md)；八态见 [gpio-eight-modes.md](../learn/gpio-eight-modes.md) |
 | SH1106 / （FT6236） / BMP280 | PB6 | I2C1_SCL | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
 | SH1106 / （FT6236） / BMP280 | PB7 | I2C1_SDA | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
 | FT6236 | PB0 | INT | GPIO_EXTI，下降沿 | **暂不使用** |

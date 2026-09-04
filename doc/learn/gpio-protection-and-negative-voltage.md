@@ -166,6 +166,7 @@ GPIO 驱动继电器线圈。线圈是电感。
 | 主题 | 文档 |
 |------|------|
 | GPIO 八种模式 | [gpio-eight-modes.md](gpio-eight-modes.md) |
+| 拉/灌电流驱 LED | [gpio-led-source-sink.md](gpio-led-source-sink.md) |
 | CNF/MODE 摘录 | [gpio-cnf-mode.md](../reference/stm32f103/md/topics/gpio-cnf-mode.md) |
 | 电气 / 引脚类型 | [datasheet-index.md](../reference/stm32f103/md/datasheet-index.md)（DS5319 §5） |
 | LQFP48 FT / 复用表 | [lqfp48-pinout.md](../reference/stm32f103/md/topics/lqfp48-pinout.md) · [stm32f103c8t6-pinout.md](../hardware/stm32f103c8t6-pinout.md) |

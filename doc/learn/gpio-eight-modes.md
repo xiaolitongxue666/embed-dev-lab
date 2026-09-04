@@ -1,6 +1,6 @@
 # STM32F103 GPIO 八种模式
 
-整理自学习笔记，说明 F103 的 **8 种 GPIO 配置**、浮空输入与高阻态，以及与本仓库 [`f103-manual-reg`](../../projects/f103-manual-reg/) / [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/) 的寄存器与 HAL 对照。CNF/MODE 位编码摘录见 [gpio-cnf-mode topic](../reference/stm32f103/md/topics/gpio-cnf-mode.md)；引脚保护与负压见 [gpio-protection-and-negative-voltage.md](gpio-protection-and-negative-voltage.md)。
+整理自学习笔记，说明 F103 的 **8 种 GPIO 配置**、浮空输入与高阻态，以及与本仓库 [`f103-manual-reg`](../../projects/f103-manual-reg/) / [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/) 的寄存器与 HAL 对照。CNF/MODE 位编码摘录见 [gpio-cnf-mode topic](../reference/stm32f103/md/topics/gpio-cnf-mode.md)；引脚保护与负压见 [gpio-protection-and-negative-voltage.md](gpio-protection-and-negative-voltage.md)；推挽驱 LED 的拉/灌电流见 [gpio-led-source-sink.md](gpio-led-source-sink.md)。
 
 ---
 
@@ -95,7 +95,7 @@ USART RX、SPI MISO 常用浮空输入：对端（CH341 TX、传感器 MISO）�
 
 ### PC13 LED — 推挽输出
 
-[`main.c`](../../projects/f103-manual-reg/src/main.c)：`GPIOC_CRH_PC13_OUT_PP`（CNF=00, MODE=11 → `0x3`）。须先 PWREN + DBP，见 [backup-domain-pc13](../reference/stm32f103/md/topics/backup-domain-pc13.md)。
+[`main.c`](../../projects/f103-manual-reg/src/main.c)：`GPIOC_CRH_PC13_OUT_PP`（CNF=00, MODE=11 → `0x3`）。须先 PWREN + DBP，见 [backup-domain-pc13](../reference/stm32f103/md/topics/backup-domain-pc13.md)。多数核心板为 **灌电流、低电平点亮**；PC13–PC15 仅约 ±3 mA，见 [gpio-led-source-sink.md](gpio-led-source-sink.md)。
 
 HAL：[`MX_GPIO_Init`](../../projects/f103-cmsis-hal/src/main.c) 中 `GPIO_MODE_OUTPUT_PP`。
 
@@ -128,6 +128,7 @@ HAL：[`HAL_UART_MspInit`](../../projects/f103-cmsis-hal/src/stm32f1xx_hal_msp.c
 |------|------|
 | CNF/MODE 官方摘录 | [gpio-cnf-mode.md](../reference/stm32f103/md/topics/gpio-cnf-mode.md) |
 | 引脚保护与负压 | [gpio-protection-and-negative-voltage.md](gpio-protection-and-negative-voltage.md) |
+| 拉/灌电流驱 LED | [gpio-led-source-sink.md](gpio-led-source-sink.md) |
 | MMIO 与 PC13 点灯 | [stm32f103-mmio-basics.md](stm32f103-mmio-basics.md) |
 | 接线与引脚表 | [stm32f103-peripherals.md](../hardware/stm32f103-peripherals.md) |
 | RM0008 §8 GPIO | [rm0008-index.md](../reference/stm32f103/md/rm0008-index.md) |

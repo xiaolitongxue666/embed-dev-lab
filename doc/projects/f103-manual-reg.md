@@ -130,7 +130,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 
 ## LED 极性与主循环
 
-多数核心板 **低电平点亮**：
+多数核心板 **灌电流、低电平点亮**（拓扑与限流见 [gpio-led-source-sink.md](../learn/gpio-led-source-sink.md)）：
 
 | `PCout(13)` | LED |
 |-------------|-----|
@@ -247,7 +247,7 @@ Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg
 | 项目 | 说明 |
 |------|------|
 | 引脚总表 | [C8T6 丝印总表](../hardware/stm32f103c8t6-pinout.md) · [LQFP48 官方摘录](../reference/stm32f103/md/topics/lqfp48-pinout.md) |
-| LED | PC13（推挽；非 FT；[GPIO 八态](../learn/gpio-eight-modes.md)） |
+| LED | PC13（推挽；非 FT；灌电流；[GPIO 八态](../learn/gpio-eight-modes.md)；[拉/灌](../learn/gpio-led-source-sink.md)） |
 | 调试串口 | USART1：PA9 TX，PA10 RX（FT；[UART/TTL](../learn/uart-ttl-rs232-rs485.md)） |
 | IMU | SPI1：PA4 CS，PA5 SCK，PA6 MISO，PA7 MOSI → LSM6DS3（PA4–PA7 **非 FT**） |
 | SWD | SWDIO=PA13，SWCLK=PA14（[SWD ≠ USART](../learn/swd-vs-usart.md)） |

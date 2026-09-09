@@ -1,6 +1,6 @@
 /**
  * @file    main.c
- * @brief   STM32F103C8T6：PC13 / PB12 LED + USART1 printf + SPI1 LSM6DS3 六轴轮询
+ * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 printf + SPI1 LSM6DS3
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
  *
@@ -13,7 +13,7 @@
  * main 内初始化顺序：
  *   1. GPIOC_Init → GPIOB_Init → USART1_Init → SPI1_Init
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
- *   3. WHO_AM_I → LSM6DS3_Init → 循环读 raw + LED
+ *   3. WHO_AM_I → LSM6DS3_Init → 循环读 raw + LED + KEY
  *
  * 串口：USART1 PA9/PA10（FT），1500000 bps；printf 经 syscalls.c → usart.c。
  * SPI / LSM6DS3（模块丝印）：
@@ -21,12 +21,13 @@
  *   PA4–PA7 手册未标 FT；详表见 spi.c 与引脚总表。
  * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
  * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
+ * PB13 KEY：FT；上拉输入，PB13←按键→GND；按下 IDR=0，松开 IDR=1。
  *
  * @see     doc/projects/f103-manual-reg.md § 启动与时钟 / 运行时初始化顺序
  * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
  * @see     doc/hardware/stm32f103-peripherals.md
  * @see     doc/hardware/stm32f103c8t6-pinout.md
- * @see     doc/learn/gpio-eight-modes.md — PC13 / PB12 推挽输出
+ * @see     doc/learn/gpio-eight-modes.md — PC13 / PB12 推挽；PB13 上拉输入
  */
 
 #include <stdio.h>
@@ -60,9 +61,12 @@
 #define GPIOC_CRH_PC13_OUT_PP (3U << 20)
 #define GPIOB_CRH_PB12_MASK   (0xFU << 16)
 #define GPIOB_CRH_PB12_OUT_PP (3U << 16)
+#define GPIOB_CRH_PB13_MASK   (0xFU << 20)
+#define GPIOB_CRH_PB13_IN_PU  (8U << 20)
 
 #define BOARD_LED_PIN 13U
 #define EXT_LED_PIN   12U
+#define KEY_PIN       13U
 
 /**
  * @brief  软件延时（忙等待）
@@ -103,7 +107,7 @@ static void GPIOC_Init(void)
 }
 
 /**
- * @brief  初始化 PB12 为推挽输出（外接拉电流 LED，无需 Backup 解锁）
+ * @brief  初始化 PB12 推挽输出 + PB13 上拉输入（无需 Backup 解锁）
  * @see    doc/learn/gpio-eight-modes.md
  */
 static void GPIOB_Init(void)
@@ -112,6 +116,11 @@ static void GPIOB_Init(void)
 
     GPIOB_CRH &= ~GPIOB_CRH_PB12_MASK;
     GPIOB_CRH |= GPIOB_CRH_PB12_OUT_PP;
+
+    /* CNF=10 MODE=00 → 上拉/下拉输入；ODR=1 选片内上拉 */
+    GPIOB_CRH &= ~GPIOB_CRH_PB13_MASK;
+    GPIOB_CRH |= GPIOB_CRH_PB13_IN_PU;
+    PBout(KEY_PIN) = 1U;
 }
 
 /**
@@ -151,7 +160,7 @@ int main(void)
                    (int)sample.gx, (int)sample.gy, (int)sample.gz);
         }
 
-        /* 降低 LED 翻转频率，避免刷屏过快掩盖 IMU 行 */
+        /* 降低 LED / KEY 打印频率，避免刷屏过快掩盖 IMU 行 */
         led_phase++;
         if (led_phase >= 200U) {
             led_phase = 0U;
@@ -164,6 +173,12 @@ int main(void)
             } else {
                 printf("PC13 LED off\n");
                 printf("PB12 LED off\n");
+            }
+            /* IDR 电平：high=松开，low=按下（低有效） */
+            if (PBin(KEY_PIN) != 0U) {
+                printf("PB13 KEY high\n");
+            } else {
+                printf("PB13 KEY low\n");
             }
         }
 

@@ -1,6 +1,6 @@
 # STM32F103C8T6 硬件外设与接线
 
-> 目标芯片：STM32F103C8T6（LQFP48，64 KB Flash / 20 KB RAM）。本文记录**板级接线与采购**；`f103-manual-reg` 已实现 **PC13 / PB12 LED + USART1 + SPI1 LSM6DS3**，其余「计划外设」尚未在代码中初始化。
+> 目标芯片：STM32F103C8T6（LQFP48，64 KB Flash / 20 KB RAM）。本文记录**板级接线与采购**；`f103-manual-reg` 已实现 **PC13 / PB12 LED + PB13 KEY + USART1 + SPI1 LSM6DS3**，其余「计划外设」尚未在代码中初始化。
 
 完整引脚总表（丝印 / FT / 复用 / 本仓库占用）：[stm32f103c8t6-pinout.md](stm32f103c8t6-pinout.md) · 官方 Table 5 摘录：[lqfp48-pinout.md](../reference/stm32f103/md/topics/lqfp48-pinout.md)
 
@@ -14,6 +14,7 @@
 |------|------|------|
 | 板载 LED | PC13（多数核心板低电平点亮） | **已实现**（两工程） |
 | 外接 LED | PB12→220 Ω→LED+，LED-→GND（拉电流） | **已实现**（`f103-manual-reg`） |
+| 按键 | PB13←按键→GND（片内上拉，低有效） | **已实现**（`f103-manual-reg`） |
 | USART1 | PA9 TX / PA10 RX，CH341 USB-TTL | **已实现** |
 | SWD | PA13 SWDIO / PA14 SWCLK | **接线保留**，禁止改普通 GPIO |
 | SH1106 1.3 寸 OLED（4 针 I2C） | I2C1 PB6/PB7 | **计划接线** |
@@ -23,7 +24,7 @@
 
 源码占用依据：
 
-- LED：[`projects/f103-manual-reg/src/main.c`](../../projects/f103-manual-reg/src/main.c)（`BOARD_LED_PIN` PC13、`EXT_LED_PIN` PB12）
+- LED / KEY：[`projects/f103-manual-reg/src/main.c`](../../projects/f103-manual-reg/src/main.c)（`BOARD_LED_PIN` PC13、`EXT_LED_PIN` PB12、`KEY_PIN` PB13）
 - USART1：[`projects/f103-manual-reg/src/usart.c`](../../projects/f103-manual-reg/src/usart.c)（默认映射，无 AFIO remap）
 - SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c)
 - HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI）
@@ -96,6 +97,7 @@
 |------|----------|------|----------|------|
 | 板载 LED | PC13 | GPIO 推挽输出 | Backup 域：先 PWREN + DBP | **已实现**；灌电流、低电平点亮常见；±3 mA；拉/灌见 [gpio-led-source-sink.md](../learn/gpio-led-source-sink.md)；八态见 [gpio-eight-modes.md](../learn/gpio-eight-modes.md) |
 | 外接 LED | PB12 | GPIO 推挽输出 | IOPBEN + CRH 推挽 | **已实现**（`f103-manual-reg`）；拉电流，220 Ω；与 PC13 同步翻转、写相同电平（一亮一灭） |
+| 按键 | PB13 | GPIO 上拉输入 | CRH CNF=10 MODE=00，ODR=1 | **已实现**（`f103-manual-reg`）；PB13←按键→GND；按下 IDR=0 |
 | SH1106 / （FT6236） / BMP280 | PB6 | I2C1_SCL | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
 | SH1106 / （FT6236） / BMP280 | PB7 | I2C1_SDA | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
 | FT6236 | PB0 | INT | GPIO_EXTI，下降沿 | **暂不使用** |
@@ -142,6 +144,7 @@
 ```text
 PC13              板载 LED（已实现）
 PB12              外接 LED（已实现，f103-manual-reg，拉电流）
+PB13              按键（已实现，f103-manual-reg，上拉输入）
 PA4, PA5, PA6, PA7  SPI1 → LSM6DS3（已实现，f103-manual-reg）
 PA9, PA10         USART1（已实现）
 PA13, PA14        SWD
@@ -190,6 +193,7 @@ PB6, PB7          I2C1：SH1106 + 可选 BMP280（计划）
 │    PA10 ← CH341 TX（USART1_RX）                              │
 │    PC13 → 板载 LED                                           │
 │    PB12 → 220 Ω → 外接 LED+（LED- → GND 轨）                 │
+│    PB13 ← 按键 → GND 轨（片内上拉）                          │
 │                                                              │
 │  1.3″ SH1106 4 针：VCC/GND→3.3V 轨；SCL/SDA→PB6/PB7        │
 │  FT6236：当前阶段不接；日后 INT→PB0，RST→PB1                │

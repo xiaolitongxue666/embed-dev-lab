@@ -48,7 +48,7 @@
 | PB10 | FT | **USART3_TX** / I2C2_SCL | TIM2_CH3（remap） | — |
 | PB11 | FT | **USART3_RX** / I2C2_SDA | TIM2_CH4（remap） | — |
 | PB12 | FT | SPI2_NSS / TIM1_BKIN / USART3_CK | — | **外接 LED**（已实现，`f103-manual-reg`，拉电流） |
-| PB13 | FT | SPI2_SCK / TIM1_CH1N / USART3_CTS | — | — |
+| PB13 | FT | SPI2_SCK / TIM1_CH1N / USART3_CTS | — | **按键**（已实现，`f103-manual-reg`，上拉输入，低有效） |
 | PB14 | FT | SPI2_MISO / TIM1_CH2N / USART3_RTS | — | — |
 | PB15 | FT | SPI2_MOSI / TIM1_CH3N | — | — |
 | PC13 | — | TAMPER / RTC | **非 FT**；Backup 域；板载 LED | **LED**（已实现，低电平点亮常见） |
@@ -115,6 +115,7 @@ ST-Link：SWDIO→PA13，SWCLK→PA14；GND 与 3.3V 进面包板轨（方案 A�
 ```text
 PC13              板载 LED（已实现）
 PB12              外接 LED（已实现，f103-manual-reg，拉电流）
+PB13              按键（已实现，f103-manual-reg，上拉输入）
 PA4–PA7           SPI1 → LSM6DS3（已实现，f103-manual-reg）
 PA9, PA10         USART1（已实现）
 PA13, PA14        SWD

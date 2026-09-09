@@ -1,10 +1,10 @@
 /**
  * @file    gpioc_bitband.h
- * @brief   GPIOC ODR 位带别名访问（寄存器直写）
+ * @brief   GPIOC / GPIOB ODR 位带别名访问（寄存器直写）
  *
  * @ref     核心板测试程序(PC13闪烁)/USER/GPIOLIKE51.h
  * @note    Cortex-M3 支持位带：对别名区单 bit 读写等效于原寄存器原子位操作。
- *          本头文件仅封装 GPIOC 的 ODR 输出位带；PCout 仍是对 GPIOC_ODR（0x4001100C）的 MMIO。
+ *          PCout 访问 GPIOC_ODR（0x4001100C）；PBout 访问 GPIOB_ODR（0x40010C0C）。
  *          详见 doc/learn/stm32f103-mmio-basics.md
  */
 
@@ -39,8 +39,22 @@
 
 /**
  * @brief  GPIOC 端口第 n 脚输出（位带）
- * @param  n  引脚号 0–15，本工程 LED 使用 PCout(13)
+ * @param  n  引脚号 0–15，本工程板载 LED 使用 PCout(13)
  */
 #define PCout(n) BIT_ADDR(GPIOC_ODR_ADDR, (n))
+
+/* -------------------------------------------------------------------------- */
+/* GPIOB 输出                                                                   */
+/* -------------------------------------------------------------------------- */
+
+#define GPIOB_BASE 0x40010C00U
+/** @brief GPIOB ODR 寄存器偏移 +12 → 0x40010C0C */
+#define GPIOB_ODR_ADDR (GPIOB_BASE + 12U)
+
+/**
+ * @brief  GPIOB 端口第 n 脚输出（位带）
+ * @param  n  引脚号 0–15，本工程外接 LED 使用 PBout(12)
+ */
+#define PBout(n) BIT_ADDR(GPIOB_ODR_ADDR, (n))
 
 #endif /* GPIOC_BITBAND_H */

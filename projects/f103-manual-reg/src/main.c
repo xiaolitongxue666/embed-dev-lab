@@ -1,6 +1,6 @@
 /**
  * @file    main.c
- * @brief   STM32F103C8T6：PC13 LED + USART1 printf + SPI1 LSM6DS3 六轴轮询
+ * @brief   STM32F103C8T6：PC13 / PB12 LED + USART1 printf + SPI1 LSM6DS3 六轴轮询
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
  *
@@ -11,7 +11,7 @@
  *        → bl main          ← 此处
  *
  * main 内初始化顺序：
- *   1. GPIOC_Init → USART1_Init → SPI1_Init
+ *   1. GPIOC_Init → GPIOB_Init → USART1_Init → SPI1_Init
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
  *   3. WHO_AM_I → LSM6DS3_Init → 循环读 raw + LED
  *
@@ -19,13 +19,14 @@
  * SPI / LSM6DS3（模块丝印）：
  *   3V3/GND；SCL←PA5，SDA←PA7，SAO→PA6，CS←PA4；Mode 3。
  *   PA4–PA7 手册未标 FT；详表见 spi.c 与引脚总表。
- * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP。
+ * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
+ * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
  *
  * @see     doc/projects/f103-manual-reg.md § 启动与时钟 / 运行时初始化顺序
  * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
  * @see     doc/hardware/stm32f103-peripherals.md
  * @see     doc/hardware/stm32f103c8t6-pinout.md
- * @see     doc/learn/gpio-eight-modes.md — PC13 推挽输出
+ * @see     doc/learn/gpio-eight-modes.md — PC13 / PB12 推挽输出
  */
 
 #include <stdio.h>
@@ -48,15 +49,20 @@
 
 #define GPIOC_BASE 0x40011000U
 #define GPIOC_CRH  (*(volatile unsigned int *)(GPIOC_BASE + 0x04U))
+#define GPIOB_CRH  (*(volatile unsigned int *)(GPIOB_BASE + 0x04U))
 
 #define RCC_APB1ENR_PWREN  (1U << 28)
+#define RCC_APB2ENR_IOPBEN (1U << 3)
 #define RCC_APB2ENR_IOPCEN (1U << 4)
 #define PWR_CR_DBP         (1U << 8)
 
 #define GPIOC_CRH_PC13_MASK   (0xFU << 20)
 #define GPIOC_CRH_PC13_OUT_PP (3U << 20)
+#define GPIOB_CRH_PB12_MASK   (0xFU << 16)
+#define GPIOB_CRH_PB12_OUT_PP (3U << 16)
 
-#define LED_PIN 13U
+#define BOARD_LED_PIN 13U
+#define EXT_LED_PIN   12U
 
 /**
  * @brief  软件延时（忙等待）
@@ -97,6 +103,18 @@ static void GPIOC_Init(void)
 }
 
 /**
+ * @brief  初始化 PB12 为推挽输出（外接拉电流 LED，无需 Backup 解锁）
+ * @see    doc/learn/gpio-eight-modes.md
+ */
+static void GPIOB_Init(void)
+{
+    RCC_APB2ENR |= RCC_APB2ENR_IOPBEN;
+
+    GPIOB_CRH &= ~GPIOB_CRH_PB12_MASK;
+    GPIOB_CRH |= GPIOB_CRH_PB12_OUT_PP;
+}
+
+/**
  * @brief  程序入口
  */
 int main(void)
@@ -106,6 +124,7 @@ int main(void)
     unsigned int led_phase;
 
     GPIOC_Init();
+    GPIOB_Init();
     USART1_Init();
     SPI1_Init();
 
@@ -136,12 +155,15 @@ int main(void)
         led_phase++;
         if (led_phase >= 200U) {
             led_phase = 0U;
-            PCout(LED_PIN) ^= 1U;
-            /* 字符串指 GPIO 电平：高=LED on（灯灭），低=LED off（灯亮） */
-            if (PCout(LED_PIN) != 0U) {
-                printf("LED on\n");
+            PCout(BOARD_LED_PIN) ^= 1U;
+            PBout(EXT_LED_PIN) ^= 1U;
+            /* 字符串指 GPIO 电平：高=on，低=off；PC13 高=灯灭，PB12 高=灯亮 */
+            if (PCout(BOARD_LED_PIN) != 0U) {
+                printf("PC13 LED on\n");
+                printf("PB12 LED on\n");
             } else {
-                printf("LED off\n");
+                printf("PC13 LED off\n");
+                printf("PB12 LED off\n");
             }
         }
 

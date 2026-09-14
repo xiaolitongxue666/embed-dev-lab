@@ -18,7 +18,7 @@
 
 ```text
 【路径 A：printf】
-printf → vfprintf → _write_r → _write（syscalls.c）→ USART1_Write（TX ring / TXE 中断）→ PA9
+printf → vfprintf → _write_r → _write（syscalls.c）→ USART1_Write（DMA1 CH4）→ PA9
 
 【路径 B：不用 printf】
 USART1_WriteStr → HAL_UART_Transmit → PA9

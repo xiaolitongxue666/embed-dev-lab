@@ -15,8 +15,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/mcu-config.cmake)
 
 set(F103_SOURCES
     src/main.c                  # 应用入口：LED、WHO_AM_I、六轴轮询、串口回显
-    src/nvic.c                  # NVIC ISER/IP 手写（USART1 IRQn=37）
-    src/usart.c                 # USART1 中断收发 + 环形缓冲
+    src/nvic.c                  # NVIC ISER/IP 手写（USART1 / DMA1 CH4/CH5）
+    src/dma.c                   # DMA1 通道启停（USART1 TX=CH4 RX=CH5）
+    src/usart.c                 # USART1 DMA 收发 + 空闲定界
     src/spi.c                   # SPI1 Mode3 + PA4 软件 CS
     src/lsm6ds3.c               # LSM6DS3 SPI 读写与 raw 采样
     src/syscalls.c              # printf → USART1

@@ -6,7 +6,7 @@
  *   printf / vfprintf — 工具链 newlib（libc.a），不在本仓库
  *   stdio 写 stdout   — 同上；libc 内部 _write_r() 再调 _write()
  *   _write            — 本文件
- *   USART1_Write      — usart.c（入 TX 环形缓冲，TXE 中断发送）
+ *   USART1_Write      — usart.c（DMA1 CH4 发送）
  *
  * 与 libnosys 的关系（链接期替换，非 weak 覆盖）：
  *   工具链设 --specs=nosys.specs（见 cmake/toolchain-arm-none-eabi.cmake），会链入 libnosys.a，
@@ -25,7 +25,7 @@
  *
  * 换行：Windows 串口助手认 CRLF；C 字符串 `\n` 在 _write 中自动前置 `\r`。
  *
- * @see     usart.c — USART1 中断收发与 USART1_Write
+ * @see     usart.c — USART1 DMA 收发与 USART1_Write
  * @see     linker/STM32F103C8_FLASH.ld — end / _end / _estack 符号
  * @see     doc/projects/f103-manual-reg.md — § printf 与 newlib syscall
  * @see     doc/learn/newlib-nosys-stdio-retarget.md — nosys、_write 与 HAL 分工

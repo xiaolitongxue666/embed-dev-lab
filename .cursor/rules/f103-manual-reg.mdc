@@ -9,7 +9,7 @@ alwaysApply: false
 与 `f103-cmsis-hal` 为**同一芯片上的并列路线**：本工程用**手写寄存器**实现功能；对照工程用官方 CMSIS+HAL（Cube 风格）。**对外具体功能应一致**。
 
 - **不** `#include` / 链接官方 CMSIS Device 头或 HAL
-- 串口：`printf` → `syscalls.c` `_write` → `USART1_Write`（TX ring + TXE 中断）；RX 为 `RXNE` 中断 + `USART1_ProcessRx` 调 handle；勿改成仅 HAL 路径
+- 串口：`printf` → `syscalls.c` `_write` → `USART1_Write`（DMA1 CH4）；RX 为 DMA1 CH5 + `IDLE` 定界，`USART1_ProcessRx` 调整帧 handle；USART DMA **关 HTIE**、只开 TCIE；勿改成仅 HAL 路径
 - PC13：先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再写 `GPIOC_CRH`
 - 时钟在 `SystemInit`（`system_stm32f1xx.c`）升至 72 MHz，进 `main` 前完成
 - 无 SysTick 应用实现（向量表 weak → Default_Handler）

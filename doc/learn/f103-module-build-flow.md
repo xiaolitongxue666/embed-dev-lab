@@ -83,8 +83,9 @@ endif()
 ```cmake
 set(F103_SOURCES
     src/main.c                  # 应用入口：LED / KEY / LSM6DS3 / 串口回显
-    src/nvic.c                  # NVIC ISER/IP（USART1 IRQn=37）
-    src/usart.c                 # USART1 中断收发
+    src/nvic.c                  # NVIC ISER/IP（USART1 / DMA1 CH4/CH5）
+    src/dma.c                   # DMA1 通道启停
+    src/usart.c                 # USART1 DMA + IDLE
     src/syscalls.c              # newlib _write/_sbrk → 串口
     src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
     startup/startup_stm32f103xb.s # 向量表（含外设 IRQ）、.data/.bss、跳转 main

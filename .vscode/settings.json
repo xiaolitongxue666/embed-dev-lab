@@ -5,5 +5,10 @@
   "cmake.environment": {},
   "clangd.checkUpdates": false,
   "clangd.path": "clangd",
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}",
+    "--query-driver=**/arm-none-eabi-gcc*,**/arm-none-eabi-g++*,**/ARMGNU~1/**/bin/*",
+    "--background-index"
+  ],
   "C_Cpp.intelliSenseEngine": "disabled"
 }

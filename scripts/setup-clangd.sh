@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# 生成 .vscode/settings.local.json，配置 clangd 参数
-# 依赖 compile_commands.json 与 arm-none-eabi-gcc 路径
+# 生成本机 .vscode/settings.local.json（gitignore）
+# 工作区以 .clangd + .vscode/settings.json 为准；本文件只覆盖 query-driver 本机路径
+# 依赖 compile_commands.json 与 arm-none-eabi-gcc
 # 用法: ./scripts/setup-clangd.sh（build 后自动调用）
 # -----------------------------------------------------------------------------
 
@@ -47,8 +48,8 @@ if ! TOOLCHAIN_BIN="$(detect_arm_toolchain_bin)"; then
   exit 0
 fi
 
-GCC_PATH="$(to_json_path "$TOOLCHAIN_BIN/arm-none-eabi-gcc")"
-GXX_PATH="$(to_json_path "$TOOLCHAIN_BIN/arm-none-eabi-g++")"
+# 同一 bin 下短名 exe（如 AR19DD~1.EXE）也能被 query-driver 匹配
+QD_GLOB="$(to_json_path "$TOOLCHAIN_BIN")/*"
 ROOT_JSON="${ROOT//\\/\/}"
 
 mkdir -p "$ROOT/.vscode"
@@ -58,7 +59,7 @@ write_settings_local() {
     local merged
     merged="$(jq -n \
       --arg dir "$ROOT_JSON" \
-      --arg qd "${GCC_PATH},${GXX_PATH}" \
+      --arg qd "$QD_GLOB" \
       '{ "clangd.arguments": [
         "--compile-commands-dir=\($dir)",
         "--query-driver=\($qd)",
@@ -75,7 +76,7 @@ write_settings_local() {
 {
   "clangd.arguments": [
     "--compile-commands-dir=${ROOT_JSON}",
-    "--query-driver=${GCC_PATH},${GXX_PATH}",
+    "--query-driver=${QD_GLOB}",
     "--background-index"
   ]
 }
@@ -84,4 +85,4 @@ EOF
 }
 
 write_settings_local
-log_ok "Wrote $OUT (compile-commands-dir: $ROOT_JSON, query-driver: $TOOLCHAIN_BIN)"
+log_ok "Wrote $OUT (compile-commands-dir: $ROOT_JSON, query-driver: $QD_GLOB)"

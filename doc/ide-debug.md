@@ -124,7 +124,9 @@ preLaunchTask "Build F103"
 | `terminal.integrated.defaultProfile.windows` | `.vscode/settings.json` | Git Bash |
 | `cmake.usePresets` | `.vscode/settings.json` | 使用 CMake Presets |
 | `compile_commands.json` | 仓库根目录 | `build.sh` / `bootstrap.sh` 后由 `setup-clangd.sh` 同步 |
-| `settings.local.json` | `.vscode/` | clangd 路径（自动生成，已 gitignore） |
+| `.clangd` | 仓库根目录 | `--target=arm-none-eabi` + `-mcpu=cortex-m3`（只给 clangd，不进 Ninja） |
+| `clangd.arguments` | `.vscode/settings.json` | Cursor 实际加载；`--query-driver` glob 含 Windows 短名 |
+| `settings.local.json` | `.vscode/` | 本机覆盖（`setup-clangd.sh` 生成，已 gitignore）；工作区以 `.clangd` + `settings.json` 为准 |
 
 ---
 
@@ -138,6 +140,7 @@ preLaunchTask "Build F103"
 | 烧录后无断点停住 | 确认 `haltAfterReset: true`；检查 SWD |
 | OpenOCD 报找不到 hex | 须先 `build` 生成 `.hex`（objcopy POST_BUILD）；probe-rs 路径用 `.elf` |
 | Git Bash 路径错误 | 工作区已设 profile 名；User settings 中配置实际 bash 路径 |
+| `Unsupported option '-mcpu='` 或 pointer-to-int（usart DMA 地址） | clangd 按 x86_64 解析。先 `./scripts/build.sh f103-manual-reg` 同步 `compile_commands.json`，再 `./scripts/setup-clangd.sh`，命令面板 **Clangd: Restart language server**。勿改 DMA `CMAR` 的 `unsigned int` 强转 |
 
 ---
 

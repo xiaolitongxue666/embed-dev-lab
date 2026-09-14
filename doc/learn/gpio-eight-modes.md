@@ -19,9 +19,9 @@ F103 每个 GPIO 脚由 `CRL`/`CRH` 中 **4 bit（CNF[1:0] + MODE[1:0]）** 配�
 | **复用推挽输出** | USART TX、SPI SCK/MOSI | PA9 USART1_TX、PA5/PA7 SPI1 |
 | **复用开漏输出** | I2C SCL/SDA | 计划 PB6/PB7 I2C1 |
 | **浮空输入** | USART RX、SPI MISO、外部已驱动的信号 | PA10 USART1_RX、PA6 SPI1_MISO |
-| **上拉输入** | 按键接 GND、需默认高电平 | （本 demo 未用） |
+| **上拉输入** | 按键接 GND、需默认高电平 | PB13 KEY（`f103-manual-reg`） |
 | **下拉输入** | 按键接 VDD、需默认低电平 | （本 demo 未用） |
-| **模拟输入** | ADC 通道 | （本 demo 未用） |
+| **模拟输入** | ADC 通道 | PA0 ADC1 旋钮（`f103-manual-reg`） |
 
 ---
 
@@ -71,6 +71,7 @@ USART RX、SPI MISO 常用浮空输入：对端（CH341 TX、传感器 MISO）�
 | `0x3` | `0011` | 推挽输出 50 MHz（CNF=00, MODE=11） |
 | `0xB` | `1011` | 复用推挽 50 MHz（CNF=10, MODE=11） |
 | `0x8` | `1000` | 上拉/下拉输入（CNF=10, MODE=00；再写 ODR） |
+| `0x0` | `0000` | 模拟输入（CNF=00, MODE=00） |
 
 完整表与 RM0008 页码见 [gpio-cnf-mode.md](../reference/stm32f103/md/topics/gpio-cnf-mode.md)。
 
@@ -115,6 +116,10 @@ HAL：[`HAL_UART_MspInit`](../../projects/f103-cmsis-hal/src/stm32f1xx_hal_msp.c
 - PA5/PA7：复用推挽 `0xB`
 - PA6：浮空输入 `0x4`
 - PA4 CS：推挽 `0x3`
+
+### ADC1 PA0 — 模拟输入
+
+[`adc.c`](../../projects/f103-manual-reg/src/adc.c)：`GPIOA_CRL` PA0 半字节 `0x0`（CNF=00, MODE=00）。旋钮 SIG→PA0；B12/B13 侧无 ADC。
 
 ### 计划 I2C — 复用开漏 + 上拉
 

@@ -19,7 +19,7 @@
 
 | 丝印 | FT | 默认复用（摘录） | Remap / 备注 | 本仓库占用 |
 |------|----|------------------|--------------|------------|
-| PA0 | — | USART2_CTS / TIM2_CH1_ETR / ADC12_IN0 / WKUP | — | — |
+| PA0 | — | USART2_CTS / TIM2_CH1_ETR / ADC12_IN0 / WKUP | — | **ADC1 旋钮 SIG**（已实现，`f103-manual-reg`） |
 | PA1 | — | USART2_RTS / TIM2_CH2 / ADC12_IN1 | — | — |
 | PA2 | — | **USART2_TX** / TIM2_CH3 / ADC12_IN2 | 勿与 SPI1 同时用默认 USART2 | —（勿开 USART2） |
 | PA3 | — | **USART2_RX** / TIM2_CH4 / ADC12_IN3 | 同上 | —（勿开 USART2） |
@@ -116,6 +116,7 @@ ST-Link：SWDIO→PA13，SWCLK→PA14；GND 与 3.3V 进面包板轨（方案 A�
 PC13              板载 LED（已实现）
 PB12              外接 LED（已实现，f103-manual-reg，拉电流）
 PB13              按键（已实现，f103-manual-reg，上拉输入）
+PA0               ADC1 CH0 旋钮 SIG（已实现，f103-manual-reg）
 PA4–PA7           SPI1 → LSM6DS3（已实现，f103-manual-reg）
 PA9, PA10         USART1（已实现）
 PA13, PA14        SWD

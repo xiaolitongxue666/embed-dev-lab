@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# f103-manual-reg — STM32F103C8T6 PC13 + USART1 + SPI1 LSM6DS3（全手写寄存器，无 CMSIS/HAL）
+# f103-manual-reg — STM32F103C8T6 PC13 + USART1 + ADC1 PA0 + SPI1 LSM6DS3（全手写寄存器，无 CMSIS/HAL）
 # 构建: 仓库根目录 ./scripts/build.sh f103-manual-reg
 # 一键:  ./scripts/build-flash.sh
 # 文档:  doc/projects/f103-manual-reg.md
@@ -17,6 +17,7 @@ set(F103_SOURCES
     src/main.c                  # 应用入口：LED、WHO_AM_I、六轴轮询、串口回显
     src/nvic.c                  # NVIC ISER/IP 手写（USART1 / DMA1 CH4/CH5）
     src/dma.c                   # DMA1 通道启停（USART1 TX=CH4 RX=CH5）
+    src/adc.c                   # ADC1 CH0（PA0）单次转换
     src/usart.c                 # USART1 DMA 收发 + 空闲定界
     src/spi.c                   # SPI1 Mode3 + PA4 软件 CS
     src/lsm6ds3.c               # LSM6DS3 SPI 读写与 raw 采样

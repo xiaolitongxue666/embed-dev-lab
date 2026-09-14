@@ -1,6 +1,6 @@
 /**
  * @file    main.c
- * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 DMA+IDLE + SPI1 LSM6DS3
+ * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 DMA+IDLE + ADC1 PA0 + SPI1 LSM6DS3
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
  *
@@ -11,15 +11,17 @@
  *        → bl main          ← 此处
  *
  * main 内初始化顺序：
- *   1. GPIOC_Init → GPIOB_Init → USART1_Init → 注册 RX 整帧回显 handle → SPI1_Init
+ *   1. GPIOC_Init → GPIOB_Init → USART1_Init → 注册 RX 整帧回显 handle
+ *      → ADC1_Init → SPI1_Init
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
- *   3. WHO_AM_I → LSM6DS3_Init → 循环读 raw + LED + KEY + USART1_ProcessRx
+ *   3. WHO_AM_I → LSM6DS3_Init → 循环读 IMU + LED + KEY + 旋钮 + USART1_ProcessRx
  *
  * 串口：USART1 PA9/PA10（FT），1500000 bps；DMA1 CH4/CH5 + 空闲中断定界。
  * printf 经 syscalls.c → USART1_Write；RX 整帧经 handle 回显。
  * SPI / LSM6DS3（模块丝印）：
  *   3V3/GND；SCL←PA5，SDA←PA7，SAO→PA6，CS←PA4；Mode 3。
  *   PA4–PA7 手册未标 FT；详表见 spi.c 与引脚总表。
+ * ADC1：PA0 = ADC12_IN0（非 FT）；10 k 旋钮 SIG；与 LED/KEY 同频打印 raw/mV。
  * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
  * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
  * PB13 KEY：FT；上拉输入，PB13←按键→GND；按下 IDR=0，松开 IDR=1。
@@ -28,11 +30,12 @@
  * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
  * @see     doc/hardware/stm32f103-peripherals.md
  * @see     doc/hardware/stm32f103c8t6-pinout.md
- * @see     doc/learn/gpio-eight-modes.md — PC13 / PB12 推挽；PB13 上拉输入
+ * @see     doc/learn/gpio-eight-modes.md — PC13 / PB12 推挽；PB13 上拉输入；PA0 模拟
  */
 
 #include <stdio.h>
 
+#include "adc.h"
 #include "gpioc_bitband.h"
 #include "lsm6ds3.h"
 #include "spi.h"
@@ -140,11 +143,14 @@ int main(void)
     unsigned char who;
     LSM6DS3_RawSample sample;
     unsigned int led_phase;
+    unsigned int knob_raw;
+    unsigned int knob_mv;
 
     GPIOC_Init();
     GPIOB_Init();
     USART1_Init();
     USART1_SetRxHandle(USART1_EchoFrame);
+    ADC1_Init();
     SPI1_Init();
 
     printf("Stm32 manual reg LSM6DS3 SPI demo start\n");
@@ -192,6 +198,9 @@ int main(void)
             } else {
                 printf("PB13 KEY low\n");
             }
+            knob_raw = ADC1_ReadRaw();
+            knob_mv = (knob_raw * ADC1_VDDA_MV) / ADC1_FULL_SCALE;
+            printf("knob raw=%u mv=%u\n", knob_raw, knob_mv);
         }
 
         delay(0x7FFFU);

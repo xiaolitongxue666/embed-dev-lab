@@ -24,7 +24,11 @@
  *
  * 不使用工具链 crt0（链接 -nostartfiles）；C 运行时最小初始化全部由本文件完成。
  *
+ * 向量表含 F103xB 外设 IRQ（USART1 为索引 53，IRQn=37）；未实现的 Handler 为 weak → Default_Handler。
+ * USART1_IRQHandler 由 src/usart.c 强符号覆盖。
+ *
  * @see     doc/projects/f103-manual-reg.md § 启动与时钟
+ * @see     doc/learn/interrupt-vector-table-and-nvic.md
  * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
  * @see     doc/learn/stm32f103-memory-boot-map.md
  * @see     doc/learn/linker-vma-lma.md
@@ -45,6 +49,8 @@
 .word _edata     /* .data 在 RAM 中的结束地址 */
 .word _sbss      /* .bss 起始地址 */
 .word _ebss      /* .bss 结束地址 */
+
+.equ BootRAM, 0xF108F85F   /* 向量表末字：RAM 启动模式 magic（本工程未用） */
 
 /* -------------------------------------------------------------------------- */
 /* 中断向量表（位于 Flash 物理起始 0x08000000，见 STM32F103C8_FLASH.ld）
@@ -71,6 +77,58 @@ g_pfnVectors:
     .word 0
     .word PendSV_Handler       /* 14 PendSV */
     .word SysTick_Handler      /* 15 SysTick */
+    /* STM32F103xB 外设 IRQ；USART1 为索引 53（IRQn=37）。须按序填满，不可只插 USART1 */
+    .word WWDG_IRQHandler            /* 16  窗口看门狗 */
+    .word PVD_IRQHandler             /* 17  可编程电压检测 PVD */
+    .word TAMPER_IRQHandler          /* 18  侵入检测 Tamper */
+    .word RTC_IRQHandler             /* 19  RTC 全局中断 */
+    .word FLASH_IRQHandler           /* 20  Flash 操作完成 */
+    .word RCC_IRQHandler             /* 21  RCC 时钟安全/就绪等 */
+    .word EXTI0_IRQHandler           /* 22  外部中断线 0 */
+    .word EXTI1_IRQHandler           /* 23  外部中断线 1 */
+    .word EXTI2_IRQHandler           /* 24  外部中断线 2 */
+    .word EXTI3_IRQHandler           /* 25  外部中断线 3 */
+    .word EXTI4_IRQHandler           /* 26  外部中断线 4 */
+    .word DMA1_Channel1_IRQHandler   /* 27  DMA1 通道 1 */
+    .word DMA1_Channel2_IRQHandler   /* 28  DMA1 通道 2 */
+    .word DMA1_Channel3_IRQHandler   /* 29  DMA1 通道 3 */
+    .word DMA1_Channel4_IRQHandler   /* 30  DMA1 通道 4 */
+    .word DMA1_Channel5_IRQHandler   /* 31  DMA1 通道 5 */
+    .word DMA1_Channel6_IRQHandler   /* 32  DMA1 通道 6 */
+    .word DMA1_Channel7_IRQHandler   /* 33  DMA1 通道 7 */
+    .word ADC1_2_IRQHandler          /* 34  ADC1 / ADC2 */
+    .word USB_HP_CAN1_TX_IRQHandler  /* 35  USB 高优先级 / CAN1 TX */
+    .word USB_LP_CAN1_RX0_IRQHandler /* 36  USB 低优先级 / CAN1 RX0 */
+    .word CAN1_RX1_IRQHandler        /* 37  CAN1 RX1 */
+    .word CAN1_SCE_IRQHandler        /* 38  CAN1 SCE（状态变化/错误） */
+    .word EXTI9_5_IRQHandler         /* 39  外部中断线 5..9 */
+    .word TIM1_BRK_IRQHandler        /* 40  TIM1 刹车 */
+    .word TIM1_UP_IRQHandler         /* 41  TIM1 更新 */
+    .word TIM1_TRG_COM_IRQHandler    /* 42  TIM1 触发/换相 */
+    .word TIM1_CC_IRQHandler         /* 43  TIM1 捕获/比较 */
+    .word TIM2_IRQHandler            /* 44  TIM2 全局 */
+    .word TIM3_IRQHandler            /* 45  TIM3 全局 */
+    .word TIM4_IRQHandler            /* 46  TIM4 全局 */
+    .word I2C1_EV_IRQHandler         /* 47  I2C1 事件 */
+    .word I2C1_ER_IRQHandler         /* 48  I2C1 错误 */
+    .word I2C2_EV_IRQHandler         /* 49  I2C2 事件 */
+    .word I2C2_ER_IRQHandler         /* 50  I2C2 错误 */
+    .word SPI1_IRQHandler            /* 51  SPI1 全局 */
+    .word SPI2_IRQHandler            /* 52  SPI2 全局 */
+    .word USART1_IRQHandler          /* 53  USART1 全局（usart.c 强符号覆盖） */
+    .word USART2_IRQHandler          /* 54  USART2 全局 */
+    .word USART3_IRQHandler          /* 55  USART3 全局 */
+    .word EXTI15_10_IRQHandler       /* 56  外部中断线 10..15 */
+    .word RTC_Alarm_IRQHandler       /* 57  RTC 闹钟 */
+    .word USBWakeUp_IRQHandler       /* 58  USB 唤醒 */
+    .word 0                          /* 59  保留 */
+    .word 0                          /* 60  保留 */
+    .word 0                          /* 61  保留 */
+    .word 0                          /* 62  保留 */
+    .word 0                          /* 63  保留 */
+    .word 0                          /* 64  保留 */
+    .word 0                          /* 65  保留 */
+    .word BootRAM                    /* 66  RAM 启动模式 magic @0x108（本工程未用） */
 
 /* -------------------------------------------------------------------------- */
 /* Reset_Handler：C 运行时就绪 → SystemInit → main
@@ -150,3 +208,89 @@ Default_Handler:
 .thumb_set PendSV_Handler, Default_Handler
 .weak SysTick_Handler
 .thumb_set SysTick_Handler, Default_Handler
+.weak WWDG_IRQHandler
+.thumb_set WWDG_IRQHandler, Default_Handler
+.weak PVD_IRQHandler
+.thumb_set PVD_IRQHandler, Default_Handler
+.weak TAMPER_IRQHandler
+.thumb_set TAMPER_IRQHandler, Default_Handler
+.weak RTC_IRQHandler
+.thumb_set RTC_IRQHandler, Default_Handler
+.weak FLASH_IRQHandler
+.thumb_set FLASH_IRQHandler, Default_Handler
+.weak RCC_IRQHandler
+.thumb_set RCC_IRQHandler, Default_Handler
+.weak EXTI0_IRQHandler
+.thumb_set EXTI0_IRQHandler, Default_Handler
+.weak EXTI1_IRQHandler
+.thumb_set EXTI1_IRQHandler, Default_Handler
+.weak EXTI2_IRQHandler
+.thumb_set EXTI2_IRQHandler, Default_Handler
+.weak EXTI3_IRQHandler
+.thumb_set EXTI3_IRQHandler, Default_Handler
+.weak EXTI4_IRQHandler
+.thumb_set EXTI4_IRQHandler, Default_Handler
+.weak DMA1_Channel1_IRQHandler
+.thumb_set DMA1_Channel1_IRQHandler, Default_Handler
+.weak DMA1_Channel2_IRQHandler
+.thumb_set DMA1_Channel2_IRQHandler, Default_Handler
+.weak DMA1_Channel3_IRQHandler
+.thumb_set DMA1_Channel3_IRQHandler, Default_Handler
+.weak DMA1_Channel4_IRQHandler
+.thumb_set DMA1_Channel4_IRQHandler, Default_Handler
+.weak DMA1_Channel5_IRQHandler
+.thumb_set DMA1_Channel5_IRQHandler, Default_Handler
+.weak DMA1_Channel6_IRQHandler
+.thumb_set DMA1_Channel6_IRQHandler, Default_Handler
+.weak DMA1_Channel7_IRQHandler
+.thumb_set DMA1_Channel7_IRQHandler, Default_Handler
+.weak ADC1_2_IRQHandler
+.thumb_set ADC1_2_IRQHandler, Default_Handler
+.weak USB_HP_CAN1_TX_IRQHandler
+.thumb_set USB_HP_CAN1_TX_IRQHandler, Default_Handler
+.weak USB_LP_CAN1_RX0_IRQHandler
+.thumb_set USB_LP_CAN1_RX0_IRQHandler, Default_Handler
+.weak CAN1_RX1_IRQHandler
+.thumb_set CAN1_RX1_IRQHandler, Default_Handler
+.weak CAN1_SCE_IRQHandler
+.thumb_set CAN1_SCE_IRQHandler, Default_Handler
+.weak EXTI9_5_IRQHandler
+.thumb_set EXTI9_5_IRQHandler, Default_Handler
+.weak TIM1_BRK_IRQHandler
+.thumb_set TIM1_BRK_IRQHandler, Default_Handler
+.weak TIM1_UP_IRQHandler
+.thumb_set TIM1_UP_IRQHandler, Default_Handler
+.weak TIM1_TRG_COM_IRQHandler
+.thumb_set TIM1_TRG_COM_IRQHandler, Default_Handler
+.weak TIM1_CC_IRQHandler
+.thumb_set TIM1_CC_IRQHandler, Default_Handler
+.weak TIM2_IRQHandler
+.thumb_set TIM2_IRQHandler, Default_Handler
+.weak TIM3_IRQHandler
+.thumb_set TIM3_IRQHandler, Default_Handler
+.weak TIM4_IRQHandler
+.thumb_set TIM4_IRQHandler, Default_Handler
+.weak I2C1_EV_IRQHandler
+.thumb_set I2C1_EV_IRQHandler, Default_Handler
+.weak I2C1_ER_IRQHandler
+.thumb_set I2C1_ER_IRQHandler, Default_Handler
+.weak I2C2_EV_IRQHandler
+.thumb_set I2C2_EV_IRQHandler, Default_Handler
+.weak I2C2_ER_IRQHandler
+.thumb_set I2C2_ER_IRQHandler, Default_Handler
+.weak SPI1_IRQHandler
+.thumb_set SPI1_IRQHandler, Default_Handler
+.weak SPI2_IRQHandler
+.thumb_set SPI2_IRQHandler, Default_Handler
+.weak USART1_IRQHandler
+.thumb_set USART1_IRQHandler, Default_Handler
+.weak USART2_IRQHandler
+.thumb_set USART2_IRQHandler, Default_Handler
+.weak USART3_IRQHandler
+.thumb_set USART3_IRQHandler, Default_Handler
+.weak EXTI15_10_IRQHandler
+.thumb_set EXTI15_10_IRQHandler, Default_Handler
+.weak RTC_Alarm_IRQHandler
+.thumb_set RTC_Alarm_IRQHandler, Default_Handler
+.weak USBWakeUp_IRQHandler
+.thumb_set USBWakeUp_IRQHandler, Default_Handler

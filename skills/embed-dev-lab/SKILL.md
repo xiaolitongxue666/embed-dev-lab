@@ -23,7 +23,7 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 
 | 工程 | 实现 | 串口 | 产物 |
 |------|------|------|------|
-| `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL） | `printf` + `syscalls.c` | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL） | `printf` + 中断 TX/RX + `syscalls.c` | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
 | `f103-cmsis-hal` | CMSIS+HAL / Cube 风格对照路线（非 CubeMX 生成） | `HAL_UART_Transmit`（无 printf） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
 
 两工程为**同一芯片上的并列路线**，对外具体功能应对齐；详见 `.cursor/rules/embed-dev-lab-core.mdc`。
@@ -37,7 +37,7 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 
 编写 → 编译 → 下载：[`doc/workflow-write-build-flash.md`](doc/workflow-write-build-flash.md)（含「烧写脚本在哪里」）。真正烧录在 `scripts/build.sh flash`；一键用 `scripts/build-flash.sh`。`flash` 不 configure；`clean` 后须先 `./scripts/build.sh <module>`。
 
-CH341 串口：`serial-ch341-switch.sh`（to-win/to-wsl）。Windows Agent 读：`./scripts/serial-ch341-read.sh [--baud N]`（自动 COM；波特/端口可变）。WSL：`picocom -b <固件波特> /dev/ttyUSB*`。规则：`.cursor/rules/serial-ch341.mdc`。
+CH341 串口：`serial-ch341-switch.sh`（to-win/to-wsl）。Windows Agent 读：`./scripts/serial-ch341-read.sh [--baud N] [--send TEXT]`（自动 COM；波特/端口可变）。WSL：`picocom -b <固件波特> /dev/ttyUSB*`。规则：`.cursor/rules/serial-ch341.mdc`。
 
 ## 硬件要点（F103 PC13）
 

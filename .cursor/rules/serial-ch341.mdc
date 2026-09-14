@@ -38,6 +38,7 @@ alwaysApply: true
 ./scripts/serial-ch341-read.sh --baud 115200        # 固件波特已改时
 ./scripts/serial-ch341-read.sh --port COM5 --no-switch
 ./scripts/serial-ch341-read.sh --list               # 列出 COM，标记 CH341
+./scripts/serial-ch341-read.sh --send PING --seconds 3  # 写出后再读（测回显）
 EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 ```
 

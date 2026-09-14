@@ -1,6 +1,6 @@
 /**
  * @file    usart.c
- * @brief   USART1 纯寄存器初始化与阻塞发送
+ * @brief   USART1 纯寄存器初始化与中断收发（环形缓冲）
  *
  * @target  STM32F103C8T6，USART1 默认引脚 PA9(TX) / PA10(RX)，挂 APB2 总线
  *
@@ -13,9 +13,13 @@
  *            = 72_000_000 / (16 × 1_500_000) = 3（整除，无舍入误差）
  *   BRR（Baud Rate Register，波特率寄存器）[15:4]=3（整数部分），[3:0]=0（小数部分）→ 写入 0x0030
  *
+ * 中断（RM0008 §27）：
+ *   RX：CR1.RXNEIE 常开；ISR 读 DR 入 RX ring（ORE 须先读 SR 再读 DR）
+ *   TX：有待发数据时置 CR1.TXEIE；ISR 写 DR；ring 空则清 TXEIE
+ *
  * 硬件接线（CH341 USB-TTL）：
  *   模块 RX ← PA9（MCU 发）
- *   模块 TX → PA10（MCU 收，本 demo 仅 printf 发送）
+ *   模块 TX → PA10（MCU 收）
  *   GND 共地（与蓝板 / 面包板 / ST-Link 同一地）
  *   CH341 为 USB↔TTL 转换；MCU 脚仍是 3.3 V CMOS（习惯称 TTL），不是 RS232
  *
@@ -31,8 +35,10 @@
  * @see     doc/learn/stm32f103-mmio-basics.md
  * @see     doc/learn/gpio-eight-modes.md — PA9 复用推挽、PA10 浮空输入（高阻）
  * @see     doc/learn/uart-ttl-rs232-rs485.md — UART 外设 vs TTL vs RS232/485
+ * @see     doc/learn/interrupt-vector-table-and-nvic.md
  */
 
+#include "nvic.h"
 #include "usart.h"
 
 /* -------------------------------------------------------------------------- */
@@ -95,21 +101,46 @@
 /* USART SR / CR1 位定义                                                        */
 /* -------------------------------------------------------------------------- */
 
-#define USART_SR_TXE (1U << 7)   /**< 发送数据寄存器空：可写入 DR */
+#define USART_SR_ORE  (1U << 3)  /**< 过载：须读 SR 再读 DR 才能清除 */
+#define USART_SR_RXNE (1U << 5)  /**< 接收数据寄存器非空：可读 DR */
+#define USART_SR_TXE  (1U << 7)  /**< 发送数据寄存器空：可写入 DR */
 #define USART_CR1_UE  (1U << 13) /**< UE（USART Enable，CR1[13]）；改 BRR 前须清 0 */
+#define USART_CR1_RXNEIE (1U << 5) /**< 接收非空中断使能 */
+#define USART_CR1_TXEIE  (1U << 7) /**< 发送寄存器空中断使能 */
 #define USART_CR1_TE  (1U << 3)  /**< 发送使能 */
-#define USART_CR1_RE  (1U << 2)  /**< 接收使能（预留，便于后续扩展串口读） */
+#define USART_CR1_RE  (1U << 2)  /**< 接收使能 */
 
 /** 写入 BRR（Baud Rate Register，波特率寄存器）：USARTDIV=3 → 1.5 Mbps */
 #define USART1_BRR_1500000 0x0030U
 
+/** USART1 NVIC 抢占优先级（0–15，越小越高） */
+#define USART1_NVIC_PRIO 5U
+
+#define USART1_TX_BUF_SIZE 256U
+#define USART1_RX_BUF_SIZE 128U
+
+unsigned char g_usart1_tx_buf[USART1_TX_BUF_SIZE];
+unsigned char g_usart1_rx_buf[USART1_RX_BUF_SIZE];
+volatile unsigned int g_usart1_tx_head;
+volatile unsigned int g_usart1_tx_tail;
+volatile unsigned int g_usart1_rx_head;
+volatile unsigned int g_usart1_rx_tail;
+
+static USART1_RxHandle_t g_usart1_rx_handle;
+
+static unsigned int usart1_ring_next(unsigned int index, unsigned int size)
+{
+    return (index + 1U) % size;
+}
+
 /**
- * @brief  初始化 USART1：时钟 → GPIO 复用 → 波特率 → 8N1 发送
+ * @brief  初始化 USART1：时钟 → GPIO 复用 → 波特率 → 8N1 → RX 中断 + NVIC
  *
  * 初始化顺序说明：
  *   1. 开 GPIOA / USART1 时钟（否则后续寄存器写无效）
  *   2. 配置 PA9 为复用推挽、PA10 为浮空输入（F103 默认映射，无需 AFIO 重映射）
- *   3. 清 UE（USART Enable，CR1[13]），写 BRR（Baud Rate Register，波特率寄存器）、CR2，再置 TE|RE|UE
+ *   3. 清 UE（USART Enable，CR1[13]），写 BRR（Baud Rate Register，波特率寄存器）、CR2，再置 TE|RE|RXNEIE|UE
+ *   4. NVIC 优先级并开启 USART1 IRQ（IRQn=37）
  *
  * 帧格式：8 数据位、无校验、1 停止位（CR1.M=0，CR2.STOP=00）
  */
@@ -133,43 +164,104 @@ void USART1_Init(void)
     USART1_CR1 = 0U;                      /* 清 UE（USART Enable，CR1[13]）后再改 BRR */
     USART1_BRR = USART1_BRR_1500000;      /* BRR（Baud Rate Register，波特率寄存器） */
     USART1_CR2 = 0U;                      /* STOP=00 → 1 停止位 */
-    USART1_CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE; /* 置 UE（USART Enable，CR1[13]）启动 */
+    USART1_CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE | USART_CR1_UE;
+
+    NVIC_IRQ_SetPriority(USART1_IRQn, USART1_NVIC_PRIO);
+    NVIC_IRQ_Enable(USART1_IRQn);
 }
 
 /**
- * @brief  阻塞发送 len 字节（轮询 SR.TXE）
+ * @brief  将 len 字节写入 TX 环形缓冲并开启 TXE 中断
  * @param  buf  待发送缓冲区；允许 NULL（直接返回）
  * @param  len  字节数；≤0 时不发送
  *
- * 发送机制（RM0008）：
- *   写 DR 即把 1 字节载入 USART 发送数据寄存器；置 UE+TE 后，硬件自动按波特率
- *   在 PA9 上串行发出（起始位 + 8 数据位 + 停止位），无需软件再操作 GPIO。
- *   字节从 DR 进入发送移位寄存器后，由移位器逐 bit 驱动 TX 引脚，CPU 不参与位时序。
- *
- * 为何每次只写 1 字节：
- *   DR 仅 8 位有效，同一时刻只能接纳一个新字节；若上一字节尚未从 DR 移入移位器
- *   （SR.TXE=0）就再次写入，会覆盖未发完的数据。故循环内：等 TXE=1 → 写 1 字节 → 重复。
- *   printf/_write 虽可能传入多字节缓冲区，本函数仍按字节拆分发送（简单可靠，无 DMA）。
- *
+ * 缓冲满时自旋等待（保持全局中断开，ISR 才能抽空 TX ring）。
  * 由 syscalls.c 的 _write() 调用；`\r\n` 转换在 _write 层完成。
  */
 void USART1_Write(const char *buf, int len)
 {
     int i;
+    unsigned int head;
+    unsigned int next;
 
     if (buf == 0 || len <= 0) {
         return;
     }
 
     for (i = 0; i < len; i++) {
-        while ((USART1_SR & USART_SR_TXE) == 0U) {
-            /* TXE=0：DR 仍被占用，上一字节尚未移入移位器，不可写 */
+        head = g_usart1_tx_head;
+        next = usart1_ring_next(head, USART1_TX_BUF_SIZE);
+        while (next == g_usart1_tx_tail) {
+            /* TX ring 满：等 ISR 写出一字节腾出空位 */
         }
-        /*
-         * 写 DR[7:0]：硬件自动在 PA9 发出该字节；无需再操作 GPIO。
-         * 强制转为 unsigned char 再写，避免 char 符号扩展污染 DR 高位。
-         * 每次循环只写 1 字节，因 DR 单字节宽且须等 TXE 后再写下一字节。
-         */
-        USART1_DR = (unsigned int)(unsigned char)buf[i];
+        g_usart1_tx_buf[head] = (unsigned char)buf[i];
+        g_usart1_tx_head = next;
+        USART1_CR1 |= USART_CR1_TXEIE;
+    }
+}
+
+void USART1_SetRxHandle(USART1_RxHandle_t handle)
+{
+    g_usart1_rx_handle = handle;
+}
+
+/**
+ * @brief  主循环消费 RX ring：弹出字节后调用已注册 handle（本地副本，NULL 不调）
+ */
+void USART1_ProcessRx(void)
+{
+    USART1_RxHandle_t handle;
+    unsigned int tail;
+    unsigned char byte;
+
+    handle = g_usart1_rx_handle;
+
+    for (;;) {
+        tail = g_usart1_rx_tail;
+        if (tail == g_usart1_rx_head) {
+            break;
+        }
+        byte = g_usart1_rx_buf[tail];
+        g_usart1_rx_tail = usart1_ring_next(tail, USART1_RX_BUF_SIZE);
+        if (handle != 0) {
+            handle(byte);
+        }
+    }
+}
+
+/**
+ * @brief  USART1 中断：只搬 ring / 清 ORE，不调用用户 handle
+ */
+void USART1_IRQHandler(void)
+{
+    unsigned int sr;
+    unsigned int head;
+    unsigned int next;
+    unsigned int tail;
+    unsigned char byte;
+
+    sr = USART1_SR;
+
+    if ((sr & USART_SR_RXNE) != 0U) {
+        byte = (unsigned char)USART1_DR;
+        head = g_usart1_rx_head;
+        next = usart1_ring_next(head, USART1_RX_BUF_SIZE);
+        if (next != g_usart1_rx_tail) {
+            g_usart1_rx_buf[head] = byte;
+            g_usart1_rx_head = next;
+        }
+    } else if ((sr & USART_SR_ORE) != 0U) {
+        (void)USART1_DR;
+    }
+
+    if (((USART1_CR1 & USART_CR1_TXEIE) != 0U) && ((sr & USART_SR_TXE) != 0U)) {
+        tail = g_usart1_tx_tail;
+        if (tail != g_usart1_tx_head) {
+            USART1_DR = (unsigned int)g_usart1_tx_buf[tail];
+            g_usart1_tx_tail = usart1_ring_next(tail, USART1_TX_BUF_SIZE);
+        }
+        if (g_usart1_tx_tail == g_usart1_tx_head) {
+            USART1_CR1 &= ~USART_CR1_TXEIE;
+        }
     }
 }

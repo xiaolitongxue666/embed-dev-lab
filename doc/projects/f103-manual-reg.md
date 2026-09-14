@@ -1,6 +1,6 @@
 # f103-manual-reg 模块
 
-**STM32F103C8T6** 核心板 demo：**PC13 / PB12 LED** + **PB13 KEY** + **USART1 printf** + **SPI1 LSM6DS3 六轴轮询**，纯寄存器实现；PC13 行为对齐厂商例程 `vendor-pack/.../核心板测试程序(PC13闪烁)`。
+**STM32F103C8T6** 核心板 demo：**PC13 / PB12 LED** + **PB13 KEY** + **USART1 中断双向（printf + 逐字节回显）** + **SPI1 LSM6DS3 六轴轮询**，纯寄存器实现；PC13 行为对齐厂商例程 `vendor-pack/.../核心板测试程序(PC13闪烁)`。
 
 ## 模块定位
 
@@ -8,7 +8,7 @@
 |----|------|
 | 目标芯片 | STM32F103C8T6（Cortex-M3，Medium-density F103xB，64 KB Flash / 20 KB RAM） |
 | 实现方式 | 全手写 `startup` / `system_stm32f1xx.c` / GPIO·USART·SPI 寄存器，**不链接** CMSIS submodule 与 HAL |
-| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉输入读按键（`PBin`）；USART1 @ PA9/PA10，1500000 bps，`printf` → 串口；SPI1 → LSM6DS3（WHO_AM_I + raw 六轴） |
+| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉输入读按键（`PBin`）；USART1 @ PA9/PA10，1500000 bps，中断 TX/RX + `printf` + 逐字节回显；SPI1 → LSM6DS3（WHO_AM_I + raw 六轴） |
 | 标准库 | 工具链 **newlib**（`libc.a`）+ 工程内 [`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) 重定向 `_write` |
 | 对照工程 | [`f103-cmsis-hal`](f103-cmsis-hal.md) — 当前阶段 HAL 工程仍以 LED+USART 为主（本轮未同步 SPI） |
 | 参照关系 | vendor-pack 三层见 [ST F1 软件仓库归纳 §5](../learn/stm32-cmsis-component-repos.md#5-与-embed-dev-lab-的三层参照)；从零手写见 [从零手写构建指南](../learn/f103-manual-build-from-scratch.md) |
@@ -24,7 +24,8 @@ projects/f103-manual-reg/
 │   ├── system_stm32f1xx.c  # SystemInit，HSE→72 MHz
 │   ├── system_stm32f1xx.h
 │   ├── gpioc_bitband.h     # PCout(n) / PBout(n) / PBin(n) 位带宏
-│   ├── usart.c / usart.h   # USART1 纯寄存器初始化与阻塞发送
+│   ├── nvic.c / nvic.h     # NVIC ISER/IP 手写（USART1 IRQn=37）
+│   ├── usart.c / usart.h   # USART1 中断收发、全局 ring、RX handle
 │   ├── spi.c / spi.h       # SPI1 Mode3 + PA4 软件 CS
 │   ├── lsm6ds3.c / lsm6ds3.h # LSM6DS3 寄存器读写与 raw 采样
 │   └── syscalls.c          # newlib _write/_sbrk 等，printf → USART1
@@ -48,11 +49,12 @@ projects/f103-manual-reg/
   → bl main（src/main.c）
        1. GPIOC_Init()    — PWR+DBP、PC13 推挽输出
        2. GPIOB_Init()    — IOPBEN、PB12 推挽、PB13 上拉输入
-       3. USART1_Init()   — RCC+GPIOA+USART1，1500000 8N1
+       3. USART1_Init()   — RCC+GPIOA+USART1，1500000 8N1，RXNEIE + NVIC
+          USART1_SetRxHandle(echo)
        4. SPI1_Init()     — PA5/6/7 + PA4 CS，Mode 3，DIV16
        5. 延时 ≥20 ms     — LSM6DS3 boot（见 AN4650 / electrical-spi-timing）
        6. WHO_AM_I / LSM6DS3_Init — 期望 0x69；CTRL1_XL/CTRL2_G = 0x40
-       7. for(;;) 轮询 STATUS+12 字节 raw + printf + LED + KEY
+       7. for(;;) USART1_ProcessRx + STATUS+12 字节 raw + printf + LED + KEY
 ```
 
 ```mermaid
@@ -74,7 +76,8 @@ flowchart TD
 | [`startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表、`Reset_Handler`、`.data`/`.bss`、`bl SystemInit`、`bl main` | [编译流程](../learn/f103-module-build-flow.md)、[中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
 | [`src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：HSE×PLL→72 MHz；失败保持 HSI 8 MHz | [裸机 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
 | [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | 应用入口：PC13、USART1、SPI/LSM6DS3、printf | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
-| [`src/usart.c`](../../projects/f103-manual-reg/src/usart.c) | USART1 MMIO：PA9 TX / PA10 RX，BRR/UE/TE，阻塞写 DR | 下文 § USART1 与 § printf |
+| [`src/nvic.c`](../../projects/f103-manual-reg/src/nvic.c) | NVIC ISER/IP：使能 USART1 IRQn=37 | [中断向量表与 NVIC](../learn/interrupt-vector-table-and-nvic.md) |
+| [`src/usart.c`](../../projects/f103-manual-reg/src/usart.c) | USART1 MMIO：PA9/PA10，TX/RX ring，`USART1_IRQHandler`，`ProcessRx` | 下文 § USART1 与 § printf |
 | [`src/spi.c`](../../projects/f103-manual-reg/src/spi.c) | SPI1 Mode3、软件 CS(PA4)、阻塞交换字节 | [SPI 时序](../reference/lsm6ds3/md/topics/electrical-spi-timing.md) |
 | [`src/lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c) | WHO_AM_I、CTRL、STATUS、连读 OUT 12 字节 | [SPI 协议](../reference/lsm6ds3/md/topics/spi-protocol.md)、[寄存器](../reference/lsm6ds3/md/topics/registers-whoami-imu.md) |
 | [`src/syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) | newlib 底层 I/O；`_write`→串口，`_sbrk`→堆 | 下文 § printf 与 newlib syscall |
@@ -205,7 +208,9 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | 帧格式 | 1500000 bps，8N1 |
 | CH341 | 模块 **RX←PA9**，**TX→PA10**，**GND→面包板 GND 轨** |
 | Windows ↔ WSL | `./scripts/serial-ch341-switch.sh status\|to-win\|to-wsl`；WSL 读串口：`picocom -b 1500000 /dev/ttyUSB0`（见 [scripts-reference § picocom](../scripts-reference.md#wsl-下用-picocom-读串口1500000-8n1)） |
-| 实现 | [`usart.c`](../../projects/f103-manual-reg/src/usart.c) 写 RCC/GPIOA/USART1 寄存器；`USART1_Write` 轮询 `SR.TXE` 写 `DR` |
+| 实现 | [`usart.c`](../../projects/f103-manual-reg/src/usart.c) 写 RCC/GPIOA/USART1；TX/RX 全局环形缓冲 + `RXNEIE`/`TXEIE`；`USART1_IRQHandler` 只搬 ring；`USART1_ProcessRx` 调 RX handle（逐字节回显） |
+| NVIC | [`nvic.c`](../../projects/f103-manual-reg/src/nvic.c) 手写 ISER/IP；USART1 IRQn=37（向量表索引 53） |
+| 手动回显 | Windows：`to-win` 后串口助手 **1500000 8N1**，关本地回显；CH341 COM 用 `serial-ch341-read.sh --list` 认。Agent：`./scripts/serial-ch341-read.sh --send PING --seconds 3`。回显会夹在 LED/KEY 行之间。先开串口再 `probe-rs reset` 才能抓到 `WHO_AM_I` 启动行 |
 
 ## printf 与 newlib syscall
 
@@ -215,7 +220,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 printf / vfprintf     → libc.a（工具链，不在本仓库）
 stdio → _write_r()      → libc.a
 _write()                → src/syscalls.c（本工程，强符号）
-USART1_Write()          → src/usart.c（写 USART1_DR，硬件自动发串行帧）
+USART1_Write()          → src/usart.c（入 TX ring，TXE 中断写 USART1_DR）
 ```
 
 ### 与 libnosys 的关系（链接期替换，非 weak 覆盖）

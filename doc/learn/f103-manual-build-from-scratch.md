@@ -88,7 +88,7 @@ CubeF1 全包内等价路径为 `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templa
 | 前 16 项内核异常向量顺序 | [`vendor-pack/cmsis-core/Include/core_cm3.h`](../../vendor-pack/cmsis-core/Include/core_cm3.h) |
 | NVIC / 向量表概念 | [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) |
 
-本 demo **仅实现 16 项内核异常**，不含完整外设 IRQ 向量（官方 startup 更长）。
+本工程 startup 已按 F103xB 顺序列出内核异常 + 外设 IRQ（USART1 为索引 53 / IRQn=37）；未实现的项仍 `.weak` 到 `Default_Handler`。对照官方更长模板见 cmsis-device-f1。
 
 ### 3.3 链接脚本：C8 须裁剪 Flash 容量
 

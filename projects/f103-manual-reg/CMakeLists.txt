@@ -14,13 +14,14 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/mcu-config.cmake)
 
 set(F103_SOURCES
-    src/main.c                  # 应用入口：LED、WHO_AM_I、六轴轮询
-    src/usart.c                 # USART1 纯寄存器初始化
+    src/main.c                  # 应用入口：LED、WHO_AM_I、六轴轮询、串口回显
+    src/nvic.c                  # NVIC ISER/IP 手写（USART1 IRQn=37）
+    src/usart.c                 # USART1 中断收发 + 环形缓冲
     src/spi.c                   # SPI1 Mode3 + PA4 软件 CS
     src/lsm6ds3.c               # LSM6DS3 SPI 读写与 raw 采样
     src/syscalls.c              # printf → USART1
     src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
-    startup/startup_stm32f103xb.s # 向量表、.data/.bss、跳转 main
+    startup/startup_stm32f103xb.s # 向量表（含外设 IRQ）、.data/.bss、跳转 main
 )
 
 # 生成 f103-manual-reg.elf（链接）+ f103-manual-reg.hex（POST_BUILD objcopy，见 mcu-config.cmake）

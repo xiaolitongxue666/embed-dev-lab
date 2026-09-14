@@ -110,7 +110,7 @@ Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定
 
 ### 本仓库向量表的范围
 
-当前 f103-manual-reg **仅列出 Cortex-M3 内核的 16 个系统异常**（索引 0–15）。完整 ST 官方 startup 还会在索引 16 之后继续放置 **片上外设中断**（如 `TIM2_IRQHandler`、`USART1_IRQHandler`），数量由芯片型号决定。f103-manual-reg 只做 LED 闪烁、暂不使用外设中断，精简表已够用；一旦启用 USART 或定时器中断，需补全对应 IRQ 项并实现 handler。见 [CMSIS 概述 — startup 实例对照](cmsis-overview.md#42-本仓库实例对照)。
+f103-manual-reg 的 [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 已按 F103xB 顺序列出内核异常（索引 0–15）与片上外设 IRQ（至 USBWakeUp + BootRAM）。USART1 为索引 **53**（外设 IRQn=**37**），由 [`usart.c`](../../projects/f103-manual-reg/src/usart.c) 的 `USART1_IRQHandler` 强符号覆盖 startup 弱别名。NVIC 使能见 [`nvic.c`](../../projects/f103-manual-reg/src/nvic.c)。对照 [CMSIS 概述 — startup 实例对照](cmsis-overview.md#42-本仓库实例对照)。
 
 ---
 
@@ -147,7 +147,7 @@ GPIO 边沿 → EXTI（配置线、边沿、屏蔽）→ 请求 → NVIC → 向
 USART 收满 → USART 外设中断请求 → NVIC → USART1_IRQHandler
 ```
 
-EXTI 章节索引：[rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§10 External interrupt/event controller）。本仓库 `f103-manual-reg` 当前未启用外设 NVIC；`f103-cmsis-hal` 的 startup 已含完整 IRQ 弱符号，demo 亦未开外设中断。
+EXTI 章节索引：[rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§10 External interrupt/event controller）。`f103-manual-reg` 已用手写 NVIC 开启 USART1 IRQ；`f103-cmsis-hal` 的 startup 含完整 IRQ 弱符号，该 demo 仍未开外设中断。
 
 ---
 

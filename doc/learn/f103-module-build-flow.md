@@ -82,11 +82,12 @@ endif()
 
 ```cmake
 set(F103_SOURCES
-    src/main.c                  # 应用入口：GPIO 闪烁 + printf
-    src/usart.c                 # USART1 纯寄存器
+    src/main.c                  # 应用入口：LED / KEY / LSM6DS3 / 串口回显
+    src/nvic.c                  # NVIC ISER/IP（USART1 IRQn=37）
+    src/usart.c                 # USART1 中断收发
     src/syscalls.c              # newlib _write/_sbrk → 串口
     src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
-    startup/startup_stm32f103xb.s # 向量表、.data/.bss、跳转 main
+    startup/startup_stm32f103xb.s # 向量表（含外设 IRQ）、.data/.bss、跳转 main
 )
 ```
 

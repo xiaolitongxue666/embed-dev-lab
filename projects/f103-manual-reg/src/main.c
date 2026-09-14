@@ -1,6 +1,6 @@
 /**
  * @file    main.c
- * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 printf + SPI1 LSM6DS3
+ * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 中断双向 + SPI1 LSM6DS3
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
  *
@@ -11,11 +11,12 @@
  *        → bl main          ← 此处
  *
  * main 内初始化顺序：
- *   1. GPIOC_Init → GPIOB_Init → USART1_Init → SPI1_Init
+ *   1. GPIOC_Init → GPIOB_Init → USART1_Init → 注册 RX 回显 handle → SPI1_Init
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
- *   3. WHO_AM_I → LSM6DS3_Init → 循环读 raw + LED + KEY
+ *   3. WHO_AM_I → LSM6DS3_Init → 循环读 raw + LED + KEY + USART1_ProcessRx
  *
- * 串口：USART1 PA9/PA10（FT），1500000 bps；printf 经 syscalls.c → usart.c。
+ * 串口：USART1 PA9/PA10（FT），1500000 bps；TX/RX 中断 + 环形缓冲。
+ * printf 经 syscalls.c → USART1_Write；RX 逐字节经 handle 回显。
  * SPI / LSM6DS3（模块丝印）：
  *   3V3/GND；SCL←PA5，SDA←PA7，SAO→PA6，CS←PA4；Mode 3。
  *   PA4–PA7 手册未标 FT；详表见 spi.c 与引脚总表。
@@ -124,6 +125,17 @@ static void GPIOB_Init(void)
 }
 
 /**
+ * @brief  RX 逐字节回显（由 USART1_ProcessRx 在主循环调用，不在 ISR 内）
+ */
+static void USART1_EchoByte(unsigned char byte)
+{
+    char ch;
+
+    ch = (char)byte;
+    USART1_Write(&ch, 1);
+}
+
+/**
  * @brief  程序入口
  */
 int main(void)
@@ -135,6 +147,7 @@ int main(void)
     GPIOC_Init();
     GPIOB_Init();
     USART1_Init();
+    USART1_SetRxHandle(USART1_EchoByte);
     SPI1_Init();
 
     printf("Stm32 manual reg LSM6DS3 SPI demo start\n");
@@ -154,6 +167,8 @@ int main(void)
 
     led_phase = 0U;
     for (;;) {
+        USART1_ProcessRx();
+
         if (LSM6DS3_ReadRaw(&sample) != 0U) {
             printf("xl %d %d %d  g %d %d %d\n",
                    (int)sample.ax, (int)sample.ay, (int)sample.az,

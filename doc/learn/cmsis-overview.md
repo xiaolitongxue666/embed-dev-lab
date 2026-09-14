@@ -167,7 +167,7 @@ CubeMX **常规生成**的是 HAL 层内容：`main.c`、`SystemClock_Config()`�
 | 前 16 个内核异常向量顺序 | 遵循 CMSIS-Core 标准 |
 | Reset 流程 | 设栈 → 拷贝 `.data` → 清零 `.bss` → `SystemInit` → `main` |
 | `.weak` + `Default_Handler` | 标准默认兜底写法 |
-| 外部中断向量 | 精简省略（最小化实现） |
+| 外部中断向量 | 已按 F103xB 顺序补全；USART1_IRQHandler 由 usart.c 覆盖 |
 
 | 判定 | 结论 |
 |------|------|

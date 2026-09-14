@@ -142,6 +142,7 @@ flowchart TB
 ./scripts/serial-ch341-read.sh                         # to-win + 自动 COM + 默认 1500000
 ./scripts/serial-ch341-read.sh --baud 115200 --seconds 8
 ./scripts/serial-ch341-read.sh --port COM5 --no-switch # 强制口（须先 --list 确认）
+./scripts/serial-ch341-read.sh --send PING --seconds 3 # 写出后再读（测回显）
 ./scripts/serial-ch341-read.sh --list
 EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 ```
@@ -151,6 +152,7 @@ EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 | `--baud` / `EMBED_SERIAL_BAUD` | 与**当前固件**一致（默认 1500000） |
 | `--port` / `EMBED_SERIAL_PORT` | 强制 COMx；默认自动检测 `1a86:5523` |
 | `--seconds` | 抓取时长（默认 5） |
+| `--send` | 打开后先写再读；文本，或 `hex:50494E47` |
 | `--no-switch` | 不调用 `to-win` |
 | `--list` | 列出 COM 并标记 CH341 |
 

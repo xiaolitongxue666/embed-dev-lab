@@ -47,6 +47,11 @@ def main() -> int:
         help="baud matching firmware (default 1500000; override when firmware changes)",
     )
     parser.add_argument("--seconds", type=float, default=5.0, help="capture duration")
+    parser.add_argument(
+        "--send",
+        default="",
+        help="write after open: text, or hex:50494E47 for hex bytes",
+    )
     parser.add_argument("--list", action="store_true", help="list COM ports and exit")
     args = parser.parse_args()
 
@@ -75,12 +80,31 @@ def main() -> int:
         list_ports()
         return 1
 
-    print(f"INFO: port={port} baud={args.baud} seconds={args.seconds}", flush=True)
+    send_payload = b""
+    send_arg = args.send
+    if send_arg:
+        if send_arg.startswith("hex:"):
+            try:
+                send_payload = bytes.fromhex(send_arg[4:])
+            except ValueError:
+                print(f"ERROR: invalid --send hex:{send_arg[4:]!r}", file=sys.stderr)
+                return 2
+        else:
+            send_payload = send_arg.encode("utf-8")
+
+    print(
+        f"INFO: port={port} baud={args.baud} seconds={args.seconds} "
+        f"send_bytes={len(send_payload)}",
+        flush=True,
+    )
     ser = serial.Serial(port, args.baud, timeout=0.2)
     buf = bytearray()
     try:
         time.sleep(0.05)
         ser.reset_input_buffer()
+        if send_payload:
+            ser.write(send_payload)
+            ser.flush()
         t0 = time.time()
         while time.time() - t0 < args.seconds:
             chunk = ser.read(4096)

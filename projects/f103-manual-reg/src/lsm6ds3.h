@@ -2,7 +2,8 @@
  * @file    lsm6ds3.h
  * @brief   LSM6DS3 / LSM6DS3TR SPI 驱动（WHO_AM_I + 六轴 raw）
  *
- * 接线见 spi.c / doc/hardware/stm32f103-peripherals.md（SCL/SDA/SAO/CS ↔ PA5/7/6/4）。
+ * 接线见 spi.c / doc/hardware/stm32f103-peripherals.md。
+ * CS=PA8（与 BMP280 的 PA3 分开）。SCL/SDA/SAO ↔ PA5/7/6。
  *
  * @see     doc/reference/lsm6ds3/md/topics/spi-protocol.md
  * @see     doc/reference/lsm6ds3/md/topics/registers-whoami-imu.md

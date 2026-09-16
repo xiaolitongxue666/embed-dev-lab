@@ -28,7 +28,7 @@ Table 9（PDF p.34）：I2C 与 SPI 共用引脚。要使用 **I2C** 时须把 *
 | `SCL` | PA5 | SCK / SPC |
 | `SDA` | PA7 | MOSI / SDI |
 | `SAO` | PA6 | MISO / SDO |
-| `CS` | PA4 | 片选（软件 GPIO） |
+| `CS` | **PA8** | 片选（软件 GPIO）；勿与 BMP280 共用 PA3 |
 
 `SCK`/`MOSI`/`MISO`/`CS` 是板级信号名。本仓库 `spi.c` 用 **硬件 SPI1**（写 `CR1`/`SR`/`DR`，由片内外设打时钟移位），不是 GPIO 一位一位模拟时序的软 SPI；二者物理线相同，软件入口不同。分层说明见 [`spi.c`](../../../../projects/f103-manual-reg/src/spi.c) 与 [f103-manual-reg.md § SPI1](../../../projects/f103-manual-reg.md#软-spi-vs-硬件-spi本工程)。
 

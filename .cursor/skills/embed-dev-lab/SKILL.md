@@ -23,7 +23,7 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 
 | 工程 | 实现 | 串口 | 产物 |
 |------|------|------|------|
-| `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL） | `printf` + DMA TX/RX + IDLE + `syscalls.c`；ADC1 PA0；I2C1 SH1106 时钟（页 DMA1 CH6） | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL） | `printf` + DMA TX/RX + IDLE + `syscalls.c`；ADC1 PA0；SPI1 LSM6+BMP280（CS 分 PA8/PA3）；I2C1 SH1106 时钟（页 DMA1 CH6） | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
 | `f103-cmsis-hal` | CMSIS+HAL / Cube 风格对照路线（非 CubeMX 生成） | `HAL_UART_Transmit`（无 printf） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
 
 两工程为**同一芯片上的并列路线**，对外具体功能应对齐；详见 `.cursor/rules/embed-dev-lab-core.mdc`。

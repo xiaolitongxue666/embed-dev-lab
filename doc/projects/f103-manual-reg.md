@@ -28,8 +28,8 @@ projects/f103-manual-reg/
 │   ├── dma.c / dma.h       # DMA1 通道启停（USART1 TX=CH4 RX=CH5）
 │   ├── adc.c / adc.h       # ADC1 CH0（PA0）校准与单次转换
 │   ├── usart.c / usart.h   # USART1 DMA 收发、IDLE 定界、RX 帧 handle
-│   ├── spi.c / spi.h       # SPI1 Mode3 + PA4 软件 CS
-│   ├── lsm6ds3.c / lsm6ds3.h # LSM6DS3 寄存器读写与 raw 采样
+│   ├── spi.c / spi.h       # SPI1 Mode0/3 + 双软件 CS：PA3=BMP280、PA8=LSM6
+│   ├── lsm6ds3.c / lsm6ds3.h # LSM6DS3 寄存器读写与 raw 采样（CS=PA8）
 │   ├── i2c.c / i2c.h       # I2C1 PB6/PB7；命令轮询，页 DMA1 CH6
 │   ├── sh1106.c / sh1106.h # SH1106 帧缓冲、时钟绘制
 │   ├── sh1106_font.c / .h  # 8×16 数字与冒号
@@ -58,7 +58,7 @@ projects/f103-manual-reg/
        3. USART1_Init()   — RCC+GPIOA+USART1+DMA1，1500000 8N1，DMAT/DMAR + IDLEIE
           USART1_SetRxHandle(整帧回显)
        4. ADC1_Init()     — PA0 模拟、ADCPRE=/6、校准、规则组 CH0
-       5. SPI1_Init()     — PA5/6/7 + PA4 CS，Mode 3，DIV16
+       5. SPI1_Init()     — PA5/6/7 + PA3/PA8 CS，默认 Mode 3，DIV16
        6. I2C1_Init()     — PB6/PB7 复用开漏，400 kHz
        7. 延时 ≥20 ms     — LSM6DS3 boot（见 AN4650 / electrical-spi-timing）
        8. WHO_AM_I / LSM6DS3_Init — 期望 0x69；CTRL1_XL/CTRL2_G = 0x40
@@ -89,7 +89,7 @@ flowchart TD
 | [`src/dma.c`](../../projects/f103-manual-reg/src/dma.c) | DMA1 通道 CCR/CNDTR/CPAR/CMAR、IFCR | [DMA1 AHB 时钟](../reference/stm32f103/md/topics/dma1-ahb-clock.md) · 下文 § USART1 |
 | [`src/adc.c`](../../projects/f103-manual-reg/src/adc.c) | ADC1 CH0（PA0）校准、SWSTART 单次转换 | 下文 § ADC1 旋钮 |
 | [`src/usart.c`](../../projects/f103-manual-reg/src/usart.c) | USART1 MMIO：DMAT/DMAR、IDLE 定界、`ProcessRx` | 下文 § USART1 与 § printf |
-| [`src/spi.c`](../../projects/f103-manual-reg/src/spi.c) | SPI1 Mode3、软件 CS(PA4)、阻塞交换字节 | [SPI 时序](../reference/lsm6ds3/md/topics/electrical-spi-timing.md) |
+| [`src/spi.c`](../../projects/f103-manual-reg/src/spi.c) | SPI1 Mode0/3、软件 CS（PA3=BMP280、PA8=LSM6）、阻塞交换字节 | [SPI 时序](../reference/lsm6ds3/md/topics/electrical-spi-timing.md) · [接线可行性](../hardware/stm32f103-peripherals.md#引脚可行性阶段-1-核对) |
 | [`src/lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c) | WHO_AM_I、CTRL、STATUS、连读 OUT 12 字节 | [SPI 协议](../reference/lsm6ds3/md/topics/spi-protocol.md)、[寄存器](../reference/lsm6ds3/md/topics/registers-whoami-imu.md) |
 | [`src/i2c.c`](../../projects/f103-manual-reg/src/i2c.c) | I2C1 主机写；命令轮询，页 DMA1 CH6 | [I2C1 写帧 / DMA](../reference/stm32f103/md/topics/i2c1-master-polling.md) |
 | [`src/sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) | 写地址 `0x78`、电荷泵、列偏移 2、中央时钟 | [SH1106](../reference/sh1106/README.md) |
@@ -179,16 +179,16 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 
 B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接到 5V。
 
-## SPI1 与 LSM6DS3
+## SPI1 与 LSM6DS3 / BMP280
 
 | 项 | 说明 |
 |----|------|
 | 外设 | SPI1（APB2），默认映射，软件 NSS |
-| 模式 | Mode 3（CPOL=1，CPHA=1）；BR=DIV16 → ≈4.5 MHz |
-| WHO_AM_I | 期望 `0x69`（LSM6DS3 / LSM6DS3TR；TR-C 为 `0x6A`） |
+| 现固件 | 三线并联 PA5/PA7/PA6；**PA3=BMP280 CS Mode 0**；**PA8=LSM6 CS Mode 3**；BR=DIV16 → ≈4.5 MHz |
+| WHO_AM_I | LSM6 期望 `0x69`（TR-C 为 `0x6A`）；BMP280 id=`0x58`（BME280=`0x60`） |
 | 配置 | `CTRL1_XL=0x40`、`CTRL2_G=0x40`（104 Hz，±2 g / 250 dps） |
 | 手册精选 | [doc/reference/lsm6ds3/](../reference/lsm6ds3/README.md) |
-| 板级接线 | [硬件外设](../hardware/stm32f103-peripherals.md)；源码表见 [`spi.c`](../../projects/f103-manual-reg/src/spi.c) 头注释 |
+| 板级接线 | [硬件外设](../hardware/stm32f103-peripherals.md)；[引脚可行性](../hardware/stm32f103-peripherals.md#引脚可行性阶段-1-核对) |
 
 ### 软 SPI vs 硬件 SPI（本工程）
 
@@ -199,7 +199,7 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 | **软 SPI**（GPIO 模拟） | 自己翻 GPIO：拉 CS → 位写 MOSI、翻 SCK、读 MISO | CPU 循环（bit-bang） |
 | **硬件 SPI**（本仓库） | 配 `CR1`；写 `DR` 发字节；读 `SR`/`DR` 收；GPIO 拉 CS | 片内 **SPI1** 外设 |
 
-`spi.c` 走硬件 SPI：PA5/6/7 复用到 SPI1，PA4 仍是普通 GPIO 片选。习惯「直接操作四根线」时，那是软 SPI 视角；这里软件入口换成寄存器，线上仍是那四根。
+`spi.c` 走硬件 SPI：PA5/6/7 复用到 SPI1，片选用普通 GPIO（PA3 / PA8）。习惯「直接操作四根线」时，那是软 SPI 视角；这里软件入口换成寄存器，线上仍是那些线。
 
 ### 信号线 vs 片内寄存器（勿混名）
 
@@ -207,7 +207,7 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 
 | 层 | 名字 | 作用 |
 |----|------|------|
-| 板级信号 | SCK、MOSI、MISO、CS | 时钟 / 主机出 / 主机入 / 片选（本工程 CS=GPIO PA4） |
+| 板级信号 | SCK、MOSI、MISO、CS | 时钟 / 主机出 / 主机入 / 片选（PA3=BMP280、PA8=LSM6） |
 | 片内寄存器 | `SPI1_CR1` | Control Register 1：主从、CPOL/CPHA、分频、SPE |
 | 片内寄存器 | `SPI1_SR` | Status Register：`TXE` / `RXNE` |
 | 片内寄存器 | `SPI1_DR` | Data Register：写→经 MOSI 发出；读←经 MISO 收到 |
@@ -223,8 +223,10 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 | `SCL` | PA5 | ← SPI1_SCK |
 | `SDA` | PA7 | ← SPI1_MOSI（SDI） |
 | `SAO` | PA6 | → SPI1_MISO（SDO） |
-| `CS` | PA4 | ← GPIO 软件片选（低有效） |
+| `CS` | **PA8** | ← GPIO 软件片选（低有效） |
 | INT1 / INT2 / OCS / SCX / SDX | — | 本 demo 不接 |
+
+BMP280（阶段 2，同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）；Mode 0。JY003（阶段 4）：PWM→PA1（TIM2_CH2），电机电源独立。
 
 ## I2C1 与 SH1106
 
@@ -306,7 +308,8 @@ Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg
 | 按键 | PB13（上拉输入；FT；低有效） |
 | 旋钮 | PA0 ADC12_IN0（非 FT；3.3V 模块 SIG） |
 | 调试串口 | USART1：PA9 TX，PA10 RX（FT；[UART/TTL](../learn/uart-ttl-rs232-rs485.md)） |
-| IMU | SPI1：PA4 CS，PA5 SCK，PA6 MISO，PA7 MOSI → LSM6DS3（PA4–PA7 **非 FT**） |
+| IMU / 气压 | SPI1：PA5/PA6/PA7 共用；PA3=BMP280 CS、PA8=LSM6 CS |
+| 风扇 | PA1 TIM2_CH2 → JY003 PWM（阶段 4）；电机电源独立 |
 | SWD | SWDIO=PA13，SWCLK=PA14（[SWD ≠ USART](../learn/swd-vs-usart.md)） |
 | 厂商例程 | `vendor-pack/STM32F103C8T6核心板/.../核心板测试程序(PC13闪烁)/` |
 

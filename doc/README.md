@@ -47,7 +47,7 @@
 
 | 文档 | 内容 |
 |------|------|
-| [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | 1.3″ SH1106 I2C、SPI LSM6DS3、可选 BMP280；触控暂缓；接线与采购 |
+| [hardware/stm32f103-peripherals.md](hardware/stm32f103-peripherals.md) | 1.3″ SH1106 I2C；SPI1 共用 BMP280+LSM6DS3；JY003 PA1；触控暂缓 |
 | [hardware/power-and-common-ground.md](hardware/power-and-common-ground.md) | 蓝板 MicroUSB 独立供电、ST-Link 3.3V→面包板、面包板 GND 轨星型汇集、负载上限 |
 | [hardware/stm32f103c8t6-pinout.md](hardware/stm32f103c8t6-pinout.md) | C8T6 / LQFP48 丝印引脚总表、FT、USART/SWD、本仓库占用 |
 

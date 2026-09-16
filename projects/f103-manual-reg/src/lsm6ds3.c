@@ -4,6 +4,7 @@
  *
  * 帧格式（DocID026899 §6.2）：首字节 RW|AD(6:0)，随后数据；MSB first。
  * 读：首字节 bit7=1；写：bit7=0。多字节依赖 CTRL3_C.IF_INC 复位默认 1。
+ * 片选 PA8（LSM6DS3_Cs*）；与 BMP280 的 PA3 分开。本阶段不强制验 IMU。
  *
  * @see     doc/reference/lsm6ds3/md/topics/spi-protocol.md
  * @see     doc/reference/lsm6ds3/md/topics/registers-whoami-imu.md
@@ -34,10 +35,10 @@ unsigned char LSM6DS3_ReadReg(unsigned char reg)
 {
     unsigned char value;
 
-    SPI1_CsLow();
+    LSM6DS3_CsLow();
     (void)SPI1_TransferByte((unsigned char)(0x80U | (reg & 0x7FU)));
     value = SPI1_TransferByte(0x00U);
-    SPI1_CsHigh();
+    LSM6DS3_CsHigh();
 
     return value;
 }
@@ -47,10 +48,10 @@ unsigned char LSM6DS3_ReadReg(unsigned char reg)
  */
 void LSM6DS3_WriteReg(unsigned char reg, unsigned char value)
 {
-    SPI1_CsLow();
+    LSM6DS3_CsLow();
     (void)SPI1_TransferByte((unsigned char)(reg & 0x7FU));
     (void)SPI1_TransferByte(value);
-    SPI1_CsHigh();
+    LSM6DS3_CsHigh();
 }
 
 unsigned char LSM6DS3_ReadWhoAmI(void)
@@ -90,12 +91,12 @@ unsigned char LSM6DS3_ReadRaw(LSM6DS3_RawSample *out)
         return 0U;
     }
 
-    SPI1_CsLow();
+    LSM6DS3_CsLow();
     (void)SPI1_TransferByte((unsigned char)(0x80U | LSM6DS3_REG_OUTX_L_G));
     for (i = 0U; i < 12U; i++) {
         buf[i] = SPI1_TransferByte(0x00U);
     }
-    SPI1_CsHigh();
+    LSM6DS3_CsHigh();
 
     out->gx = (short)((unsigned short)buf[0] | ((unsigned short)buf[1] << 8));
     out->gy = (short)((unsigned short)buf[2] | ((unsigned short)buf[3] << 8));

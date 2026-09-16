@@ -14,7 +14,7 @@ F103 每个 GPIO 脚由 `CRL`/`CRH` 中 **4 bit（CNF[1:0] + MODE[1:0]）** 配�
 
 | 模式 | 典型用途 | 本仓库例子 |
 |------|----------|------------|
-| **推挽输出** | LED、普通数字输出 | PC13 LED、SPI CS（PA4） |
+| **推挽输出** | LED、普通数字输出 | PC13 LED、SPI CS（PA3） |
 | **开漏输出** | 需外部上拉的总线、电平转换 | （本 demo 用复用开漏走 I2C） |
 | **复用推挽输出** | USART TX、SPI SCK/MOSI | PA9 USART1_TX、PA5/PA7 SPI1 |
 | **复用开漏输出** | I2C SCL/SDA | PB6/PB7 I2C1（`f103-manual-reg`） |
@@ -115,7 +115,7 @@ HAL：[`HAL_UART_MspInit`](../../projects/f103-cmsis-hal/src/stm32f1xx_hal_msp.c
 
 - PA5/PA7：复用推挽 `0xB`
 - PA6：浮空输入 `0x4`
-- PA4 CS：推挽 `0x3`
+- PA3 CS：推挽 `0x3`
 
 ### ADC1 PA0 — 模拟输入
 

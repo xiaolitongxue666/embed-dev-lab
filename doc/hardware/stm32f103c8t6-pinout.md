@@ -19,15 +19,15 @@
 
 | 丝印 | FT | 默认复用（摘录） | Remap / 备注 | 本仓库占用 |
 |------|----|------------------|--------------|------------|
-| PA0 | — | USART2_CTS / TIM2_CH1_ETR / ADC12_IN0 / WKUP | — | **ADC1 旋钮 SIG**（已实现，`f103-manual-reg`） |
-| PA1 | — | USART2_RTS / TIM2_CH2 / ADC12_IN1 | — | — |
+| PA0 | — | USART2_CTS / TIM2_CH1_ETR / ADC12_IN0 / WKUP | — | **ADC1 旋钮 SIG**（已实现，`f103-manual-reg`）；勿作风扇 PWM |
+| PA1 | — | USART2_RTS / TIM2_CH2 / ADC12_IN1 | TIM2 默认 CH2 | **JY003 PWM**（目标，阶段 4） |
 | PA2 | — | **USART2_TX** / TIM2_CH3 / ADC12_IN2 | 勿与 SPI1 同时用默认 USART2 | —（勿开 USART2） |
-| PA3 | — | **USART2_RX** / TIM2_CH4 / ADC12_IN3 | 同上 | —（勿开 USART2） |
-| PA4 | — | SPI1_NSS / USART2_CK / ADC12_IN4 | — | **SPI1 CS**（GPIO，已实现） |
-| PA5 | — | SPI1_SCK / ADC12_IN5 | **无 TIM2_CH1** | **SPI1 SCK**（已实现） |
-| PA6 | — | SPI1_MISO / TIM3_CH1 / ADC12_IN6 | Remap：TIM1_BKIN | **SPI1 MISO**（已实现） |
-| PA7 | — | SPI1_MOSI / TIM3_CH2 / ADC12_IN7 | Remap：TIM1_CH1N | **SPI1 MOSI**（已实现） |
-| PA8 | FT | USART1_CK / TIM1_CH1 / MCO | — | — |
+| PA3 | — | **USART2_RX** / TIM2_CH4 / ADC12_IN3 | GPIO 软件 CS；勿开 USART2 | **BMP280 CSB**（`f103-manual-reg`） |
+| PA4 | — | SPI1_NSS / USART2_CK / ADC12_IN4 | 不用硬件 NSS | 空闲（面包板孔不可用，勿再作 CS） |
+| PA5 | — | SPI1_SCK / ADC12_IN5 | **无 TIM2_CH1** | **SPI1 SCK**（BMP280 + LSM6 并联） |
+| PA6 | — | SPI1_MISO / TIM3_CH1 / ADC12_IN6 | Remap：TIM1_BKIN | **SPI1 MISO**（BMP280 SDO / LSM6 SAO；SDO 勿接地） |
+| PA7 | — | SPI1_MOSI / TIM3_CH2 / ADC12_IN7 | Remap：TIM1_CH1N | **SPI1 MOSI**（BMP280 SDI / LSM6 SDA） |
+| PA8 | FT | USART1_CK / TIM1_CH1 / MCO | 本工程不用这些 AF | **LSM6DS3 CS**（目标，阶段 3） |
 | PA9 | FT | **USART1_TX** / TIM1_CH2 | Remap 到 PB6 | **USART1 TX**（已实现） |
 | PA10 | FT | **USART1_RX** / TIM1_CH3 | Remap 到 PB7 | **USART1 RX**（已实现） |
 | PA11 | FT | USART1_CTS / CAN_RX / TIM1_CH4 / **USBDM** | — | — |
@@ -105,7 +105,7 @@ ST-Link：SWDIO→PA13，SWCLK→PA14；GND 与 3.3V 进面包板轨（方案 A�
 
 1. 输出一律 3.3 V；仅 **FT** 脚可在手册条件下耐受较高输入，不能输出 5 V。
 2. 串口优先默认脚；`USART1_REMAP` 与 I2C1（PB6/PB7）冲突。
-3. SPI1 占用 PA4–PA7 时不要启用默认 USART2。
+3. SPI1 占用 PA5–PA7、软件 CS PA3/PA8 时不要启用默认 USART2。TIM2 风扇用 PA1，保持默认 remap。
 4. 本仓库外设模块统一 **3.3 V** 供电（见接线文）。
 
 ---
@@ -117,11 +117,15 @@ PC13              板载 LED（已实现）
 PB12              外接 LED（已实现，f103-manual-reg，拉电流）
 PB13              按键（已实现，f103-manual-reg，上拉输入）
 PA0               ADC1 CH0 旋钮 SIG（已实现，f103-manual-reg）
-PA4–PA7           SPI1 → LSM6DS3（已实现，f103-manual-reg）
+PA1               TIM2_CH2 → JY003 PWM（目标，阶段 4）
+PA3               BMP280 CSB
+PA4               空闲（面包板孔不可用，勿再作 CS）
+PA5–PA7           SPI1 SCK/MISO/MOSI（BMP280 + LSM6 并联）
+PA8               LSM6DS3 CS（阶段 3）
 PA9, PA10         USART1（已实现）
 PA13, PA14        SWD
 PB0, PB1          FT6236 INT/RST（预留，暂不使用）
-PB6, PB7          I2C1：SH1106（已实现，`f103-manual-reg`，8 位写地址 0x78）+ 可选 BMP280
+PB6, PB7          I2C1：SH1106（已实现，`f103-manual-reg`，8 位写地址 0x78）
 ```
 
 ---

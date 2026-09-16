@@ -14,15 +14,16 @@
  *   1. GPIOC_Init → GPIOB_Init → USART1_Init → 注册 RX 整帧回显 handle
  *      → ADC1_Init → SPI1_Init → I2C1_Init
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
- *   3. WHO_AM_I → LSM6DS3_Init → Probe 0x78 → SH1106 中央数字时钟
+ *   3. BMP280 ID → WHO_AM_I → LSM6DS3_Init → Probe 0x78 → SH1106 中央数字时钟
  *   4. 循环读 IMU + LED + KEY + 旋钮 + USART1_ProcessRx；每秒刷新时钟
  *
  * 串口：USART1 PA9/PA10（FT），1500000 bps；DMA1 CH4/CH5 + 空闲中断定界。
  * printf 经 syscalls.c → USART1_Write；RX 整帧经 handle 回显。
- * SPI / LSM6DS3（模块丝印）：
- *   3V3/GND；SCL←PA5，SDA←PA7，SAO→PA6，CS←PA4；Mode 3。
- *   PA4–PA7 手册未标 FT；详表见 spi.c 与引脚总表。
+ * SPI1：PA5/PA7/PA6 共用；PA3=BMP280 CSB Mode 0；PA8=LSM6 CS Mode 3。
+ *       JY003 PWM=PA1 TIM2_CH2（电机电源独立，阶段 4）。BMP280 SDO 禁止接地。
+ *   PA3、PA5–PA7 手册未标 FT；PA8 为 FT；详表见 spi.c 与引脚总表。
  * ADC1：PA0 = ADC12_IN0（非 FT）；10 k 旋钮 SIG；与 LED/KEY 同频打印 raw/mV。
+ *       PA0 不作风扇 PWM（TIM2_CH1 已被旋钮占用）。
  * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
  * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
  * PB13 KEY：FT；上拉输入，PB13←按键→GND；按下 IDR=0，松开 IDR=1。
@@ -38,6 +39,7 @@
 #include <stdio.h>
 
 #include "adc.h"
+#include "bmp280.h"
 #include "gpioc_bitband.h"
 #include "i2c.h"
 #include "lsm6ds3.h"
@@ -146,6 +148,7 @@ static void USART1_EchoFrame(const unsigned char *data, unsigned int len)
 int main(void)
 {
     unsigned char who;
+    unsigned char bmp_id;
     LSM6DS3_RawSample sample;
     unsigned int led_phase;
     unsigned int knob_raw;
@@ -162,13 +165,23 @@ int main(void)
     USART1_Init();
     USART1_SetRxHandle(USART1_EchoFrame);
     ADC1_Init();
-    SPI1_Init();
-    I2C1_Init();
     SysTick_Init();
 
-    printf("Stm32 manual reg LSM6DS3 SPI + SH1106 I2C demo start\n");
+    printf("Stm32 manual reg BMP280 + LSM6DS3 SPI + SH1106 I2C demo start\n");
+
+    SPI1_Init();
+    I2C1_Init();
 
     delay_boot_20ms();
+
+    bmp_id = BMP280_ReadID();
+    printf("BMP280 ID=0x%02X (expect 0x%02X / BME 0x%02X)\n",
+           (unsigned int)bmp_id,
+           (unsigned int)BMP280_ID_VALUE,
+           (unsigned int)BME280_ID_VALUE);
+    if ((bmp_id != BMP280_ID_VALUE) && (bmp_id != BME280_ID_VALUE)) {
+        printf("BMP280 ID mismatch; check CSB/SDO/Mode0/3V3/GND\n");
+    }
 
     who = LSM6DS3_ReadWhoAmI();
     printf("WHO_AM_I=0x%02X (expect 0x%02X)\n",
@@ -237,6 +250,8 @@ int main(void)
             knob_raw = ADC1_ReadRaw();
             knob_mv = (knob_raw * ADC1_VDDA_MV) / ADC1_FULL_SCALE;
             printf("knob raw=%u mv=%u\n", knob_raw, knob_mv);
+            bmp_id = BMP280_ReadID();
+            printf("BMP280 ID=0x%02X\n", (unsigned int)bmp_id);
         }
 
         delay(0x7FFFU);

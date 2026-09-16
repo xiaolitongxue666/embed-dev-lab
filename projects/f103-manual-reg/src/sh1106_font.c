@@ -1,6 +1,6 @@
 /**
  * @file    sh1106_font.c
- * @brief   8×16 数字与冒号（时钟）
+ * @brief   8×16 数字、冒号、小数点、负号、C
  */
 
 #include "sh1106_font.h"
@@ -48,6 +48,21 @@ static const unsigned char font_8x16_colon[16] = {
     0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+static const unsigned char font_8x16_dot[16] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00
+};
+
+static const unsigned char font_8x16_minus[16] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static const unsigned char font_8x16_c[16] = {
+    0x00, 0x3C, 0x66, 0x60, 0x60, 0x60, 0x60, 0x60,
+    0x60, 0x60, 0x60, 0x66, 0x3C, 0x00, 0x00, 0x00
+};
+
 const unsigned char *SH1106_Font8x16(unsigned char ch)
 {
     if ((ch >= (unsigned char)'0') && (ch <= (unsigned char)'9')) {
@@ -55,6 +70,15 @@ const unsigned char *SH1106_Font8x16(unsigned char ch)
     }
     if (ch == (unsigned char)':') {
         return font_8x16_colon;
+    }
+    if (ch == (unsigned char)'.') {
+        return font_8x16_dot;
+    }
+    if (ch == (unsigned char)'-') {
+        return font_8x16_minus;
+    }
+    if (ch == (unsigned char)'C') {
+        return font_8x16_c;
     }
     return font_8x16_blank;
 }

@@ -14,8 +14,8 @@
  *   1. GPIOC_Init → GPIOB_Init → USART1_Init → 注册 RX 整帧回显 handle
  *      → ADC1_Init → SPI1_Init → I2C1_Init
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
- *   3. BMP280 ID → WHO_AM_I → LSM6DS3_Init → Probe 0x78 → SH1106 中央数字时钟
- *   4. 循环读 IMU + LED + KEY + 旋钮 + USART1_ProcessRx；每秒刷新时钟
+ *   3. BMP280 ID / Init → WHO_AM_I → LSM6DS3_Init → Probe 0x78 → SH1106 时钟 + 右下温度
+ *   4. 循环读 IMU + LED + KEY + 旋钮 + USART1_ProcessRx；每秒刷新时钟与温度
  *
  * 串口：USART1 PA9/PA10（FT），1500000 bps；DMA1 CH4/CH5 + 空闲中断定界。
  * printf 经 syscalls.c → USART1_Write；RX 整帧经 handle 回显。
@@ -27,7 +27,7 @@
  * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
  * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
  * PB13 KEY：FT；上拉输入，PB13←按键→GND；按下 IDR=0，松开 IDR=1。
- * SH1106：I2C1 PB6=SCL / PB7=SDA，8 位写地址 0x78；列偏移 2；中央 HH:MM:SS。
+ * SH1106：I2C1 PB6=SCL / PB7=SDA，8 位写地址 0x78；列偏移 2；中央 HH:MM:SS；右下温度。
  *
  * @see     doc/projects/f103-manual-reg.md § 启动与时钟 / 运行时初始化顺序
  * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
@@ -149,6 +149,7 @@ int main(void)
 {
     unsigned char who;
     unsigned char bmp_id;
+    unsigned char bmp_ok;
     LSM6DS3_RawSample sample;
     unsigned int led_phase;
     unsigned int knob_raw;
@@ -159,6 +160,9 @@ int main(void)
     unsigned int clock_h;
     unsigned int clock_m;
     unsigned int clock_s;
+    int temp_centi;
+    unsigned int temp_abs;
+    unsigned int press_pa;
 
     GPIOC_Init();
     GPIOB_Init();
@@ -181,6 +185,13 @@ int main(void)
            (unsigned int)BME280_ID_VALUE);
     if ((bmp_id != BMP280_ID_VALUE) && (bmp_id != BME280_ID_VALUE)) {
         printf("BMP280 ID mismatch; check CSB/SDO/Mode0/3V3/GND\n");
+    }
+
+    bmp_ok = BMP280_Init();
+    if (bmp_ok != 0U) {
+        printf("BMP280 init: calib + normal, osrs_t x2 / osrs_p x16\n");
+    } else {
+        printf("BMP280 init failed\n");
     }
 
     who = LSM6DS3_ReadWhoAmI();
@@ -217,6 +228,16 @@ int main(void)
             clock_s = elapsed_sec % 60U;
             SH1106_Clear();
             SH1106_DrawClock(clock_h, clock_m, clock_s);
+            if (bmp_ok != 0U) {
+                temp_centi = BMP280_ReadTemp();
+                press_pa = BMP280_ReadPressure();
+                SH1106_DrawTemp(temp_centi);
+                temp_abs = (temp_centi < 0) ? (unsigned int)(-temp_centi)
+                                            : (unsigned int)temp_centi;
+                printf("temp %s%u.%02u C  press %u Pa\n",
+                       (temp_centi < 0) ? "-" : "",
+                       temp_abs / 100U, temp_abs % 100U, press_pa);
+            }
             SH1106_Refresh();
             printf("clock %02u:%02u:%02u\n", clock_h, clock_m, clock_s);
         }
@@ -250,8 +271,15 @@ int main(void)
             knob_raw = ADC1_ReadRaw();
             knob_mv = (knob_raw * ADC1_VDDA_MV) / ADC1_FULL_SCALE;
             printf("knob raw=%u mv=%u\n", knob_raw, knob_mv);
-            bmp_id = BMP280_ReadID();
-            printf("BMP280 ID=0x%02X\n", (unsigned int)bmp_id);
+            if (bmp_ok != 0U) {
+                temp_centi = BMP280_ReadTemp();
+                press_pa = BMP280_ReadPressure();
+                temp_abs = (temp_centi < 0) ? (unsigned int)(-temp_centi)
+                                            : (unsigned int)temp_centi;
+                printf("temp %s%u.%02u C  press %u Pa\n",
+                       (temp_centi < 0) ? "-" : "",
+                       temp_abs / 100U, temp_abs % 100U, press_pa);
+            }
         }
 
         delay(0x7FFFU);

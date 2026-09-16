@@ -18,7 +18,7 @@
  * 每页写前发 0xB0+page、列 0x02、0x10（轮询）；0x40 后 128 字节 DMA1 CH6。
  *
  * 调用顺序：I2C1_Init → I2C1_Probe(0x78) → SH1106_Init
- *   → 改缓冲（Clear / DrawPixel / DrawClock）→ SH1106_Refresh。
+ *   → 改缓冲（Clear / DrawPixel / DrawClock / DrawTemp）→ SH1106_Refresh。
  * Init 内会清 RAM 并开显示。4 针无 RES，Init 用忙等代替复位脚。
  *
  * @see     sh1106.c
@@ -56,5 +56,11 @@ void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set);
  * @note   不 Refresh；时基在 main / SysTick，本函数不管计时
  */
 void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int second);
+
+/**
+ * @brief  右下角画补偿温度（8×16，y=48），单位 0.01℃
+ * @note   不 Refresh；不改 DrawClock
+ */
+void SH1106_DrawTemp(int temp_centi);
 
 #endif /* SH1106_H */

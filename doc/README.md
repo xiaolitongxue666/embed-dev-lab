@@ -9,7 +9,7 @@
 3. [probe-rs 指南](probe-rs.md) — CLI、WinUSB、ST-Link、排错  
 4. [IDE 调试与扩展](ide-debug.md) — probe-rs-debugger、launch/tasks  
 5. [脚本参考](scripts-reference.md) — 全脚本、烧写入口、CH341 宿主切换、WSL picocom、自动化链路  
-6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI LSM6DS3、引脚核对、采购  
+6. [F103 硬件外设与接线](hardware/stm32f103-peripherals.md) — 1.3″ SH1106 I2C、SPI BMP280+LSM6DS3、引脚核对、采购  
    · [供电、共地与 SWD](hardware/power-and-common-ground.md) — 蓝板 MicroUSB、ST-Link 3.3V→面包板、GND 星型汇集  
    · [C8T6 引脚总表](hardware/stm32f103c8t6-pinout.md) — 丝印 / FT / USART·SWD / 本仓库占用  
 7. [f103-manual-reg 模块](projects/f103-manual-reg.md) — 源码与硬件要点  
@@ -40,7 +40,7 @@
 | 文档 | 内容 |
 |------|------|
 | [projects/README.md](projects/README.md) | 固件小工程索引（与 `projects/` 目录对应） |
-| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 LED + USART + ADC PA0 + SPI LSM6DS3 + I2C SH1106 手写寄存器 demo |
+| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 LED + USART + ADC PA0 + SPI BMP280/LSM6 + I2C SH1106 时钟与温度 |
 | [projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md) | CMSIS+HAL CubeIDE 风格对照 demo |
 
 ## 硬件
@@ -63,7 +63,7 @@
 | [probe-rs.md](probe-rs.md) | probe-rs CLI 与驱动 |
 | [ide-debug.md](ide-debug.md) | Cursor/VS Code 插件与调试 |
 | [scripts-reference.md](scripts-reference.md) | scripts/ 脚本说明 |
-| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 LED + USART + ADC PA0 + SPI LSM6DS3 + I2C SH1106 手写寄存器 demo |
+| [projects/f103-manual-reg.md](projects/f103-manual-reg.md) | F103 LED + USART + ADC PA0 + SPI BMP280/LSM6 + I2C SH1106 时钟与温度 |
 | [projects/f103-cmsis-hal.md](projects/f103-cmsis-hal.md) | CMSIS+HAL CubeIDE 风格对照 |
 | [learn/f103-manual-build-from-scratch.md](learn/f103-manual-build-from-scratch.md) | 从零手写：文件顺序、CMSIS 对照、验收清单 |
 | [learn/f103-module-build-flow.md](learn/f103-module-build-flow.md) | CMake 构建、.c/.s 链接、startup 与链接脚本协作 |

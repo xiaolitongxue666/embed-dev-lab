@@ -20,7 +20,7 @@ I2C 写帧与寄存器步骤：[i2c1-master-polling.md](../stm32f103/md/topics/i
 
 ## 从零：页和怎么上屏
 
-屏是 **128 格宽 × 64 格高** 的点阵，只认亮/灭，不懂「数字」。`Clear` / `DrawClock` / `DrawPixel` 只改 MCU 里 1024 字节草稿纸；**只有 `Refresh` 才往 I2C 发像素**。
+屏是 **128 格宽 × 64 格高** 的点阵，只认亮/灭，不懂「数字」。`Clear` / `DrawClock` / `DrawTemp` / `DrawPixel` 只改 MCU 里 1024 字节草稿纸；**只有 `Refresh` 才往 I2C 发像素**。
 
 **页**不是文档页，是把 64 行从上到下切成 **8 条横带**，每条高 8 行：
 
@@ -61,7 +61,7 @@ START  78  40  128字节  STOP     // 图只在 40 后面（128 列由 DMA1 CH6 
 
 **SH1106 片内没有字库。** 只有 GDDRAM，不认 ASCII，也不能「写一个 `'0'` 就出字」。
 
-本仓库的字形在 MCU Flash：[`sh1106_font.c`](../../../projects/f103-manual-reg/src/sh1106_font.c) 仅有 **`'0'`–`'9'` 和 `':'`** 的 8×16 点阵。`DrawClock` 查表再 `DrawPixel`。没有字母、没有汉字。
+本仓库的字形在 MCU Flash：[`sh1106_font.c`](../../../projects/f103-manual-reg/src/sh1106_font.c) 有 **`'0'`–`'9'`、`':'`、`'.'`、`'-'`、`'C'`** 的 8×16 点阵。`DrawClock`（×2）/ `DrawTemp`（1×）查表再 `DrawPixel`。没有汉字。
 
 要更多字：自行取模，加 `const` 数组，或按点画。字库占的是 **F103 的 64 KB Flash**，不是 OLED 芯片。
 
@@ -101,7 +101,8 @@ I2C1_Probe(0x78)           → 串口 SH1106 ACK addr=0x78
 SH1106_Init()              → 命令序列 + 清 RAM + 0xAF
 循环每秒：
   SH1106_Clear()
-  SH1106_DrawClock(h,m,s)  → 只改 1024 B 缓冲
+  SH1106_DrawClock(h,m,s)  → 中央 HH:MM:SS（只改缓冲）
+  SH1106_DrawTemp(centi)   → 右下 8×16 温度（y=48）
   SH1106_Refresh()         → 8 页 × 上表 4 次事务（数据段 DMA）
 ```
 
@@ -112,16 +113,16 @@ SH1106_Init()              → 命令序列 + 清 RAM + 0xAF
 | `I2C1_Probe(addr8)` | 只发地址看 ACK |
 | `SH1106_Init` | init 序列、清屏、开显示 |
 | `SH1106_Clear` | 清缓冲，不写屏 |
-| `SH1106_DrawPixel` / `SH1106_DrawClock` | 改缓冲 |
+| `SH1106_DrawPixel` / `SH1106_DrawClock` / `SH1106_DrawTemp` | 改缓冲 |
 | `SH1106_Refresh` | 缓冲 → GDDRAM |
 
-**当前上电行为**：屏中央 `HH:MM:SS`（8×16 点阵 ×2）。SysTick 1 ms，**不是 RTC**；`SH1106_Init` 后 `SysTick_SetMs(0)`，从 `00:00:00` 起。复位清零。自己画图见下文，不必走 `DrawClock`。
+**当前上电行为**：屏中央 `HH:MM:SS`（8×16 点阵 ×2，y=16..47）；右下补偿温度（1× 8×16，y=48）。SysTick 1 ms，**不是 RTC**；`SH1106_Init` 后 `SysTick_SetMs(0)`，从 `00:00:00` 起。复位清零。自己画图见下文，不必走 `DrawClock`。
 
 ## 实际例子：画出电子时钟 `00:00:00`
 
-对照 [`main.c`](../../../projects/f103-manual-reg/src/main.c)：`SH1106_Clear` → `SH1106_DrawClock(0,0,0)` → `SH1106_Refresh`。软件只改 RAM；**上屏的 I2C 字节全部来自 Refresh**（外加 Probe / Init）。
+对照 [`main.c`](../../../projects/f103-manual-reg/src/main.c)：`SH1106_Clear` → `SH1106_DrawClock` → `SH1106_DrawTemp` → `SH1106_Refresh`。软件只改 RAM；**上屏的 I2C 字节全部来自 Refresh**（外加 Probe / Init）。
 
-几何（与源码一致）：8 个字形 × 16 像素宽 = 128，高 32；`x=0`，`y=16`。字形占 **page 2–5**（`y=16..47`）。page 0/1/6/7 的 128 字节全是 `00`。
+几何（与源码一致）：时钟 8 个字形 × 16 像素宽 = 128，高 32；`x=0`，`y=16`，占 **page 2–5**（`y=16..47`）。温度 1× 8×16 右对齐，`y=48`，占 **page 6–7**。page 0/1 全是 `00`。
 
 ### Probe
 

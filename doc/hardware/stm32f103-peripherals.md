@@ -1,6 +1,6 @@
 # STM32F103C8T6 硬件外设与接线
 
-> 目标芯片：STM32F103C8T6（LQFP48，64 KB Flash / 20 KB RAM）。本文记录**板级接线与采购**；`f103-manual-reg` 已实现 **PC13 / PB12 LED + PB13 KEY + USART1 + ADC1 PA0 旋钮 + SPI1 LSM6DS3 + I2C1 SH1106**。  
+> 目标芯片：STM32F103C8T6（LQFP48，64 KB Flash / 20 KB RAM）。本文记录**板级接线与采购**；`f103-manual-reg` 已实现 **PC13 / PB12 LED + PB13 KEY + USART1 + ADC1 PA0 旋钮 + SPI1 BMP280 温度 + LSM6DS3 + I2C1 SH1106**。  
 > **目标接法（一次定死）**：BMP280 与 LSM6DS3 **共用 SPI1 三线**（PA5/PA7/PA6），独立片选 **PA3=BMP280、PA8=LSM6DS3**；JY003 PWM 用 **PA1=TIM2_CH2**。
 
 完整引脚总表（丝印 / FT / 复用 / 本仓库占用）：[stm32f103c8t6-pinout.md](stm32f103c8t6-pinout.md) · 官方 Table 5 摘录：[lqfp48-pinout.md](../reference/stm32f103/md/topics/lqfp48-pinout.md)
@@ -22,7 +22,7 @@
 | SH1106 1.3 寸 OLED（4 针 I2C） | I2C1 PB6/PB7，写地址 `0x78` | **已实现**（`f103-manual-reg`） |
 | FT6236U 触摸盖板 | I2C1 + PB0 INT + PB1 RST | **暂不使用**（条目保留，接线可选） |
 | LSM6DS3 / LSM6DS3TR 模块 | SPI1 全双工；CS=PA8 | **固件已实现**；硬件尚未接 |
-| BMP280 / BME280 | SPI1 共用三线；CS=PA3，Mode 0 | **阶段 2**（不再走 I2C） |
+| BMP280 / BME280 | SPI1 共用三线；CS=PA3，Mode 0；补偿温度上屏 | **已实现**（`f103-manual-reg`） |
 | JY003 风扇模块 | TIM2_CH2 PWM @ PA1；电机电源独立 | **阶段 4** |
 
 源码占用依据：
@@ -32,7 +32,7 @@
 - ADC1 / 旋钮：[`adc.c`](../../projects/f103-manual-reg/src/adc.c)（PA0 = ADC12_IN0）
 - SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c)（PA8 CS + Mode 3）
 - I2C1 / SH1106：[`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c)（8 位写地址 `0x78`）
-- BMP280：[`bmp280.c`](../../projects/f103-manual-reg/src/bmp280.c)（PA3 CS + Mode 0）；JY003：阶段 4 `tim2.c`
+- BMP280：[`bmp280.c`](../../projects/f103-manual-reg/src/bmp280.c)（PA3 CS + Mode 0，校准补偿 T/P）；JY003：阶段 4 `tim2.c`
 - HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI / I2C）
 
 全部当前模块 **3.3 V** 供电。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / GND** 拉到面包板（方案 A：5V 闲置）——**禁止**把 ST-Link 电源接到蓝板。共地以面包板 GND 轨为汇集点。详解：[供电、共地与 SWD](power-and-common-ground.md)。
@@ -182,7 +182,7 @@
 
 ### BMP / BME280
 
-**阶段 2**。与 LSM6DS3 **共用** SPI1 三线（PA5/PA7/PA6），片选独立。SPI **Mode 0**。ID 寄存器 `0xD0`：BMP280=`0x58`，BME280=`0x60`。短线直连，不加 4.7kΩ。
+**已实现**（`f103-manual-reg`）。与 LSM6DS3 **共用** SPI1 三线（PA5/PA7/PA6），片选独立。SPI **Mode 0**。读 24 字节校准后补偿温度/气压（无湿度）。ID 寄存器 `0xD0`：BMP280=`0x58`，BME280=`0x60`。短线直连，不加 4.7kΩ。屏右下显示温度。
 
 | 模块脚 | MCU / 电源 | 说明 |
 |--------|------------|------|
@@ -248,7 +248,7 @@ PB12              外接 LED（已实现，f103-manual-reg，拉电流）
 PB13              按键（已实现，f103-manual-reg，上拉输入）
 PA0               ADC1 CH0 旋钮 SIG（已实现）
 PA1               TIM2_CH2 → JY003 PWM（阶段 4）
-PA3               BMP280 CSB（阶段 2）
+PA3               BMP280 CSB（已实现）
 PA4               空闲（面包板孔不可用，勿再作 CS）
 PA5, PA6, PA7     SPI1 SCK/MISO/MOSI（BMP280 + LSM6 并联）
 PA8               LSM6DS3 CS（阶段 3）

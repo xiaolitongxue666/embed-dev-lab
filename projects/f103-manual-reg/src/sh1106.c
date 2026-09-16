@@ -104,6 +104,26 @@ void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set)
 #define SH1106_CLOCK_GLYPH_W  (SH1106_FONT_WIDTH * SH1106_CLOCK_SCALE)
 #define SH1106_CLOCK_GLYPH_H  (SH1106_FONT_HEIGHT * SH1106_CLOCK_SCALE)
 #define SH1106_CLOCK_CHARS    8U
+#define SH1106_TEMP_Y         48U
+#define SH1106_TEMP_MAX_CHARS 8U
+
+static void sh1106_draw_char(unsigned int x0, unsigned int y0, unsigned char ch)
+{
+    const unsigned char *glyph;
+    unsigned int row;
+    unsigned int col;
+    unsigned char bits;
+
+    glyph = SH1106_Font8x16(ch);
+    for (row = 0U; row < SH1106_FONT_HEIGHT; row++) {
+        bits = glyph[row];
+        for (col = 0U; col < SH1106_FONT_WIDTH; col++) {
+            if ((bits & (unsigned char)(0x80U >> col)) != 0U) {
+                SH1106_DrawPixel(x0 + col, y0 + row, 1U);
+            }
+        }
+    }
+}
 
 static void sh1106_draw_char_2x(unsigned int x0, unsigned int y0, unsigned char ch)
 {
@@ -168,6 +188,61 @@ void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int secon
     /* 从左到右每个字占 16 列，同一 y */
     for (i = 0U; i < SH1106_CLOCK_CHARS; i++) {
         sh1106_draw_char_2x(x + (i * SH1106_CLOCK_GLYPH_W), y, text[i]);
+    }
+}
+
+void SH1106_DrawTemp(int temp_centi)
+{
+    unsigned char text[SH1106_TEMP_MAX_CHARS];
+    unsigned int n;
+    unsigned int abs_c;
+    unsigned int whole;
+    unsigned int frac;
+    unsigned int x;
+    unsigned int i;
+
+    n = 0U;
+    if (temp_centi < 0) {
+        text[n] = (unsigned char)'-';
+        n++;
+        abs_c = (unsigned int)(-temp_centi);
+    } else {
+        abs_c = (unsigned int)temp_centi;
+    }
+
+    whole = abs_c / 100U;
+    frac = abs_c % 100U;
+
+    if (whole >= 100U) {
+        text[n] = (unsigned char)('0' + (whole / 100U));
+        n++;
+        whole %= 100U;
+        text[n] = (unsigned char)('0' + (whole / 10U));
+        n++;
+        text[n] = (unsigned char)('0' + (whole % 10U));
+        n++;
+    } else if (whole >= 10U) {
+        text[n] = (unsigned char)('0' + (whole / 10U));
+        n++;
+        text[n] = (unsigned char)('0' + (whole % 10U));
+        n++;
+    } else {
+        text[n] = (unsigned char)('0' + whole);
+        n++;
+    }
+
+    text[n] = (unsigned char)'.';
+    n++;
+    text[n] = (unsigned char)('0' + (frac / 10U));
+    n++;
+    text[n] = (unsigned char)('0' + (frac % 10U));
+    n++;
+    text[n] = (unsigned char)'C';
+    n++;
+
+    x = SH1106_WIDTH - (n * SH1106_FONT_WIDTH);
+    for (i = 0U; i < n; i++) {
+        sh1106_draw_char(x + (i * SH1106_FONT_WIDTH), SH1106_TEMP_Y, text[i]);
     }
 }
 

@@ -2,7 +2,7 @@
 
 **双路线（同一芯片，功能对齐，路径不同）：**
 
-- **f103-manual-reg**：手写外设寄存器完成功能；不链接官方 CMSIS Device / HAL；串口 `printf` + `syscalls.c` → `_write` → DMA TX；RX 为 DMA + 空闲中断 + `USART1_ProcessRx`；ADC1 PA0 旋钮单次采样；SPI1 LSM6DS3 与 BMP280 共用三线（LSM6 CS=PA8、BMP280 CS=PA3）；I2C1 PB6/PB7 SH1106（写地址 `0x78`，中央 `HH:MM:SS`，页数据 DMA1 CH6）；SysTick 1 ms；时钟在 `SystemInit`（进 `main` 前）升至 72 MHz
+- **f103-manual-reg**：手写外设寄存器完成功能；不链接官方 CMSIS Device / HAL；串口 `printf` + `syscalls.c` → `_write` → DMA TX；RX 为 DMA + 空闲中断 + `USART1_ProcessRx`；ADC1 PA0 旋钮单次采样；SPI1 LSM6DS3 与 BMP280 共用三线（LSM6 CS=PA8、BMP280 CS=PA3，补偿温度/气压，无湿度）；I2C1 PB6/PB7 SH1106（写地址 `0x78`，中央 `HH:MM:SS`，右下温度，页数据 DMA1 CH6）；SysTick 1 ms；时钟在 `SystemInit`（进 `main` 前）升至 72 MHz
 - **f103-cmsis-hal**：ST 官方 CMSIS + HAL，按 STM32Cube / CubeIDE 生成工程分层与风格手写对照（`MX_*` / MSP / `hal_conf`）；**非** CubeMX 一键生成、**非**占位；工程内 CMSIS+HAL 最小子集（HAL Src **9** 个 `.c`）；串口 `HAL_UART_Transmit`（无 printf/syscalls）；时钟在 `main` 的 `SystemClock_Config`
 
 新增/变更 demo 行为时两条路线应同步对齐（除非用户明确只改其一）。

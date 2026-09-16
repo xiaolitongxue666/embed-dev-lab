@@ -220,7 +220,7 @@ SPI：专给 IMU；屏幕不占 SPI
 2. **共地**：面包板 GND 轨为汇集点；ST-Link / CH341 / 蓝板 SWD / 外设 GND 均接该轨，禁止串联（[供电与共地](power-and-common-ground.md)）。
 3. **SWD**：PA13、PA14 保持调试功能（[SWD ≠ USART](../learn/swd-vs-usart.md)）；只接信号 + GND，不接 ST-Link 电源到蓝板。
 4. **I2C**：SCL/SDA 需上拉（多数模块已焊 ~4.7–10 kΩ）；缺上拉则总线卡死。多从机靠不同 7 位地址区分。
-5. **SH1106**：常见 128×64 可视区，片内 GDDRAM 多为 **132×64**，驱动须按 SH1106 处理列偏移；勿直接套用 SSD1306 初始化序列。
+5. **SH1106**：常见 128×64 可视区，片内 GDDRAM 多为 **132×64**，驱动须按 SH1106 处理列偏移；勿直接套用 SSD1306 初始化序列。上图步骤与 1024 B 页格式见 [SH1106 · 显示图像](../reference/sh1106/README.md#显示图像)。
 6. **触控**：条目保留，**当前阶段不启用**；日后叠装时 INT 下降沿置标志，主循环再 I2C 读坐标。
 7. **SPI / LSM6DS3**：Full-Duplex Master；软件 NSS（PA4 低有效）；4-wire（须接 MISO/SAO）；固件使用 **Mode 3**（与手册时序图一致）。
 8. **禁止**用 W25Q / TF 当 SPI「学习外设」；本方案 SPI 仅 IMU。

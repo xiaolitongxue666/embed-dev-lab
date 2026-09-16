@@ -237,7 +237,7 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 | demo | 中央 HH:MM:SS（8×16×2）；SysTick 1 ms，从 00:00:00 起每秒刷新 |
 | 实现 | [`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) |
 | 应用 API | `I2C1_Init` / `I2C1_Probe` / `I2C1_Write`；`SH1106_Init` / `Clear` / `DrawPixel` / `DrawClock` / `Refresh` |
-| 手册 | [I2C1 轮询](../reference/stm32f103/md/topics/i2c1-master-polling.md) · [SH1106](../reference/sh1106/README.md) |
+| 手册 | [I2C1 轮询 · 地址 / 写帧](../reference/stm32f103/md/topics/i2c1-master-polling.md#主机写一帧) · [从零：页](../reference/sh1106/README.md#从零页和怎么上屏) · [SH1106 显示图像](../reference/sh1106/README.md#显示图像) · [时钟 00:00:00 总线字节](../reference/sh1106/README.md#实际例子画出电子时钟-000000) |
 
 ## USART1 与硬件接线
 

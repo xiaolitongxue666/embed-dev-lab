@@ -3,10 +3,10 @@
  * @brief   SH1106 I2C 初始化、1024 B 帧缓冲、按页刷新
  *
  * 控制字节：0x00 命令，0x40 GDDRAM 数据。省略则黑屏。
- * 电荷泵 0x8D,0x14 必须发。每页：0xB0+page、列低 0x02、列高 0x10，再 128 字节。
+ * 电荷泵 0x8D,0x14 必须发（3.3 V 升到面板高压；不是地址、不是分页）。
+ * 页 = 8 行横带；每页：0xB0+page、列低 0x02、列高 0x10，再 0x40+128 列字节。
+ * 一列字节 bit0=该页顶。Clear/Draw* 只改 RAM，Refresh 才发像素。
  * 4 针模块无 RES，用忙等代替复位脚。调用前须已 I2C1_Init。
- *
- * refresh 按页一次 I2C 事务（0x40 + 128），协议与单字节写相同。
  *
  * @see     doc/reference/sh1106/README.md
  */
@@ -45,6 +45,7 @@ static unsigned char sh1106_write_cmd(unsigned char cmd)
     return I2C1_Write(SH1106_ADDR_WR, pkt, 2U);
 }
 
+/** 一页 128 列：控制字节 0x40 后从左到右各一字节（管内 8 个竖点） */
 static unsigned char sh1106_write_page(const unsigned char *data)
 {
     unsigned char pkt[1U + SH1106_WIDTH];
@@ -86,6 +87,7 @@ void SH1106_Clear(void)
     }
 }
 
+/** page=y/8，该列 buf[page][x] 的 bit=y%8（bit0=页顶） */
 void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set)
 {
     unsigned int page;
@@ -135,6 +137,15 @@ static void sh1106_draw_char_2x(unsigned int x0, unsigned int y0, unsigned char 
     }
 }
 
+/**
+ * @brief  只改 RAM：把 HH:MM:SS 画到缓冲中央。不上 I2C，须再 Refresh。
+ *
+ * 字库 8×16，放大 2 倍 → 每字 16×32。8 字刚好铺满 128 列：
+ *   x = (128 - 8*16) / 2 = 0
+ *   y = (64 - 32) / 2 = 16  → 占 page 2–5（y=16..47）
+ * 每个字库像素变成 2×2，由 sh1106_draw_char_2x → DrawPixel。
+ * 本函数不管计时；时基在 main / SysTick。
+ */
 void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int second)
 {
     unsigned char text[SH1106_CLOCK_CHARS];
@@ -146,6 +157,7 @@ void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int secon
     minute %= 60U;
     second %= 60U;
 
+    /* 8 个 ASCII：十位时、个位时、冒号、分、分、冒号、秒、秒 */
     text[0] = (unsigned char)('0' + (hour / 10U));
     text[1] = (unsigned char)('0' + (hour % 10U));
     text[2] = (unsigned char)':';
@@ -155,14 +167,17 @@ void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int secon
     text[6] = (unsigned char)('0' + (second / 10U));
     text[7] = (unsigned char)('0' + (second % 10U));
 
+    /* 水平 / 垂直居中；当前常量下 x=0、y=16 */
     x = (SH1106_WIDTH - (SH1106_CLOCK_CHARS * SH1106_CLOCK_GLYPH_W)) / 2U;
     y = (SH1106_HEIGHT - SH1106_CLOCK_GLYPH_H) / 2U;
 
+    /* 从左到右每个字占 16 列，同一 y */
     for (i = 0U; i < SH1106_CLOCK_CHARS; i++) {
         sh1106_draw_char_2x(x + (i * SH1106_CLOCK_GLYPH_W), y, text[i]);
     }
 }
 
+/** 对 8 页各发设页/列 + 128 字节；此时才上 I2C */
 void SH1106_Refresh(void)
 {
     unsigned char page;

@@ -13,7 +13,9 @@
  *   0x00  Co=0 D/C#=0  后续为命令
  *   0x40  Co=0 D/C#=1  后续为 GDDRAM
  *
- * 显存：片内 132×64，可视 128×64。每页写前发 0xB0+page、列 0x02、0x10。
+ * 显存：片内 132×64，可视 128×64。页 = 8 行高的横带，共 8 条（page0=y0..7）。
+ * 缓冲 buf[page][x]：一字节一列，bit0=该页最上一行，bit7=最下一行。
+ * 每页写前发 0xB0+page、列 0x02、0x10；0x40 后 128 字节才是像素。
  *
  * 调用顺序：I2C1_Init → I2C1_Probe(0x78) → SH1106_Init
  *   → 改缓冲（Clear / DrawPixel / DrawClock）→ SH1106_Refresh。
@@ -31,6 +33,7 @@
 
 #define SH1106_WIDTH    128U
 #define SH1106_HEIGHT   64U
+/** 页数：64 行 / 8 = 8 条横带 */
 #define SH1106_PAGES    8U
 
 /** GDDRAM 可见区从列 2 起（132−128=4，两侧各约 2） */
@@ -42,10 +45,10 @@ void SH1106_Init(void);
 /** 只清 RAM 帧缓冲，不写屏；须再 Refresh */
 void SH1106_Clear(void);
 
-/** 把 8 页缓冲按列偏移 2 写到 GDDRAM */
+/** 8 页缓冲按列偏移 2 写入 GDDRAM；像素只在此时上 I2C */
 void SH1106_Refresh(void);
 
-/** 写缓冲一点；x=0..127，y=0..63；set≠0 点亮。须再 Refresh */
+/** 写缓冲一点；page=y/8，该列字节 bit=y%8（bit0=页顶）。须再 Refresh */
 void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set);
 
 /**

@@ -23,7 +23,7 @@
 15. [链接器 Map 文件](learn/linker-map-file.md) — 内存布局报告、段与符号  
 16. [STM32F103 官方参考](reference/stm32f103/README.md) — DS5319 + RM0008  
 17. [LSM6DS3 官方参考](reference/lsm6ds3/README.md) — DocID026899 中文精选 + SPI/寄存器  
-    · [SH1106 OLED](reference/sh1106/README.md) — I2C `0x78`、控制字节、列偏移、固件 API  
+    · [SH1106 OLED](reference/sh1106/README.md) — I2C `0x78`、控制字节、列偏移、[图像](reference/sh1106/README.md#显示图像)、[00:00:00 总线字节](reference/sh1106/README.md#实际例子画出电子时钟-000000)  
 18. [STM32 裸机入门笔记](learn/stm32-bare-metal-bootstrap.md) — startup、SystemInit、RCC、HSE  
 19. [CMSIS 标准与手写裸机边界](learn/cmsis-overview.md) — 分层、手写兼容判定、与 HAL 关系  
 20. [ST F1 软件仓库归纳](learn/stm32-cmsis-component-repos.md) — CMSIS / HAL / STM32CubeF1  

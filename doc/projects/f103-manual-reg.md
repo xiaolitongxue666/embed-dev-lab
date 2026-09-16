@@ -30,7 +30,7 @@ projects/f103-manual-reg/
 │   ├── usart.c / usart.h   # USART1 DMA 收发、IDLE 定界、RX 帧 handle
 │   ├── spi.c / spi.h       # SPI1 Mode3 + PA4 软件 CS
 │   ├── lsm6ds3.c / lsm6ds3.h # LSM6DS3 寄存器读写与 raw 采样
-│   ├── i2c.c / i2c.h       # I2C1 PB6/PB7 主机写（8 位地址原样进 DR）
+│   ├── i2c.c / i2c.h       # I2C1 PB6/PB7；命令轮询，页 DMA1 CH6
 │   ├── sh1106.c / sh1106.h # SH1106 帧缓冲、时钟绘制
 │   ├── sh1106_font.c / .h  # 8×16 数字与冒号
 │   ├── systick.c / .h      # SysTick 1 ms
@@ -86,12 +86,12 @@ flowchart TD
 | [`src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：HSE×PLL→72 MHz；失败保持 HSI 8 MHz | [裸机 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
 | [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | 应用入口：PC13、USART1、ADC1 旋钮、SPI/LSM6DS3、I2C/SH1106、printf | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
 | [`src/nvic.c`](../../projects/f103-manual-reg/src/nvic.c) | NVIC ISER/IP：USART1=37，DMA1 CH4=14 / CH5=15 | [中断向量表与 NVIC](../learn/interrupt-vector-table-and-nvic.md) |
-| [`src/dma.c`](../../projects/f103-manual-reg/src/dma.c) | DMA1 通道 CCR/CNDTR/CPAR/CMAR、IFCR | 下文 § USART1 |
+| [`src/dma.c`](../../projects/f103-manual-reg/src/dma.c) | DMA1 通道 CCR/CNDTR/CPAR/CMAR、IFCR | [DMA1 AHB 时钟](../reference/stm32f103/md/topics/dma1-ahb-clock.md) · 下文 § USART1 |
 | [`src/adc.c`](../../projects/f103-manual-reg/src/adc.c) | ADC1 CH0（PA0）校准、SWSTART 单次转换 | 下文 § ADC1 旋钮 |
 | [`src/usart.c`](../../projects/f103-manual-reg/src/usart.c) | USART1 MMIO：DMAT/DMAR、IDLE 定界、`ProcessRx` | 下文 § USART1 与 § printf |
 | [`src/spi.c`](../../projects/f103-manual-reg/src/spi.c) | SPI1 Mode3、软件 CS(PA4)、阻塞交换字节 | [SPI 时序](../reference/lsm6ds3/md/topics/electrical-spi-timing.md) |
 | [`src/lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c) | WHO_AM_I、CTRL、STATUS、连读 OUT 12 字节 | [SPI 协议](../reference/lsm6ds3/md/topics/spi-protocol.md)、[寄存器](../reference/lsm6ds3/md/topics/registers-whoami-imu.md) |
-| [`src/i2c.c`](../../projects/f103-manual-reg/src/i2c.c) | I2C1 主机写；8 位地址原样进 DR | [I2C1 轮询](../reference/stm32f103/md/topics/i2c1-master-polling.md) |
+| [`src/i2c.c`](../../projects/f103-manual-reg/src/i2c.c) | I2C1 主机写；命令轮询，页 DMA1 CH6 | [I2C1 写帧 / DMA](../reference/stm32f103/md/topics/i2c1-master-polling.md) |
 | [`src/sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) | 写地址 `0x78`、电荷泵、列偏移 2、中央时钟 | [SH1106](../reference/sh1106/README.md) |
 | [`src/systick.c`](../../projects/f103-manual-reg/src/systick.c) | SysTick 1 ms，覆盖 weak Handler | [中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
 | [`src/syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) | newlib 底层 I/O；`_write`→串口，`_sbrk`→堆 | 下文 § printf 与 newlib syscall |
@@ -230,13 +230,13 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 
 | 项 | 说明 |
 |----|------|
-| 外设 | I2C1（APB1，PCLK1=36 MHz），默认映射，400 kHz Fast duty 2 |
+| 外设 | I2C1（APB1，PCLK1=36 MHz），默认映射，400 kHz Fast duty 2；页数据 DMA1 CH6 |
 | 引脚 | PB6=SCL，PB7=SDA；复用开漏 `0xF`；模块板载上拉 |
 | 地址 | 8 位写 **`0x78`** 原样进 `DR`，禁止再 `<< 1` |
 | 显示 | 128×64 可视；每页列偏移 `0x02`+`0x10`；电荷泵 `0x8D,0x14` |
 | demo | 中央 HH:MM:SS（8×16×2）；SysTick 1 ms，从 00:00:00 起每秒刷新 |
 | 实现 | [`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) |
-| 应用 API | `I2C1_Init` / `I2C1_Probe` / `I2C1_Write`；`SH1106_Init` / `Clear` / `DrawPixel` / `DrawClock` / `Refresh` |
+| 应用 API | `I2C1_Init` / `I2C1_Probe` / `I2C1_Write` / `I2C1_WriteDma`；`SH1106_Init` / `Clear` / `DrawPixel` / `DrawClock` / `Refresh` |
 | 手册 | [I2C1 轮询 · 地址 / 写帧](../reference/stm32f103/md/topics/i2c1-master-polling.md#主机写一帧) · [从零：页](../reference/sh1106/README.md#从零页和怎么上屏) · [SH1106 显示图像](../reference/sh1106/README.md#显示图像) · [时钟 00:00:00 总线字节](../reference/sh1106/README.md#实际例子画出电子时钟-000000) |
 
 ## USART1 与硬件接线

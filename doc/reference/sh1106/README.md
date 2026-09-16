@@ -45,7 +45,7 @@ I2C 写帧与寄存器步骤：[i2c1-master-polling.md](../stm32f103/md/topics/i
 START  78  00  B0+页号  STOP     // 选哪一条带子
 START  78  00  02       STOP     // 列从可见区左边开始（偏移 2）
 START  78  00  10       STOP
-START  78  40  128字节  STOP     // 图只在 40 后面
+START  78  40  128字节  STOP     // 图只在 40 后面（128 列由 DMA1 CH6 搬）
 ```
 
 显示 `00:00:00` 的操作顺序：
@@ -53,9 +53,9 @@ START  78  40  128字节  STOP     // 图只在 40 后面
 1. `I2C1_Init` → `I2C1_Probe(0x78)`（总线上只有 `START 78 STOP`）
 2. `SH1106_Init`：命令含电荷泵 `8D 14`（把 3.3 V 泵到面板高压；不是地址、不是分页），再开显示
 3. `SH1106_Clear` → `SH1106_DrawClock(0,0,0)`（只改 RAM）
-4. `SH1106_Refresh`：对 page 0..7 各做上面 4 次事务（共 32 次 START/STOP）
+4. `SH1106_Refresh`：对 page 0..7 各做上面 4 次事务（命令轮询，128 列 DMA；共 32 次 START/STOP）
 
-记住三句：页是 8 像素高的横带；一页 128 个列字节；真正的图只在 `40` 后面。总线帧格式见 [I2C1 主机写一帧](../stm32f103/md/topics/i2c1-master-polling.md#主机写一帧)。
+记住三句：页是 8 像素高的横带；一页 128 个列字节；真正的图只在 `40` 后面。命令轮询、128 列 DMA、ISR 在 [`i2c.c`](../../../projects/f103-manual-reg/src/i2c.c) 的 `DMA1_Channel6_IRQHandler`。白话见 [谁走 DMA](../stm32f103/md/topics/i2c1-master-polling.md#白话谁走-dma中断在哪)；DMA1 须开 AHB 时钟，见 [dma1-ahb-clock.md](../stm32f103/md/topics/dma1-ahb-clock.md)。总线帧格式见 [I2C1 主机写一帧](../stm32f103/md/topics/i2c1-master-polling.md#主机写一帧)。
 
 ### 字库
 
@@ -86,7 +86,7 @@ SSD1306 的显存同样按页切（8 页 × 128 列）。差别：它还可以 h
 START  78  00  B0+page  STOP     // page 0=B0 … 7=B7
 START  78  00  02       STOP     // 列低 4 bit，偏移 2
 START  78  00  10       STOP     // 列高 4 bit
-START  78  40  d0..d127 STOP     // 该页 128 列，图源不要自己加 2 列
+START  78  40  d0..d127 STOP     // 该页 128 列（DMA1 CH6）；图源不要自己加 2 列
 ```
 
 4 针无 RES，用忙等代替复位脚。
@@ -102,12 +102,13 @@ SH1106_Init()              → 命令序列 + 清 RAM + 0xAF
 循环每秒：
   SH1106_Clear()
   SH1106_DrawClock(h,m,s)  → 只改 1024 B 缓冲
-  SH1106_Refresh()         → 8 页 × 上表 4 次事务
+  SH1106_Refresh()         → 8 页 × 上表 4 次事务（数据段 DMA）
 ```
 
 | 符号 | 作用 |
 |------|------|
-| `I2C1_Write(addr8, buf, len)` | START + 8 位地址 + 数据 + STOP；超时 / AF 返回 0 |
+| `I2C1_Write(addr8, buf, len)` | 短包轮询；超时 / AF 返回 0 |
+| `I2C1_WriteDma(addr8, ctrl, mem, len)` | `ctrl` 轮询，其后 DMA1 CH6 |
 | `I2C1_Probe(addr8)` | 只发地址看 ACK |
 | `SH1106_Init` | init 序列、清屏、开显示 |
 | `SH1106_Clear` | 清缓冲，不写屏 |

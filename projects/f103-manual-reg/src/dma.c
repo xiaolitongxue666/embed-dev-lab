@@ -3,8 +3,12 @@
  * @brief   DMA1 通道 MMIO：AHBENR.DMA1EN、CCR/CNDTR/CPAR/CMAR、ISR/IFCR
  *
  * 通道 n 寄存器块：0x40020008 + (n-1)×0x14（RM0008）。
- * CH4=0x40020044，CH5=0x40020058。
- * USART 调用方须清 CCR.HTIE，只开 TCIE。
+ * CH4=0x40020044，CH5=0x40020058，CH6=0x4002006C（I2C1_TX）。
+ * 调用方须清 CCR.HTIE，只开 TCIE。
+ *
+ * DMA1 在 AHB：DMA1_ClockEnable 写 AHBENR.DMA1EN。C8T6 无 DMA2。
+ *
+ * @see     doc/reference/stm32f103/md/topics/dma1-ahb-clock.md
  */
 
 #include "dma.h"

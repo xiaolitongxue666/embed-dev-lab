@@ -2,7 +2,7 @@
  * @file    sh1106.h
  * @brief   SH1106 1.3″ 4 针 I2C OLED 应用接口
  *
- * 分层：main → 本头文件 → sh1106.c → I2C1_Write(0x78, …) → i2c.c
+ * 分层：main → 本头文件 → sh1106.c → 命令 I2C1_Write / 页 I2C1_WriteDma → i2c.c
  *
  * 总线 / 地址：
  *   PB6=SCL，PB7=SDA（I2C1 默认映射，复用开漏）。模块板载上拉。
@@ -15,7 +15,7 @@
  *
  * 显存：片内 132×64，可视 128×64。页 = 8 行高的横带，共 8 条（page0=y0..7）。
  * 缓冲 buf[page][x]：一字节一列，bit0=该页最上一行，bit7=最下一行。
- * 每页写前发 0xB0+page、列 0x02、0x10；0x40 后 128 字节才是像素。
+ * 每页写前发 0xB0+page、列 0x02、0x10（轮询）；0x40 后 128 字节 DMA1 CH6。
  *
  * 调用顺序：I2C1_Init → I2C1_Probe(0x78) → SH1106_Init
  *   → 改缓冲（Clear / DrawPixel / DrawClock）→ SH1106_Refresh。

@@ -4,7 +4,8 @@
  *
  * 控制字节：0x00 命令，0x40 GDDRAM 数据。省略则黑屏。
  * 电荷泵 0x8D,0x14 必须发（3.3 V 升到面板高压；不是地址、不是分页）。
- * 页 = 8 行横带；每页：0xB0+page、列低 0x02、列高 0x10，再 0x40+128 列字节。
+ * 页 = 8 行横带；每页：0xB0+page、列低 0x02、列高 0x10（轮询命令）。
+ * 0x40 后 128 列由 DMA1 CH6 搬运；DMA 不发起停/地址/控制字节。
  * 一列字节 bit0=该页顶。Clear/Draw* 只改 RAM，Refresh 才发像素。
  * 4 针模块无 RES，用忙等代替复位脚。调用前须已 I2C1_Init。
  *
@@ -45,17 +46,10 @@ static unsigned char sh1106_write_cmd(unsigned char cmd)
     return I2C1_Write(SH1106_ADDR_WR, pkt, 2U);
 }
 
-/** 一页 128 列：控制字节 0x40 后从左到右各一字节（管内 8 个竖点） */
+/** 一页 128 列：软件发 0x40，DMA 从 data 搬列字节（data 须为全局缓冲） */
 static unsigned char sh1106_write_page(const unsigned char *data)
 {
-    unsigned char pkt[1U + SH1106_WIDTH];
-    unsigned int i;
-
-    pkt[0] = SH1106_CTRL_DATA;
-    for (i = 0U; i < SH1106_WIDTH; i++) {
-        pkt[1U + i] = data[i];
-    }
-    return I2C1_Write(SH1106_ADDR_WR, pkt, 1U + SH1106_WIDTH);
+    return I2C1_WriteDma(SH1106_ADDR_WR, SH1106_CTRL_DATA, data, SH1106_WIDTH);
 }
 
 static unsigned char sh1106_set_page_col(unsigned char page)

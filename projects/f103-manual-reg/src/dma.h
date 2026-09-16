@@ -2,9 +2,11 @@
  * @file    dma.h
  * @brief   DMA1 通道手写寄存器：启停、剩余计数、清标志
  *
- * 不链接 CMSIS。USART1_TX=CH4、USART1_RX=CH5（RM0008 默认映射）。
+ * 不链接 CMSIS。USART1_TX=CH4、USART1_RX=CH5、I2C1_TX=CH6（RM0008 默认映射）。
+ * DMA1 挂 AHB：须 DMA1_ClockEnable（RCC_AHBENR.DMA1EN）。通道无单独时钟。
  *
  * @see     dma.c
+ * @see     doc/reference/stm32f103/md/topics/dma1-ahb-clock.md
  * @see     doc/learn/interrupt-vector-table-and-nvic.md
  */
 
@@ -13,6 +15,7 @@
 
 #define DMA1_CHANNEL4 4U
 #define DMA1_CHANNEL5 5U
+#define DMA1_CHANNEL6 6U
 
 #define DMA_CCR_EN   (1U << 0)
 #define DMA_CCR_TCIE (1U << 1)
@@ -20,6 +23,7 @@
 #define DMA_CCR_DIR  (1U << 4) /**< 1=内存→外设，0=外设→内存 */
 #define DMA_CCR_MINC (1U << 7)
 
+/** 开 AHB 上 DMA1 总时钟（DMA1EN）；7 通道共用，无 CH 单独时钟 */
 void DMA1_ClockEnable(void);
 void DMA1_Channel_Stop(unsigned int channel);
 void DMA1_Channel_ClearFlags(unsigned int channel);

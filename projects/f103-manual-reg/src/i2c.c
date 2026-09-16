@@ -1,6 +1,6 @@
 /**
  * @file    i2c.c
- * @brief   I2C1 纯寄存器主机写：400 kHz Fast、duty 2:1、阻塞 + 超时
+ * @brief   I2C1 纯寄存器主机写：400 kHz Fast；短包轮询，页数据 DMA1 CH6
  *
  * @target  STM32F103C8T6，I2C1 默认映射 PB6(SCL)/PB7(SDA)
  *
@@ -25,18 +25,28 @@
  * 8 位写地址原样写入 DR。屏幕为 0x78（R6 焊、R5 空；0x78 == 0x3C<<1）。
  * 禁止再对 0x78 左移。StdPeriph I2C_Send7bitAddress(addr>>1) 的移位不要照抄。
  *
+ * DMA（RM0008 默认映射）：I2C1_TX = DMA1 CH6。DMA 只搬内存→DR，
+ * 不产生 START/STOP/从地址/控制字节。CR2.DMAEN 仅在页数据阶段打开。
+ * USART 已用 CH4/CH5，勿占用。
+ * I2C1 时钟在 APB1，DMA1 时钟在 AHB，两套都要开。
+ * 页 DMA 完成：DMA1_Channel6_IRQHandler（本文件，非 HAL 回调）。
+ *
  * OAR1 bit14 手册要求软件保持为 1。
+ * F1 硬件 I2C 可能 BUSY 锁死：超时则 PE 关 + APB1 复位再恢复时序。
  *
  * 时钟前提（system_stm32f1xx.c）：
  *   SYSCLK 72 MHz，APB1 /2 → PCLK1 = 36 MHz（I2C1 时钟源）
  *   CR2.FREQ=36；Fast 400 kHz duty 2：CCR=30、FS=1；TRISE=11
  *
+ * @see     dma.c
  * @see     doc/hardware/stm32f103-peripherals.md
  * @see     doc/reference/stm32f103/md/topics/i2c1-master-polling.md
  * @see     RM0008 I2C 章
  */
 
+#include "dma.h"
 #include "i2c.h"
+#include "nvic.h"
 
 /* -------------------------------------------------------------------------- */
 /* 外设基地址与寄存器（RM0008）                                                 */
@@ -76,6 +86,7 @@
 #define I2C_CR1_ACK    (1U << 10)
 
 #define I2C_CR2_FREQ   36U
+#define I2C_CR2_DMAEN  (1U << 11)
 
 #define I2C_SR1_SB     (1U << 0)
 #define I2C_SR1_ADDR   (1U << 1)
@@ -94,6 +105,33 @@
 #define I2C_TRISE_FAST 11U
 
 #define I2C_WAIT_LOOPS 200000U
+#define I2C_DMA_NVIC_PRIO 6U
+#define I2C1_DMA_CCR_TX (DMA_CCR_TCIE | DMA_CCR_DIR | DMA_CCR_MINC)
+
+/** 1=空闲，0=CH6 正在搬 */
+static volatile unsigned char i2c1_dma_tx_done = 1U;
+
+static void i2c1_hw_apply(void)
+{
+    I2C1_CR1 &= ~I2C_CR1_PE;
+    I2C1_CR2 = I2C_CR2_FREQ;
+    I2C1_CCR = I2C_CCR_FS | I2C_CCR_400KHZ;
+    I2C1_TRISE = I2C_TRISE_FAST;
+    I2C1_OAR1 = I2C_OAR1_BIT14;
+    I2C1_CR1 = I2C_CR1_ACK | I2C_CR1_PE;
+}
+
+/** F1 BUSY 锁死：关 PE、APB1 复位 I2C1，再写回时序（GPIO 不动） */
+static void i2c1_recover_busy(void)
+{
+    I2C1_CR2 &= ~I2C_CR2_DMAEN;
+    DMA1_Channel_Stop(DMA1_CHANNEL6);
+    I2C1_CR1 &= ~I2C_CR1_PE;
+    RCC_APB1RSTR |= RCC_APB1RSTR_I2C1RST;
+    RCC_APB1RSTR &= ~RCC_APB1RSTR_I2C1RST;
+    i2c1_hw_apply();
+    i2c1_dma_tx_done = 1U;
+}
 
 static unsigned char i2c1_wait_sr1(unsigned int mask)
 {
@@ -119,6 +157,15 @@ static unsigned char i2c1_wait_busy_clear(void)
 {
     volatile unsigned int n;
 
+    n = I2C_WAIT_LOOPS;
+    while (n != 0U) {
+        if ((I2C1_SR2 & I2C_SR2_BUSY) == 0U) {
+            return 1U;
+        }
+        n--;
+    }
+
+    i2c1_recover_busy();
     n = I2C_WAIT_LOOPS;
     while (n != 0U) {
         if ((I2C1_SR2 & I2C_SR2_BUSY) == 0U) {
@@ -166,12 +213,12 @@ void I2C1_Init(void)
     GPIOB_CRL &= ~(GPIOB_CRL_PB6_MASK | GPIOB_CRL_PB7_MASK);
     GPIOB_CRL |= GPIOB_CRL_PB6_AF_OD | GPIOB_CRL_PB7_AF_OD;
 
-    I2C1_CR1 &= ~I2C_CR1_PE;
-    I2C1_CR2 = I2C_CR2_FREQ;
-    I2C1_CCR = I2C_CCR_FS | I2C_CCR_400KHZ;
-    I2C1_TRISE = I2C_TRISE_FAST;
-    I2C1_OAR1 = I2C_OAR1_BIT14;
-    I2C1_CR1 = I2C_CR1_ACK | I2C_CR1_PE;
+    i2c1_hw_apply();
+
+    DMA1_ClockEnable();
+    NVIC_IRQ_SetPriority(DMA1_Channel6_IRQn, I2C_DMA_NVIC_PRIO);
+    NVIC_IRQ_Enable(DMA1_Channel6_IRQn);
+    i2c1_dma_tx_done = 1U;
 }
 
 unsigned char I2C1_Write(unsigned char addr8, const unsigned char *buf, unsigned int len)
@@ -201,6 +248,49 @@ unsigned char I2C1_Write(unsigned char addr8, const unsigned char *buf, unsigned
     return 1U;
 }
 
+unsigned char I2C1_WriteDma(unsigned char addr8, unsigned char ctrl,
+                            const unsigned char *mem, unsigned int len)
+{
+    volatile unsigned int n;
+
+    if ((mem == 0) || (len == 0U)) {
+        return 0U;
+    }
+
+    if (i2c1_start_addr(addr8) == 0U) {
+        return 0U;
+    }
+
+    if (i2c1_wait_sr1(I2C_SR1_TXE) == 0U) {
+        return 0U;
+    }
+    I2C1_DR = (unsigned int)ctrl;
+    if (i2c1_wait_sr1(I2C_SR1_BTF) == 0U) {
+        return 0U;
+    }
+
+    i2c1_dma_tx_done = 0U;
+    I2C1_CR2 |= I2C_CR2_DMAEN;
+    DMA1_Channel_Start(DMA1_CHANNEL6,
+                       I2C1_DMA_CCR_TX & ~DMA_CCR_HTIE,
+                       I2C1_BASE + 0x10U,
+                       (unsigned int)mem,
+                       len);
+
+    n = I2C_WAIT_LOOPS;
+    while ((i2c1_dma_tx_done == 0U) && (n != 0U)) {
+        n--;
+    }
+    if (i2c1_dma_tx_done == 0U) {
+        I2C1_CR2 &= ~I2C_CR2_DMAEN;
+        DMA1_Channel_Stop(DMA1_CHANNEL6);
+        I2C1_CR1 |= I2C_CR1_STOP;
+        i2c1_dma_tx_done = 1U;
+        return 0U;
+    }
+    return 1U;
+}
+
 unsigned char I2C1_Probe(unsigned char addr8)
 {
     if (i2c1_start_addr(addr8) == 0U) {
@@ -209,4 +299,24 @@ unsigned char I2C1_Probe(unsigned char addr8)
 
     I2C1_CR1 |= I2C_CR1_STOP;
     return 1U;
+}
+
+void DMA1_Channel6_IRQHandler(void)
+{
+    volatile unsigned int n;
+
+    DMA1_Channel_Stop(DMA1_CHANNEL6);
+    DMA1_Channel_ClearFlags(DMA1_CHANNEL6);
+    I2C1_CR2 &= ~I2C_CR2_DMAEN;
+
+    n = I2C_WAIT_LOOPS;
+    while (n != 0U) {
+        if ((I2C1_SR1 & I2C_SR1_BTF) != 0U) {
+            break;
+        }
+        n--;
+    }
+
+    I2C1_CR1 |= I2C_CR1_STOP;
+    i2c1_dma_tx_done = 1U;
 }

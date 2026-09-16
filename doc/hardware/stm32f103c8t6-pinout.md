@@ -41,8 +41,8 @@
 | PB3 | FT | JTDO | Remap：TIM2_CH2 / SPI1_SCK | 复位属 JTAG |
 | PB4 | FT | JNTRST | Remap：TIM3_CH1 / SPI1_MISO | 复位属 JTAG |
 | PB5 | — | I2C1_SMBAl / TIM3_CH2 / SPI1_MOSI | **非 FT** | — |
-| PB6 | FT | **I2C1_SCL** / TIM4_CH1 | USART1_TX（remap） | **I2C1 SCL**（计划） |
-| PB7 | FT | **I2C1_SDA** / TIM4_CH2 | USART1_RX（remap） | **I2C1 SDA**（计划） |
+| PB6 | FT | **I2C1_SCL** / TIM4_CH1 | USART1_TX（remap） | **I2C1 SCL**（已实现，`f103-manual-reg`） |
+| PB7 | FT | **I2C1_SDA** / TIM4_CH2 | USART1_RX（remap） | **I2C1 SDA**（已实现，`f103-manual-reg`） |
 | PB8 | FT | TIM4_CH3 | I2C1_SCL / CAN_RX（remap） | — |
 | PB9 | FT | TIM4_CH4 | I2C1_SDA / CAN_TX（remap） | — |
 | PB10 | FT | **USART3_TX** / I2C2_SCL | TIM2_CH3（remap） | — |
@@ -104,7 +104,7 @@ ST-Link：SWDIO→PA13，SWCLK→PA14；GND 与 3.3V 进面包板轨（方案 A�
 ## 4. 使用注意
 
 1. 输出一律 3.3 V；仅 **FT** 脚可在手册条件下耐受较高输入，不能输出 5 V。
-2. 串口优先默认脚；`USART1_REMAP` 与计划中的 I2C1（PB6/PB7）冲突。
+2. 串口优先默认脚；`USART1_REMAP` 与 I2C1（PB6/PB7）冲突。
 3. SPI1 占用 PA4–PA7 时不要启用默认 USART2。
 4. 本仓库外设模块统一 **3.3 V** 供电（见接线文）。
 
@@ -121,7 +121,7 @@ PA4–PA7           SPI1 → LSM6DS3（已实现，f103-manual-reg）
 PA9, PA10         USART1（已实现）
 PA13, PA14        SWD
 PB0, PB1          FT6236 INT/RST（预留，暂不使用）
-PB6, PB7          I2C1：SH1106 + 可选 BMP280（计划）
+PB6, PB7          I2C1：SH1106（已实现，`f103-manual-reg`，8 位写地址 0x78）+ 可选 BMP280
 ```
 
 ---

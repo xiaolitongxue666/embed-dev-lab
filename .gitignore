@@ -147,6 +147,8 @@ doc/reference/stm32f103/pdf/*.pdf
 !doc/reference/stm32f103/pdf/.gitkeep
 doc/reference/lsm6ds3/pdf/*.pdf
 !doc/reference/lsm6ds3/pdf/.gitkeep
+doc/reference/sh1106/pdf/*.pdf
+!doc/reference/sh1106/pdf/.gitkeep
 
 # --- MCP 构建缓存（embedded-debugger-mcp cargo build）---
 .tools/

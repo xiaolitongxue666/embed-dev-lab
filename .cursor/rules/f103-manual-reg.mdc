@@ -13,5 +13,5 @@ alwaysApply: false
 - ADC1：PA0 = ADC12_IN0（旋钮 SIG）；单次 SWSTART；B12/B13 侧无 ADC；本轮不对齐 cmsis-hal
 - PC13：先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再写 `GPIOC_CRH`
 - 时钟在 `SystemInit`（`system_stm32f1xx.c`）升至 72 MHz，进 `main` 前完成
-- 无 SysTick 应用实现（向量表 weak → Default_Handler）
+- SysTick：1 ms 时基（`systick.c` 覆盖 weak `SysTick_Handler`），供 OLED 时钟
 - 构建：`./scripts/build.sh f103-manual-reg build`；文档：`doc/projects/f103-manual-reg.md`

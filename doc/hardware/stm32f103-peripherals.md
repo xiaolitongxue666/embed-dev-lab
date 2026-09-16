@@ -1,6 +1,6 @@
 # STM32F103C8T6 硬件外设与接线
 
-> 目标芯片：STM32F103C8T6（LQFP48，64 KB Flash / 20 KB RAM）。本文记录**板级接线与采购**；`f103-manual-reg` 已实现 **PC13 / PB12 LED + PB13 KEY + USART1 + ADC1 PA0 旋钮 + SPI1 LSM6DS3**，其余「计划外设」尚未在代码中初始化。
+> 目标芯片：STM32F103C8T6（LQFP48，64 KB Flash / 20 KB RAM）。本文记录**板级接线与采购**；`f103-manual-reg` 已实现 **PC13 / PB12 LED + PB13 KEY + USART1 + ADC1 PA0 旋钮 + SPI1 LSM6DS3 + I2C1 SH1106**，其余「计划外设」尚未在代码中初始化。
 
 完整引脚总表（丝印 / FT / 复用 / 本仓库占用）：[stm32f103c8t6-pinout.md](stm32f103c8t6-pinout.md) · 官方 Table 5 摘录：[lqfp48-pinout.md](../reference/stm32f103/md/topics/lqfp48-pinout.md)
 
@@ -18,7 +18,7 @@
 | 旋钮电位器 | PA0 ADC12_IN0；模块 3.3V，SIG→PA0 | **已实现**（`f103-manual-reg`） |
 | USART1 | PA9 TX / PA10 RX，CH341 USB-TTL | **已实现** |
 | SWD | PA13 SWDIO / PA14 SWCLK | **接线保留**，禁止改普通 GPIO |
-| SH1106 1.3 寸 OLED（4 针 I2C） | I2C1 PB6/PB7 | **计划接线** |
+| SH1106 1.3 寸 OLED（4 针 I2C） | I2C1 PB6/PB7，写地址 `0x78` | **已实现**（`f103-manual-reg`） |
 | FT6236U 触摸盖板 | I2C1 + PB0 INT + PB1 RST | **暂不使用**（条目保留，接线可选） |
 | LSM6DS3 / LSM6DS3TR 模块 | SPI1 全双工（独占 SPI） | **已实现**（`f103-manual-reg`） |
 | BMP280（可选） | I2C1 多从机练习 | **计划接线** |
@@ -29,7 +29,8 @@
 - USART1：[`projects/f103-manual-reg/src/usart.c`](../../projects/f103-manual-reg/src/usart.c)（默认映射，无 AFIO remap）
 - ADC1 / 旋钮：[`adc.c`](../../projects/f103-manual-reg/src/adc.c)（PA0 = ADC12_IN0）
 - SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c)
-- HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI）
+- I2C1 / SH1106：[`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c)（8 位写地址 `0x78`）
+- HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI / I2C）
 
 全部当前模块 **3.3 V** 供电。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / GND** 拉到面包板（方案 A：5V 闲置）——**禁止**把 ST-Link 电源接到蓝板。共地以面包板 GND 轨为汇集点。详解：[供电、共地与 SWD](power-and-common-ground.md)。
 
@@ -101,8 +102,8 @@
 | 外接 LED | PB12 | GPIO 推挽输出 | IOPBEN + CRH 推挽 | **已实现**（`f103-manual-reg`）；拉电流，220 Ω；与 PC13 同步翻转、写相同电平（一亮一灭） |
 | 按键 | PB13 | GPIO 上拉输入 | CRH CNF=10 MODE=00，ODR=1 | **已实现**（`f103-manual-reg`）；PB13←按键→GND；按下 IDR=0 |
 | 旋钮电位器 | PA0 | ADC12_IN0 | CRL 模拟输入 CNF=00 MODE=00 | **已实现**（`f103-manual-reg`）；模块 3.3V/GND；SIG→PA0（对面排针，非 B12 侧）；勿接 5V |
-| SH1106 / （FT6236） / BMP280 | PB6 | I2C1_SCL | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
-| SH1106 / （FT6236） / BMP280 | PB7 | I2C1_SDA | I2C1 默认映射，开漏 + 上拉 | 总线共用 |
+| SH1106 / （FT6236） / BMP280 | PB6 | I2C1_SCL | I2C1 默认映射，开漏 + 上拉 | **SH1106 已实现**；总线可再挂 BMP280 |
+| SH1106 / （FT6236） / BMP280 | PB7 | I2C1_SDA | I2C1 默认映射，开漏 + 上拉 | 写地址 `0x78` |
 | FT6236 | PB0 | INT | GPIO_EXTI，下降沿 | **暂不使用** |
 | FT6236 | PB1 | RST | GPIO 推挽输出 | **暂不使用** |
 | LSM6DS3 | PA5 | SPI1_SCK | SPI1 默认映射 | 全双工时钟；**已实现** |
@@ -118,7 +119,7 @@
 
 | 器件 | 常见地址 | 说明 |
 |------|----------|------|
-| SH1106 | `0x3C` 或 `0x3D` | 以模块跳线 / I2C 扫描为准 |
+| SH1106 | 8 位写 **`0x78`**（本模块 R6 焊、R5 空） | 固件 / Probe / 日志只用 `0x78`，不再左移；`0x78 == 0x3C<<1` |
 | FT6236 | `0x38`（ADDR 可改 `0x39`） | **暂不使用**；FocalTech FT6x36 |
 | BMP280 | `0x76` 或 `0x77` | 由 SDO 电平决定 |
 
@@ -153,7 +154,7 @@ PA4, PA5, PA6, PA7  SPI1 → LSM6DS3（已实现，f103-manual-reg）
 PA9, PA10         USART1（已实现）
 PA13, PA14        SWD
 PB0, PB1          FT6236 INT / RST（预留，暂不使用）
-PB6, PB7          I2C1：SH1106 + 可选 BMP280（计划）
+PB6, PB7          I2C1：SH1106（已实现，`f103-manual-reg`，写地址 0x78）+ 可选 BMP280
 ```
 
 ---
@@ -224,7 +225,7 @@ SPI：专给 IMU；屏幕不占 SPI
 7. **SPI / LSM6DS3**：Full-Duplex Master；软件 NSS（PA4 低有效）；4-wire（须接 MISO/SAO）；固件使用 **Mode 3**（与手册时序图一致）。
 8. **禁止**用 W25Q / TF 当 SPI「学习外设」；本方案 SPI 仅 IMU。
 9. **Flash 预算**：动画帧进内部 Flash；完整高帧数动画放不下，限 8–15 帧精简循环。
-10. **与固件**：`f103-manual-reg` 已驱动 SPI1/LSM6DS3；OLED / BMP280 等计划外设仍未初始化。
+10. **与固件**：`f103-manual-reg` 已驱动 SPI1/LSM6DS3 与 I2C1/SH1106；BMP280 等仍未初始化。
 
 ---
 
@@ -236,7 +237,7 @@ SPI：专给 IMU；屏幕不占 SPI
 | SYS Debug | Serial Wire（保留 SWD）；见 [swd-vs-usart.md](../learn/swd-vs-usart.md) |
 | USART1 | PA9/PA10 异步，**不 remap** |
 | SPI1 | Full-Duplex Master；PA5/PA6/PA7；软件 NSS=PA4；**Mode 3**（`f103-manual-reg` 已实现） |
-| I2C1 | PB6/PB7，**不 remap**；400 kHz Fast Mode（计划） |
+| I2C1 | PB6/PB7，**不 remap**；400 kHz Fast Mode（`f103-manual-reg` 已实现） |
 | GPIO | PB0 / PB1 预留给 FT6236（**当前可不初始化**） |
 | 业务划分 | SPI 任务仅 LSM6DS3；I2C：SH1106 显示 + 可选 BMP280；FT6236 触摸延后 |
 | LVGL（若引入） | `LV_USE_FILESYSTEM 0`；`LV_USE_GIF 0`；`LV_COLOR_DEPTH 1`；`LV_MEM_SIZE` 约 7 KB —— **未接入本仓库** |

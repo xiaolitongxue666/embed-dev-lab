@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# f103-manual-reg — STM32F103C8T6 PC13 + USART1 + ADC1 PA0 + SPI1 LSM6DS3（全手写寄存器，无 CMSIS/HAL）
+# f103-manual-reg — STM32F103C8T6 PC13 + USART1 + ADC1 PA0 + SPI1 LSM6DS3 + I2C1 SH1106（全手写寄存器，无 CMSIS/HAL）
 # 构建: 仓库根目录 ./scripts/build.sh f103-manual-reg
 # 一键:  ./scripts/build-flash.sh
 # 文档:  doc/projects/f103-manual-reg.md
@@ -21,6 +21,10 @@ set(F103_SOURCES
     src/usart.c                 # USART1 DMA 收发 + 空闲定界
     src/spi.c                   # SPI1 Mode3 + PA4 软件 CS
     src/lsm6ds3.c               # LSM6DS3 SPI 读写与 raw 采样
+    src/i2c.c                   # I2C1 PB6/PB7 主机写（8 位地址原样进 DR）
+    src/sh1106.c                # SH1106 帧缓冲与按页刷新
+    src/sh1106_font.c           # 8x16 数字/冒号
+    src/systick.c               # SysTick 1 ms
     src/syscalls.c              # printf → USART1
     src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
     startup/startup_stm32f103xb.s # 向量表（含外设 IRQ）、.data/.bss、跳转 main

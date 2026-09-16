@@ -1,0 +1,57 @@
+/**
+ * @file    sh1106.h
+ * @brief   SH1106 1.3″ 4 针 I2C OLED 应用接口
+ *
+ * 分层：main → 本头文件 → sh1106.c → I2C1_Write(0x78, …) → i2c.c
+ *
+ * 总线 / 地址：
+ *   PB6=SCL，PB7=SDA（I2C1 默认映射，复用开漏）。模块板载上拉。
+ *   SH1106_ADDR_WR=0x78 为 **8 位写地址**，原样进 I2C DR，禁止再 << 1。
+ *   读地址 0x79 本驱动不用。
+ *
+ * I2C 控制字节（每帧数据前必须先发）：
+ *   0x00  Co=0 D/C#=0  后续为命令
+ *   0x40  Co=0 D/C#=1  后续为 GDDRAM
+ *
+ * 显存：片内 132×64，可视 128×64。每页写前发 0xB0+page、列 0x02、0x10。
+ *
+ * 调用顺序：I2C1_Init → I2C1_Probe(0x78) → SH1106_Init
+ *   → 改缓冲（Clear / DrawPixel / DrawClock）→ SH1106_Refresh。
+ * Init 内会清 RAM 并开显示。4 针无 RES，Init 用忙等代替复位脚。
+ *
+ * @see     sh1106.c
+ * @see     doc/reference/sh1106/README.md
+ */
+
+#ifndef SH1106_H
+#define SH1106_H
+
+/** 8 位写地址；写入 I2C DR 时不再左移 */
+#define SH1106_ADDR_WR  0x78U
+
+#define SH1106_WIDTH    128U
+#define SH1106_HEIGHT   64U
+#define SH1106_PAGES    8U
+
+/** GDDRAM 可见区从列 2 起（132−128=4，两侧各约 2） */
+#define SH1106_COL_OFFSET 2U
+
+/** 发 init 序列、清屏、开显示；调用前须 I2C1_Init 且 Probe 成功 */
+void SH1106_Init(void);
+
+/** 只清 RAM 帧缓冲，不写屏；须再 Refresh */
+void SH1106_Clear(void);
+
+/** 把 8 页缓冲按列偏移 2 写到 GDDRAM */
+void SH1106_Refresh(void);
+
+/** 写缓冲一点；x=0..127，y=0..63；set≠0 点亮。须再 Refresh */
+void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set);
+
+/**
+ * @brief  在缓冲中央画 HH:MM:SS（8×16 点阵 ×2 → 16×32）
+ * @note   不 Refresh；时基在 main / SysTick，本函数不管计时
+ */
+void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int second);
+
+#endif /* SH1106_H */

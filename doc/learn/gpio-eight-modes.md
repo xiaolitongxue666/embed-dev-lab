@@ -15,9 +15,9 @@ F103 每个 GPIO 脚由 `CRL`/`CRH` 中 **4 bit（CNF[1:0] + MODE[1:0]）** 配�
 | 模式 | 典型用途 | 本仓库例子 |
 |------|----------|------------|
 | **推挽输出** | LED、普通数字输出 | PC13 LED、SPI CS（PA4） |
-| **开漏输出** | 需外部上拉的总线、电平转换 | （计划 I2C 亦可走复用开漏） |
+| **开漏输出** | 需外部上拉的总线、电平转换 | （本 demo 用复用开漏走 I2C） |
 | **复用推挽输出** | USART TX、SPI SCK/MOSI | PA9 USART1_TX、PA5/PA7 SPI1 |
-| **复用开漏输出** | I2C SCL/SDA | 计划 PB6/PB7 I2C1 |
+| **复用开漏输出** | I2C SCL/SDA | PB6/PB7 I2C1（`f103-manual-reg`） |
 | **浮空输入** | USART RX、SPI MISO、外部已驱动的信号 | PA10 USART1_RX、PA6 SPI1_MISO |
 | **上拉输入** | 按键接 GND、需默认高电平 | PB13 KEY（`f103-manual-reg`） |
 | **下拉输入** | 按键接 VDD、需默认低电平 | （本 demo 未用） |
@@ -121,9 +121,9 @@ HAL：[`HAL_UART_MspInit`](../../projects/f103-cmsis-hal/src/stm32f1xx_hal_msp.c
 
 [`adc.c`](../../projects/f103-manual-reg/src/adc.c)：`GPIOA_CRL` PA0 半字节 `0x0`（CNF=00, MODE=00）。旋钮 SIG→PA0；B12/B13 侧无 ADC。
 
-### 计划 I2C — 复用开漏 + 上拉
+### I2C1 — 复用开漏 + 模块上拉
 
-见 [硬件外设与接线](../hardware/stm32f103-peripherals.md)：PB6/PB7 为 I2C1，开漏 + 模块上拉。
+[`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)：PB6/PB7 半字节 `0xF`（CNF=11 MODE=11）。模块板载上拉。见 [硬件外设与接线](../hardware/stm32f103-peripherals.md)。
 
 ---
 

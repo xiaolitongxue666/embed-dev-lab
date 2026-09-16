@@ -1,6 +1,6 @@
 /**
  * @file    main.c
- * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 DMA+IDLE + ADC1 PA0 + SPI1 LSM6DS3
+ * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 DMA+IDLE + ADC1 PA0 + SPI1 LSM6DS3 + I2C1 SH1106
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
  *
@@ -12,9 +12,10 @@
  *
  * main 内初始化顺序：
  *   1. GPIOC_Init → GPIOB_Init → USART1_Init → 注册 RX 整帧回显 handle
- *      → ADC1_Init → SPI1_Init
+ *      → ADC1_Init → SPI1_Init → I2C1_Init
  *   2. 延时 ≥20 ms（LSM6DS3 boot）
- *   3. WHO_AM_I → LSM6DS3_Init → 循环读 IMU + LED + KEY + 旋钮 + USART1_ProcessRx
+ *   3. WHO_AM_I → LSM6DS3_Init → Probe 0x78 → SH1106 中央数字时钟
+ *   4. 循环读 IMU + LED + KEY + 旋钮 + USART1_ProcessRx；每秒刷新时钟
  *
  * 串口：USART1 PA9/PA10（FT），1500000 bps；DMA1 CH4/CH5 + 空闲中断定界。
  * printf 经 syscalls.c → USART1_Write；RX 整帧经 handle 回显。
@@ -25,6 +26,7 @@
  * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
  * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
  * PB13 KEY：FT；上拉输入，PB13←按键→GND；按下 IDR=0，松开 IDR=1。
+ * SH1106：I2C1 PB6=SCL / PB7=SDA，8 位写地址 0x78；列偏移 2；中央 HH:MM:SS。
  *
  * @see     doc/projects/f103-manual-reg.md § 启动与时钟 / 运行时初始化顺序
  * @see     doc/learn/stm32-bare-metal-bootstrap.md Q11
@@ -37,8 +39,11 @@
 
 #include "adc.h"
 #include "gpioc_bitband.h"
+#include "i2c.h"
 #include "lsm6ds3.h"
+#include "sh1106.h"
 #include "spi.h"
+#include "systick.h"
 #include "usart.h"
 
 /* -------------------------------------------------------------------------- */
@@ -145,6 +150,12 @@ int main(void)
     unsigned int led_phase;
     unsigned int knob_raw;
     unsigned int knob_mv;
+    unsigned char oled_ok;
+    unsigned int last_sec;
+    unsigned int elapsed_sec;
+    unsigned int clock_h;
+    unsigned int clock_m;
+    unsigned int clock_s;
 
     GPIOC_Init();
     GPIOB_Init();
@@ -152,8 +163,10 @@ int main(void)
     USART1_SetRxHandle(USART1_EchoFrame);
     ADC1_Init();
     SPI1_Init();
+    I2C1_Init();
+    SysTick_Init();
 
-    printf("Stm32 manual reg LSM6DS3 SPI demo start\n");
+    printf("Stm32 manual reg LSM6DS3 SPI + SH1106 I2C demo start\n");
 
     delay_boot_20ms();
 
@@ -168,9 +181,32 @@ int main(void)
     LSM6DS3_Init();
     printf("LSM6DS3 init: XL/G 104 Hz, FS +/-2g / 250 dps\n");
 
+    oled_ok = 0U;
+    if (I2C1_Probe(SH1106_ADDR_WR) != 0U) {
+        printf("SH1106 ACK addr=0x78\n");
+        SH1106_Init();
+        SysTick_SetMs(0U);
+        oled_ok = 1U;
+    } else {
+        printf("SH1106 NACK; check PB6/PB7/3V3/GND\n");
+    }
+
     led_phase = 0U;
+    last_sec = 0xFFFFFFFFU;
     for (;;) {
         USART1_ProcessRx();
+
+        elapsed_sec = SysTick_GetMs() / 1000U;
+        if ((oled_ok != 0U) && (elapsed_sec != last_sec)) {
+            last_sec = elapsed_sec;
+            clock_h = (elapsed_sec / 3600U) % 24U;
+            clock_m = (elapsed_sec / 60U) % 60U;
+            clock_s = elapsed_sec % 60U;
+            SH1106_Clear();
+            SH1106_DrawClock(clock_h, clock_m, clock_s);
+            SH1106_Refresh();
+            printf("clock %02u:%02u:%02u\n", clock_h, clock_m, clock_s);
+        }
 
         if (LSM6DS3_ReadRaw(&sample) != 0U) {
             printf("xl %d %d %d  g %d %d %d\n",

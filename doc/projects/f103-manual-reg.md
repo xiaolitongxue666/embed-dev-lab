@@ -1,14 +1,14 @@
 # f103-manual-reg 模块
 
-**STM32F103C8T6** 核心板 demo：**PC13 / PB12 LED** + **PB13 KEY** + **USART1 DMA+空闲中断（printf + 整帧回显）** + **ADC1 PA0 旋钮** + **SPI1 LSM6DS3 六轴轮询**，纯寄存器实现；PC13 行为对齐厂商例程 `vendor-pack/.../核心板测试程序(PC13闪烁)`。
+**STM32F103C8T6** 核心板 demo：**PC13 / PB12 LED** + **PB13 KEY** + **USART1 DMA+空闲中断（printf + 整帧回显）** + **ADC1 PA0 旋钮** + **SPI1 LSM6DS3 六轴轮询** + **I2C1 SH1106 数字时钟**，纯寄存器实现；PC13 行为对齐厂商例程 `vendor-pack/.../核心板测试程序(PC13闪烁)`。
 
 ## 模块定位
 
 | 项 | 说明 |
 |----|------|
 | 目标芯片 | STM32F103C8T6（Cortex-M3，Medium-density F103xB，64 KB Flash / 20 KB RAM） |
-| 实现方式 | 全手写 `startup` / `system_stm32f1xx.c` / GPIO·USART·SPI·ADC 寄存器，**不链接** CMSIS submodule 与 HAL |
-| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉输入读按键（`PBin`）；USART1 @ PA9/PA10，1500000 bps，DMA TX/RX + 空闲定界 + `printf` + 整帧回显；ADC1 CH0 @ PA0 旋钮（`knob raw` / `mv`）；SPI1 → LSM6DS3（WHO_AM_I + raw 六轴） |
+| 实现方式 | 全手写 `startup` / `system_stm32f1xx.c` / GPIO·USART·SPI·ADC·I2C 寄存器，**不链接** CMSIS submodule 与 HAL |
+| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉输入读按键（`PBin`）；USART1 @ PA9/PA10，1500000 bps，DMA TX/RX + 空闲定界 + `printf` + 整帧回显；ADC1 CH0 @ PA0 旋钮（`knob raw` / `mv`）；SPI1 → LSM6DS3（WHO_AM_I + raw 六轴）；I2C1 → SH1106 中央 `HH:MM:SS`（写地址 `0x78`） |
 | 标准库 | 工具链 **newlib**（`libc.a`）+ 工程内 [`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) 重定向 `_write` |
 | 对照工程 | [`f103-cmsis-hal`](f103-cmsis-hal.md) — 当前阶段 HAL 工程仍以 LED+USART 为主（本轮未同步 SPI / ADC） |
 | 参照关系 | vendor-pack 三层见 [ST F1 软件仓库归纳 §5](../learn/stm32-cmsis-component-repos.md#5-与-embed-dev-lab-的三层参照)；从零手写见 [从零手写构建指南](../learn/f103-manual-build-from-scratch.md) |
@@ -20,7 +20,7 @@ projects/f103-manual-reg/
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── src/
-│   ├── main.c              # GPIOC / GPIOB / USART1 / ADC1 / SPI1 / LSM6DS3 初始化与轮询
+│   ├── main.c              # GPIOC / GPIOB / USART1 / ADC1 / SPI1 / I2C1 / LSM6DS3 / SH1106
 │   ├── system_stm32f1xx.c  # SystemInit，HSE→72 MHz
 │   ├── system_stm32f1xx.h
 │   ├── gpioc_bitband.h     # PCout(n) / PBout(n) / PBin(n) 位带宏
@@ -30,6 +30,10 @@ projects/f103-manual-reg/
 │   ├── usart.c / usart.h   # USART1 DMA 收发、IDLE 定界、RX 帧 handle
 │   ├── spi.c / spi.h       # SPI1 Mode3 + PA4 软件 CS
 │   ├── lsm6ds3.c / lsm6ds3.h # LSM6DS3 寄存器读写与 raw 采样
+│   ├── i2c.c / i2c.h       # I2C1 PB6/PB7 主机写（8 位地址原样进 DR）
+│   ├── sh1106.c / sh1106.h # SH1106 帧缓冲、时钟绘制
+│   ├── sh1106_font.c / .h  # 8×16 数字与冒号
+│   ├── systick.c / .h      # SysTick 1 ms
 │   └── syscalls.c          # newlib _write/_sbrk 等，printf → USART1
 ├── startup/
 │   └── startup_stm32f103xb.s   # 向量表、.data/.bss、Reset_Handler
@@ -55,9 +59,11 @@ projects/f103-manual-reg/
           USART1_SetRxHandle(整帧回显)
        4. ADC1_Init()     — PA0 模拟、ADCPRE=/6、校准、规则组 CH0
        5. SPI1_Init()     — PA5/6/7 + PA4 CS，Mode 3，DIV16
-       6. 延时 ≥20 ms     — LSM6DS3 boot（见 AN4650 / electrical-spi-timing）
-       7. WHO_AM_I / LSM6DS3_Init — 期望 0x69；CTRL1_XL/CTRL2_G = 0x40
-       8. for(;;) USART1_ProcessRx + STATUS+12 字节 raw + printf + LED + KEY + knob
+       6. I2C1_Init()     — PB6/PB7 复用开漏，400 kHz
+       7. 延时 ≥20 ms     — LSM6DS3 boot（见 AN4650 / electrical-spi-timing）
+       8. WHO_AM_I / LSM6DS3_Init — 期望 0x69；CTRL1_XL/CTRL2_G = 0x40
+       9. Probe 0x78 → SH1106_Init
+      10. for(;;) 每秒画中央时钟 + USART1_ProcessRx + IMU + LED + KEY + knob
 ```
 
 ```mermaid
@@ -68,7 +74,7 @@ flowchart TD
   data --> si["bl SystemInit\nsystem_stm32f1xx.c"]
   si --> clk["HSE x PLL9 = 72 MHz"]
   clk --> mainNode["bl main\nmain.c"]
-  mainNode --> app["GPIO / USART1 / ADC1 / SPI1 / LSM6DS3"]
+  mainNode --> app["GPIO / USART1 / ADC1 / SPI1 / I2C1 SH1106"]
 ```
 
 `main` **不会**再调用 `SystemInit`。链接使用 `-nostartfiles`，无工具链 crt0；C 运行时最小初始化全在 `Reset_Handler`。
@@ -78,18 +84,21 @@ flowchart TD
 |------|------|----------|
 | [`startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表、`Reset_Handler`、`.data`/`.bss`、`bl SystemInit`、`bl main` | [编译流程](../learn/f103-module-build-flow.md)、[中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
 | [`src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：HSE×PLL→72 MHz；失败保持 HSI 8 MHz | [裸机 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
-| [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | 应用入口：PC13、USART1、ADC1 旋钮、SPI/LSM6DS3、printf | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
+| [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | 应用入口：PC13、USART1、ADC1 旋钮、SPI/LSM6DS3、I2C/SH1106、printf | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
 | [`src/nvic.c`](../../projects/f103-manual-reg/src/nvic.c) | NVIC ISER/IP：USART1=37，DMA1 CH4=14 / CH5=15 | [中断向量表与 NVIC](../learn/interrupt-vector-table-and-nvic.md) |
 | [`src/dma.c`](../../projects/f103-manual-reg/src/dma.c) | DMA1 通道 CCR/CNDTR/CPAR/CMAR、IFCR | 下文 § USART1 |
 | [`src/adc.c`](../../projects/f103-manual-reg/src/adc.c) | ADC1 CH0（PA0）校准、SWSTART 单次转换 | 下文 § ADC1 旋钮 |
 | [`src/usart.c`](../../projects/f103-manual-reg/src/usart.c) | USART1 MMIO：DMAT/DMAR、IDLE 定界、`ProcessRx` | 下文 § USART1 与 § printf |
 | [`src/spi.c`](../../projects/f103-manual-reg/src/spi.c) | SPI1 Mode3、软件 CS(PA4)、阻塞交换字节 | [SPI 时序](../reference/lsm6ds3/md/topics/electrical-spi-timing.md) |
 | [`src/lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c) | WHO_AM_I、CTRL、STATUS、连读 OUT 12 字节 | [SPI 协议](../reference/lsm6ds3/md/topics/spi-protocol.md)、[寄存器](../reference/lsm6ds3/md/topics/registers-whoami-imu.md) |
+| [`src/i2c.c`](../../projects/f103-manual-reg/src/i2c.c) | I2C1 主机写；8 位地址原样进 DR | [I2C1 轮询](../reference/stm32f103/md/topics/i2c1-master-polling.md) |
+| [`src/sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) | 写地址 `0x78`、电荷泵、列偏移 2、中央时钟 | [SH1106](../reference/sh1106/README.md) |
+| [`src/systick.c`](../../projects/f103-manual-reg/src/systick.c) | SysTick 1 ms，覆盖 weak Handler | [中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
 | [`src/syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) | newlib 底层 I/O；`_write`→串口，`_sbrk`→堆 | 下文 § printf 与 newlib syscall |
 | [`src/gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) | `PCout(n)` 位带写 ODR | [MMIO §5](../learn/stm32f103-mmio-basics.md#5-f103-manual-reg-pc13-点灯完整-mmio-流程) |
 | [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) | Flash/RAM 布局；`end`/`_ebss` 供 printf 堆 | [linker-vma-lma](../learn/linker-vma-lma.md)、[memory-map](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
 
-头文件 `usart.h`、`spi.h`、`lsm6ds3.h`、`gpioc_bitband.h`、`system_stm32f1xx.h` 由 `#include` 引入，**不**列入 CMake `SOURCES`。
+头文件 `usart.h`、`spi.h`、`lsm6ds3.h`、`i2c.h`、`sh1106.h`、`gpioc_bitband.h`、`system_stm32f1xx.h` 由 `#include` 引入，**不**列入 CMake `SOURCES`。
 
 ## 构建与烧录
 
@@ -126,7 +135,7 @@ Debug 构建下：源码写 `printf("...")` 时，GCC 常将**纯字符串**优�
 | 1 | 硬件读 [`g_pfnVectors`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | `[0]=_estack` → MSP；`[1]=Reset_Handler` → PC |
 | 2 | [`Reset_Handler`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 设 SP；`.data` Flash→RAM；`.bss` 清零 |
 | 3 | `bl SystemInit` → [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | RCC 默认化 + `SetSysClockTo72()` |
-| 4 | `bl main` → [`main.c`](../../projects/f103-manual-reg/src/main.c) | LED / USART1 / ADC1 PA0 / SPI1 LSM6DS3 |
+| 4 | `bl main` → [`main.c`](../../projects/f103-manual-reg/src/main.c) | LED / USART1 / ADC1 PA0 / SPI1 LSM6DS3 / I2C1 SH1106 |
 
 [`SystemInit`](../../projects/f103-manual-reg/src/system_stm32f1xx.c)：**HSE 8 MHz × PLL×9 → SYSCLK 72 MHz**；HSE 失败保持 **HSI 8 MHz**。成功时 **APB2=PCLK2=72 MHz**（USART1 BRR、SPI1 分频均按此假定）；APB1=36 MHz。
 
@@ -216,6 +225,19 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 | `SAO` | PA6 | → SPI1_MISO（SDO） |
 | `CS` | PA4 | ← GPIO 软件片选（低有效） |
 | INT1 / INT2 / OCS / SCX / SDX | — | 本 demo 不接 |
+
+## I2C1 与 SH1106
+
+| 项 | 说明 |
+|----|------|
+| 外设 | I2C1（APB1，PCLK1=36 MHz），默认映射，400 kHz Fast duty 2 |
+| 引脚 | PB6=SCL，PB7=SDA；复用开漏 `0xF`；模块板载上拉 |
+| 地址 | 8 位写 **`0x78`** 原样进 `DR`，禁止再 `<< 1` |
+| 显示 | 128×64 可视；每页列偏移 `0x02`+`0x10`；电荷泵 `0x8D,0x14` |
+| demo | 中央 HH:MM:SS（8×16×2）；SysTick 1 ms，从 00:00:00 起每秒刷新 |
+| 实现 | [`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) |
+| 应用 API | `I2C1_Init` / `I2C1_Probe` / `I2C1_Write`；`SH1106_Init` / `Clear` / `DrawPixel` / `DrawClock` / `Refresh` |
+| 手册 | [I2C1 轮询](../reference/stm32f103/md/topics/i2c1-master-polling.md) · [SH1106](../reference/sh1106/README.md) |
 
 ## USART1 与硬件接线
 

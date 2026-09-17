@@ -23,7 +23,7 @@
 | FT6236U 触摸盖板 | I2C1 + PB0 INT + PB1 RST | **暂不使用**（条目保留，接线可选） |
 | LSM6DS3 / LSM6DS3TR 模块 | SPI1 全双工；CS=PA8 | **固件已实现**；硬件尚未接 |
 | BMP280 / BME280 | SPI1 共用三线；CS=PA3，Mode 0；补偿温度上屏 | **已实现**（`f103-manual-reg`） |
-| JY003 风扇模块 | TIM2_CH2 PWM @ PA1；电机电源独立 | **阶段 4** |
+| JY003 风扇模块 | TIM2_CH2 PWM @ PA1；电机电源独立 | **已实现**（`f103-manual-reg`） |
 
 源码占用依据：
 
@@ -32,7 +32,7 @@
 - ADC1 / 旋钮：[`adc.c`](../../projects/f103-manual-reg/src/adc.c)（PA0 = ADC12_IN0）
 - SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c)（PA8 CS + Mode 3）
 - I2C1 / SH1106：[`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c)（8 位写地址 `0x78`）
-- BMP280：[`bmp280.c`](../../projects/f103-manual-reg/src/bmp280.c)（PA3 CS + Mode 0，校准补偿 T/P）；JY003：阶段 4 `tim2.c`
+- BMP280：[`bmp280.c`](../../projects/f103-manual-reg/src/bmp280.c)（PA3 CS + Mode 0，校准补偿 T/P）；JY003：[`tim2.c`](../../projects/f103-manual-reg/src/tim2.c)（PA1 TIM2_CH2，旋钮 raw→占空比）
 - HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI / I2C）
 
 全部当前模块 **3.3 V** 供电。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / GND** 拉到面包板（方案 A：5V 闲置）——**禁止**把 ST-Link 电源接到蓝板。共地以面包板 GND 轨为汇集点。详解：[供电、共地与 SWD](power-and-common-ground.md)。
@@ -209,7 +209,7 @@
 
 ### JY003
 
-**阶段 4**。TIM2 默认 remap，CH2=PA1。电机电源独立，只共地。PWM 脚以模块丝印为准。
+**已实现**（`f103-manual-reg`）。TIM2 默认 remap，CH2=PA1；24 kHz PWM1；旋钮 PA0 raw 映射 `CCR2`（0..999，raw≤80 死区）。电机电源独立，只共地。PWM 脚以模块丝印为准。温度不控风扇。
 
 | 模块脚（以丝印为准） | MCU / 电源 | 说明 |
 |----------------------|------------|------|
@@ -247,7 +247,7 @@ PC13              板载 LED（已实现）
 PB12              外接 LED（已实现，f103-manual-reg，拉电流）
 PB13              按键（已实现，f103-manual-reg，上拉输入）
 PA0               ADC1 CH0 旋钮 SIG（已实现）
-PA1               TIM2_CH2 → JY003 PWM（阶段 4）
+PA1               TIM2_CH2 → JY003 PWM（已实现）
 PA3               BMP280 CSB（已实现）
 PA4               空闲（面包板孔不可用，勿再作 CS）
 PA5, PA6, PA7     SPI1 SCK/MISO/MOSI（BMP280 + LSM6 并联）
@@ -268,7 +268,7 @@ PB6, PB7          I2C1：SH1106（已实现，写地址 0x78）
 - **SPI 模式**：LSM6 DocID026899 Table 6 / Figure 3 为 **Mode 3**（空闲时钟高）。BMP280 支持 Mode **00** 与 **11**（CSB 下降沿时 SCK 电平自动选）。计划 BMP280 用 Mode 0，故阶段 2 须在两次访问之间关 `SPE`、改 `CR1.CPOL/CPHA`。BMP280 也能用 Mode 11（与 LSM6 相同），那是备选，本方案不采用。
 - **时钟**：SPI1 DIV16 ≈ 4.5 MHz，低于两芯片 10 MHz 上限。
 - **PA1 = 风扇 PWM**：RM0008 TIM2 remap 表，`TIM2_REMAP=00` 时 CH2=PA1。参考 demo 的 PA0=TIM2_CH1 已被旋钮占用。PA1 未占用、非 FT，PWM 为 3.3 V 逻辑，**不能**给电机供电。
-- **JY003**：公开资料几乎只有商品名，引脚以模块丝印（PWM / IN / SIG）为准。同类 PWM 风扇/驱动常见 1–20 kHz；阶段 4 用 20 kHz。电机电源独立，GND 并入面包板轨。ST-Link 3.3V ≈150 mA，带不动风扇。
+- **JY003**：公开资料几乎只有商品名，引脚以模块丝印（PWM / IN / SIG）为准。同类 PWM 风扇/驱动常见 1–20 kHz；固件用 24 kHz（PSC=2、ARR=999）。电机电源独立，GND 并入面包板轨。ST-Link 3.3V ≈150 mA，带不动风扇。
 - **排除**：SPI2（PB13=按键）；SPI1 remap 到 PB3/PB4（复位属 JTAG）；USART2（抢 PA0–PA4）。
 
 ---
@@ -309,7 +309,7 @@ PB6, PB7          I2C1：SH1106（已实现，写地址 0x78）
 │    PA6  ← SPI1_MISO ──┴── BMP280 SDO / LSM6DS3 SAO（SDO 勿接地）│
 │    PA3  → BMP280 CSB                                         │
 │    PA8  → LSM6DS3 CS（阶段 3）                               │
-│    PA1  → JY003 PWM（目标，阶段 4；TIM2_CH2）                │
+│    PA1  → JY003 PWM（已实现；TIM2_CH2）                      │
 │    PA9  → CH341 RX（USART1_TX）                              │
 │    PA10 ← CH341 TX（USART1_RX）                              │
 │    PC13 → 板载 LED                                           │
@@ -345,7 +345,7 @@ SPI：BMP280 + LSM6DS3 共用三线、独立 CS；屏幕不占 SPI
 9. **禁止**用 W25Q / TF 当 SPI「学习外设」。
 10. **JY003**：PWM 只接 PA1；电机电源独立；只共地。
 11. **Flash 预算**：动画帧进内部 Flash；完整高帧数动画放不下，限 8–15 帧精简循环。
-12. **与固件**：`f103-manual-reg` 已驱动 SPI1（PA3=BMP280 CS、PA8=LSM6 CS）与 I2C1/SH1106；风扇 PWM 为阶段 4。
+12. **与固件**：`f103-manual-reg` 已驱动 SPI1（PA3=BMP280 CS）、I2C1/SH1106、TIM2 PA1 风扇；LSM6 驱动保留、本阶段不访问。
 
 ---
 
@@ -358,7 +358,7 @@ SPI：BMP280 + LSM6DS3 共用三线、独立 CS；屏幕不占 SPI
 | USART1 | PA9/PA10 异步，**不 remap** |
 | SPI1 | Full-Duplex Master；PA5/PA6/PA7；软件 CS：PA3=BMP280（Mode 0）、PA8=LSM6（Mode 3） |
 | I2C1 | PB6/PB7，**不 remap**；400 kHz Fast Mode（`f103-manual-reg` 已实现） |
-| TIM2 | 默认映射；CH2=PA1 PWM（阶段 4）；不占用 PA0 |
+| TIM2 | 默认映射；CH2=PA1 PWM（已实现）；不占用 PA0 |
 | GPIO | PB0 / PB1 预留给 FT6236（**当前可不初始化**） |
 | 业务划分 | SPI1：BMP280 + LSM6DS3；I2C：SH1106；FT6236 触摸延后；风扇独立电源 |
 | LVGL（若引入） | `LV_USE_FILESYSTEM 0`；`LV_USE_GIF 0`；`LV_COLOR_DEPTH 1`；`LV_MEM_SIZE` 约 7 KB —— **未接入本仓库** |

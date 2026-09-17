@@ -229,7 +229,7 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 | `CS` | **PA8** | ← GPIO 软件片选（低有效） |
 | INT1 / INT2 / OCS / SCX / SDX | — | 本 demo 不接 |
 
-BMP280（同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）；Mode 0；补偿温度上屏、气压走串口。JY003（阶段 4）：PWM→PA1（TIM2_CH2），电机电源独立。
+BMP280（同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）；Mode 0；补偿温度上屏、气压走串口。JY003：PWM→PA1（TIM2_CH2），旋钮 raw 映射占空比，电机电源独立。LSM6DS3 驱动保留、本阶段不访问。
 
 ## I2C1 与 SH1106
 
@@ -312,7 +312,7 @@ Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg
 | 旋钮 | PA0 ADC12_IN0（非 FT；3.3V 模块 SIG） |
 | 调试串口 | USART1：PA9 TX，PA10 RX（FT；[UART/TTL](../learn/uart-ttl-rs232-rs485.md)） |
 | IMU / 气压 | SPI1：PA5/PA6/PA7 共用；PA3=BMP280 CS、PA8=LSM6 CS |
-| 风扇 | PA1 TIM2_CH2 → JY003 PWM（阶段 4）；电机电源独立 |
+| 风扇 | PA1 TIM2_CH2 → JY003 PWM（已实现，旋钮 raw→占空比）；电机电源独立 |
 | SWD | SWDIO=PA13，SWCLK=PA14（[SWD ≠ USART](../learn/swd-vs-usart.md)） |
 | 厂商例程 | `vendor-pack/STM32F103C8T6核心板/.../核心板测试程序(PC13闪烁)/` |
 

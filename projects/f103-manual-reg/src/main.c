@@ -1,6 +1,6 @@
 /**
  * @file    main.c
- * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 DMA+IDLE + ADC1 PA0 + SPI1 LSM6DS3 + I2C1 SH1106
+ * @brief   STM32F103C8T6：PC13 / PB12 LED + PB13 KEY + USART1 DMA+IDLE + ADC1 PA0 + SPI1 BMP280 + TIM2 JY003 + I2C1 SH1106
  *
  * @target  STM32F103C8T6（Medium-density，64 KB Flash / 20 KB RAM）
  *
@@ -12,17 +12,17 @@
  *
  * main 内初始化顺序：
  *   1. GPIOC_Init → GPIOB_Init → USART1_Init → 注册 RX 整帧回显 handle
- *      → ADC1_Init → SPI1_Init → I2C1_Init
- *   2. 延时 ≥20 ms（LSM6DS3 boot）
- *   3. BMP280 ID / Init → WHO_AM_I → LSM6DS3_Init → Probe 0x78 → SH1106 时钟 + 右下温度
- *   4. 循环读 IMU + LED + KEY + 旋钮 + USART1_ProcessRx；每秒刷新时钟与温度
+ *      → ADC1_Init → TIM2_PWM_Init → SPI1_Init → I2C1_Init
+ *   2. 延时 ≥20 ms（BMP280 / 预留 LSM6 boot）
+ *   3. BMP280 ID / Init → Probe 0x78 → SH1106 时钟 + 右下温度
+ *   4. 循环：旋钮 raw→风扇占空比 + LED + KEY + USART1_ProcessRx；每秒刷新时钟与温度
  *
  * 串口：USART1 PA9/PA10（FT），1500000 bps；DMA1 CH4/CH5 + 空闲中断定界。
  * printf 经 syscalls.c → USART1_Write；RX 整帧经 handle 回显。
- * SPI1：PA5/PA7/PA6 共用；PA3=BMP280 CSB Mode 0；PA8=LSM6 CS Mode 3。
- *       JY003 PWM=PA1 TIM2_CH2（电机电源独立，阶段 4）。BMP280 SDO 禁止接地。
+ * SPI1：PA5/PA7/PA6 共用；PA3=BMP280 CSB Mode 0；PA8=LSM6 CS Mode 3（驱动保留，本阶段不访问）。
+ *       JY003 PWM=PA1 TIM2_CH2（电机电源独立）。BMP280 SDO 禁止接地。
  *   PA3、PA5–PA7 手册未标 FT；PA8 为 FT；详表见 spi.c 与引脚总表。
- * ADC1：PA0 = ADC12_IN0（非 FT）；10 k 旋钮 SIG；与 LED/KEY 同频打印 raw/mV。
+ * ADC1：PA0 = ADC12_IN0（非 FT）；10 k 旋钮 SIG；映射 TIM2_CCR2。
  *       PA0 不作风扇 PWM（TIM2_CH1 已被旋钮占用）。
  * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
  * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
@@ -42,10 +42,10 @@
 #include "bmp280.h"
 #include "gpioc_bitband.h"
 #include "i2c.h"
-#include "lsm6ds3.h"
 #include "sh1106.h"
 #include "spi.h"
 #include "systick.h"
+#include "tim2.h"
 #include "usart.h"
 
 /* -------------------------------------------------------------------------- */
@@ -91,7 +91,7 @@ static void delay(volatile unsigned int count)
 }
 
 /**
- * @brief  约 ≥20 ms 忙等（72 MHz 下经验计数，满足 LSM6DS3 boot）
+ * @brief  约 ≥20 ms 忙等（72 MHz 下经验计数，满足 LSM6DS3 / BMP280 boot）
  *
  * AN4650：上电后约 20 ms 加载 trim，此前勿访问寄存器。
  * 单次 0xFFFFF 循环在 72 MHz 上约数十 ms 量级，调用两次留余量。
@@ -143,17 +143,27 @@ static void USART1_EchoFrame(const unsigned char *data, unsigned int len)
 }
 
 /**
+ * @brief  旋钮 raw（0..4095）映射风扇占空比（0..999），低端死区
+ */
+static unsigned int knob_to_fan_duty(unsigned int knob_raw)
+{
+    if (knob_raw <= FAN_KNOB_DEADZONE) {
+        return 0U;
+    }
+    return (knob_raw * FAN_DUTY_MAX) / ADC1_FULL_SCALE;
+}
+
+/**
  * @brief  程序入口
  */
 int main(void)
 {
-    unsigned char who;
     unsigned char bmp_id;
     unsigned char bmp_ok;
-    LSM6DS3_RawSample sample;
     unsigned int led_phase;
     unsigned int knob_raw;
     unsigned int knob_mv;
+    unsigned int fan_duty;
     unsigned char oled_ok;
     unsigned int last_sec;
     unsigned int elapsed_sec;
@@ -169,9 +179,11 @@ int main(void)
     USART1_Init();
     USART1_SetRxHandle(USART1_EchoFrame);
     ADC1_Init();
+    TIM2_PWM_Init();
     SysTick_Init();
 
-    printf("Stm32 manual reg BMP280 + LSM6DS3 SPI + SH1106 I2C demo start\n");
+    printf("Stm32 manual reg BMP280 + JY003 fan + SH1106 I2C demo start\n");
+    printf("LSM6DS3 deferred (not connected)\n");
 
     SPI1_Init();
     I2C1_Init();
@@ -194,17 +206,6 @@ int main(void)
         printf("BMP280 init failed\n");
     }
 
-    who = LSM6DS3_ReadWhoAmI();
-    printf("WHO_AM_I=0x%02X (expect 0x%02X)\n",
-           (unsigned int)who, (unsigned int)LSM6DS3_WHO_AM_I_VALUE);
-
-    if (who != LSM6DS3_WHO_AM_I_VALUE) {
-        printf("LSM6DS3 ID mismatch; check CS/3V3/MISO wiring\n");
-    }
-
-    LSM6DS3_Init();
-    printf("LSM6DS3 init: XL/G 104 Hz, FS +/-2g / 250 dps\n");
-
     oled_ok = 0U;
     if (I2C1_Probe(SH1106_ADDR_WR) != 0U) {
         printf("SH1106 ACK addr=0x78\n");
@@ -219,6 +220,10 @@ int main(void)
     last_sec = 0xFFFFFFFFU;
     for (;;) {
         USART1_ProcessRx();
+
+        knob_raw = ADC1_ReadRaw();
+        fan_duty = knob_to_fan_duty(knob_raw);
+        Fan_SetDuty(fan_duty);
 
         elapsed_sec = SysTick_GetMs() / 1000U;
         if ((oled_ok != 0U) && (elapsed_sec != last_sec)) {
@@ -237,18 +242,14 @@ int main(void)
                 printf("temp %s%u.%02u C  press %u Pa\n",
                        (temp_centi < 0) ? "-" : "",
                        temp_abs / 100U, temp_abs % 100U, press_pa);
+            } else {
+                /* CS 接触不良等读失败：右下角仍画 0.00C */
+                SH1106_DrawTemp(0);
             }
             SH1106_Refresh();
             printf("clock %02u:%02u:%02u\n", clock_h, clock_m, clock_s);
         }
 
-        if (LSM6DS3_ReadRaw(&sample) != 0U) {
-            printf("xl %d %d %d  g %d %d %d\n",
-                   (int)sample.ax, (int)sample.ay, (int)sample.az,
-                   (int)sample.gx, (int)sample.gy, (int)sample.gz);
-        }
-
-        /* 降低 LED / KEY 打印频率，避免刷屏过快掩盖 IMU 行 */
         led_phase++;
         if (led_phase >= 200U) {
             led_phase = 0U;
@@ -268,9 +269,8 @@ int main(void)
             } else {
                 printf("PB13 KEY low\n");
             }
-            knob_raw = ADC1_ReadRaw();
             knob_mv = (knob_raw * ADC1_VDDA_MV) / ADC1_FULL_SCALE;
-            printf("knob raw=%u mv=%u\n", knob_raw, knob_mv);
+            printf("knob raw=%u mv=%u duty=%u\n", knob_raw, knob_mv, fan_duty);
             if (bmp_ok != 0U) {
                 temp_centi = BMP280_ReadTemp();
                 press_pa = BMP280_ReadPressure();

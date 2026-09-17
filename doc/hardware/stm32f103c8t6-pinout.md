@@ -20,7 +20,7 @@
 | 丝印 | FT | 默认复用（摘录） | Remap / 备注 | 本仓库占用 |
 |------|----|------------------|--------------|------------|
 | PA0 | — | USART2_CTS / TIM2_CH1_ETR / ADC12_IN0 / WKUP | — | **ADC1 旋钮 SIG**（已实现，`f103-manual-reg`）；勿作风扇 PWM |
-| PA1 | — | USART2_RTS / TIM2_CH2 / ADC12_IN1 | TIM2 默认 CH2 | **JY003 PWM**（目标，阶段 4） |
+| PA1 | — | USART2_RTS / TIM2_CH2 / ADC12_IN1 | TIM2 默认 CH2 | **JY003 PWM**（已实现，`f103-manual-reg`） |
 | PA2 | — | **USART2_TX** / TIM2_CH3 / ADC12_IN2 | 勿与 SPI1 同时用默认 USART2 | —（勿开 USART2） |
 | PA3 | — | **USART2_RX** / TIM2_CH4 / ADC12_IN3 | GPIO 软件 CS；勿开 USART2 | **BMP280 CSB**（`f103-manual-reg`） |
 | PA4 | — | SPI1_NSS / USART2_CK / ADC12_IN4 | 不用硬件 NSS | 空闲（面包板孔不可用，勿再作 CS） |
@@ -117,7 +117,7 @@ PC13              板载 LED（已实现）
 PB12              外接 LED（已实现，f103-manual-reg，拉电流）
 PB13              按键（已实现，f103-manual-reg，上拉输入）
 PA0               ADC1 CH0 旋钮 SIG（已实现，f103-manual-reg）
-PA1               TIM2_CH2 → JY003 PWM（目标，阶段 4）
+PA1               TIM2_CH2 → JY003 PWM（已实现）
 PA3               BMP280 CSB
 PA4               空闲（面包板孔不可用，勿再作 CS）
 PA5–PA7           SPI1 SCK/MISO/MOSI（BMP280 + LSM6 并联）

@@ -278,7 +278,7 @@ LOAD .../startup/startup_stm32f103xb.s.obj
 | `Reset_Handler` | startup.obj |
 | `_write_r` / `vfprintf` 等 | libc.a |
 
-`.isr_vector` 仍在 Flash `0x08000000`（链接脚本段名决定，与 `LOAD` 顺序无关）。当前 Debug 构建：纯字符串 `printf` 常被优化为 `puts`，`.text` 约 **8 KB**（`arm-none-eabi-size`）；带格式符的 `printf` 才接近 **30 KB**。仅 LED、无 libc 时约 **0.6 KB** 量级——**勿**用旧 map 中的固定地址做绝对对照，以当前 `f103-manual-reg.map` 为准。
+`.isr_vector` 仍在 Flash `0x08000000`（链接脚本段名决定，与 `LOAD` 顺序无关）。当前 Debug 构建（2026-09-17）：带格式符 `printf` 的 demo `.text` **41304**（`arm-none-eabi-size`）。纯字符串常被优化为 `puts`，体积会小一截。仅 LED、无 libc 时约 **0.6 KB** 量级——**勿**用旧 map 中的固定地址做绝对对照，以当前 `f103-manual-reg.map` 为准。
 
 **④ 向量表与 `Reset_Handler`**
 

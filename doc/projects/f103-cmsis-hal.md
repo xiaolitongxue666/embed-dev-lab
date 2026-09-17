@@ -116,7 +116,7 @@ USART1_WriteStr("...\n")  →  HAL_UART_Transmit(&huart1, ...)  →  PA9
 | 需要 `%d` 等格式化 | 可链 libc 并参考 [f103-manual-reg § printf](f103-manual-reg.md#printf-与-newlib-syscall) 增加 `syscalls.c` |
 | 引脚 / 波特率 | PA9 TX，1500000 8N1；`\n` 在 `USART1_WriteStr` 内补 `\r` |
 | CH341 宿主切换 | `./scripts/serial-ch341-switch.sh status\|to-win\|to-wsl`；WSL：`picocom -b 1500000 /dev/ttyUSB0`（见 [scripts-reference § picocom](../scripts-reference.md#wsl-下用-picocom-读串口1500000-8n1)） |
-| Flash 参考 | Debug 约 **6 KB** text（无 libc I/O）；manual-reg 纯字符串走 `puts` 约 **8 KB**，带格式符的 `printf` 才接近 **30 KB** |
+| Flash 参考 | Debug 约 **6 KB** text（无 libc I/O）；manual-reg 当前 Debug `.text` **41304**（2026-09-17，带格式符 `printf`） |
 
 概念总览：[裸机 newlib、nosys 与串口输出 §5](../learn/newlib-nosys-stdio-retarget.md#5-printf-与-hal_uart_transmit-如何选)
 

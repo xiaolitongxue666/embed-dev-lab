@@ -62,15 +62,15 @@ projects/f103-manual-reg/
        1. GPIOC_Init()    — PWR+DBP、PC13 推挽输出
        2. GPIOB_Init()    — IOPBEN、PB12 推挽、PB13 上拉输入
        3. Key_ExtiInit()  — EXTI13 双沿，IRQn 40
-       4. USART1_Init()   — 1500000 8N1，DMAT/DMAR + IDLEIE；USART1_EnableEcho()
+       4. USART1_Init()   — 1500000 8N1，DMAT/DMAR + IDLEIE；USART1_SetRxHandle(USART1_EchoFrame)
        5. ADC1_Init()     — PA0 模拟、校准、CONT + DMA1 CH1
        6. TIM2_PWM_Init() — PA1 PWM，24 kHz
        7. SysTick_Init()  — 1 ms
        8. SPI1_Init()     — PA5/6/7 + PA3/PA8 CS，默认 Mode 3
        9. I2C1_Init()     — PB6/PB7，400 kHz
       10. 延时 ≥20 ms     — 传感器上电
-      11. BMP280_Probe / Init（失败则循环画 0.00C）
-      12. SH1106_Probe / Init
+      11. BMP280_ReadID / Init（失败则 OLED 画 0.00C）
+      12. I2C1_Probe(0x78) / SH1106_Init
       13. for(;;) ProcessRx + EXTI 边沿日志 + 旋钮→风扇 + 1 Hz 时钟/温度 + LED/KEY/knob
 ```
 
@@ -150,7 +150,7 @@ probe-rs chip：**`STM32F103C8Tx`**
 
 ### 体积参考（含 newlib / 串口）
 
-Debug 构建下：源码写 `printf("...")` 时，GCC 常将**纯字符串**优化为 `puts()`，实测 `.text` 约 **8 KB**（`arm-none-eabi-size`）。引入带格式符的 `printf("%d", x)` 后才会链接更多 libc，接近 **30 KB** 量级。C8 64 KB Flash 仍足够本 demo；新增功能时注意 map 中 `.text` 总量。
+当前 Debug（2026-09-17 `arm-none-eabi-size`）：`.text` **41304**、`.data` **1720**、`.bss` **2308**（格式化 `printf` + BMP280/SH1106/TIM2）。纯字符串常被优化为 `puts()`，体积会小一截；带格式符才会拉入更多 libc。C8 64 KB Flash 仍足够；新增功能时注意 map 中 `.text` 总量。
 
 工具链链接：`--specs=nosys.specs -nostartfiles`（[`toolchain-arm-none-eabi.cmake`](../../cmake/toolchain-arm-none-eabi.cmake)）。详见 [编译流程](../learn/f103-module-build-flow.md)。
 
@@ -204,7 +204,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | GPIO | `GPIOA_CRL` CNF=00 MODE=00 模拟输入 |
 | 时钟 | `RCC_CFGR.ADCPRE=/6`（PCLK2 72 MHz → ADC 12 MHz，上限 14 MHz） |
 | 采样 | 连续转换 + DMA1 CH1 循环 16-bit，无 TCIE；`ADC1_ReadRaw` 读最近 DMA 值 |
-| 用途 | raw 映射 TIM2 CCR2（死区 80）；日志 `knob=%u duty=%u` |
+| 用途 | raw 映射 TIM2 CCR2（死区 80）；日志 `knob raw=%u mv=%u duty=%u` |
 
 B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接到 5V。
 
@@ -352,7 +352,7 @@ Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg
 | knob 无行 / 旧固件 | 先 `build` 再 `flash`；`probe-rs list` 须见到 ST-Link（仅蓝板 USB + CH341 不能烧录） |
 | knob raw 钉死 0 或 4095 | SIG 是否接到 **PA0**（非 B12 侧）；模块是否 3.3V（勿 5V） |
 | 程序卡死 | HSE 超时（`system_stm32f1xx.c`）；无晶振时 HSI 路径 |
-| 有 LED 无串口 | `USART1_Init()`；COM/波特率 1500000/GND；CH341 宿主 `serial-ch341-switch.sh status` |
+| 有 LED 无串口 | `USART1_Init()`；COM/波特率 1500000/GND；CH341 宿主 `serial-ch341-switch.sh status`。host 收 0 字节且 SWD 见 `USART1_BRR=0x30` / `USART1_Write` 在跑：查 CH341 **RX←PA9**、**GND→面包板轨**；对 PA10 发 `0x00` 时 `GPIOA_IDR.10` 应跳变，否则 TX→PA10 未接到 |
 | 串口逐行右移 | `_write` 须 `\n`→`\r\n`（已实现在 `syscalls.c`） |
 | WHO_AM_I=0x00/0xFF | CS、3V3、MISO=SAO、SPI Mode 3、上电 20 ms 后再读 |
 | WHO_AM_I=0x6A | 模块可能是 LSM6DS3TR-C，期望 ID 不同 |

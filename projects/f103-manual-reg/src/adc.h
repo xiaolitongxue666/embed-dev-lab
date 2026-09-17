@@ -1,10 +1,11 @@
 /**
  * @file    adc.h
- * @brief   ADC1 通道 0（PA0）手写寄存器：校准、单次软件触发
+ * @brief   ADC1 通道 0（PA0）：校准后 DMA1 CH1 循环写入 raw
  *
- * 不链接 CMSIS。PA0 = ADC12_IN0（非 FT，模块须 3.3 V）；B12/B13 侧排针无 ADC。
+ * 不链接 CMSIS。PA0 = ADC12_IN0（非 FT，模块须 3.3 V）。
  * PCLK2=72 MHz 时 ADCPRE=/6 → ADC 时钟 12 MHz。
- * 12-bit 右对齐；电压按 VDDA=3.3 V 用整数换算：mv = raw * 3300 / 4095。
+ * 连续转换 + CR2.DMA；CH1 循环、16-bit、无 MINC（RM0008 ADC/DMA）。
+ * ADC1_ReadRaw 只读最近一次 DMA 结果，不再 SWSTART 空等。
  *
  * @see     adc.c
  * @see     doc/hardware/stm32f103c8t6-pinout.md
@@ -19,12 +20,12 @@
 #define ADC1_FULL_SCALE 4095U
 
 /**
- * @brief  开启 ADC1 时钟、PA0 模拟输入、校准、规则组 CH0
+ * @brief  开启 ADC1、PA0 模拟、校准、DMA1 CH1 循环、连续转换
  */
 void ADC1_Init(void);
 
 /**
- * @brief  软件触发一次规则转换，等待 EOC，返回 12-bit 右对齐值
+ * @brief  返回 DMA 最近写入的 12-bit 右对齐值
  */
 unsigned int ADC1_ReadRaw(void);
 

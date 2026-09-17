@@ -88,17 +88,25 @@ void BMP280_WriteReg(unsigned char reg, unsigned char value)
 
 void BMP280_ReadMultiReg(unsigned char reg, unsigned char *buf, unsigned int len)
 {
+    unsigned char tx[25];
+    unsigned char rx[25];
     unsigned int i;
 
-    if (buf == 0) {
+    if ((buf == 0) || (len == 0U) || (len > 24U)) {
         return;
+    }
+
+    tx[0] = (unsigned char)(0x80U | (reg & 0x7FU));
+    for (i = 1U; i <= len; i++) {
+        tx[i] = 0x00U;
     }
 
     SPI1_SetMode0();
     BMP280_CsLow();
-    (void)SPI1_TransferByte((unsigned char)(0x80U | (reg & 0x7FU)));
-    for (i = 0U; i < len; i++) {
-        buf[i] = SPI1_TransferByte(0x00U);
+    if (SPI1_TransferBytes(tx, rx, len + 1U) != 0U) {
+        for (i = 0U; i < len; i++) {
+            buf[i] = rx[i + 1U];
+        }
     }
     BMP280_CsHigh();
     SPI1_SetMode3();

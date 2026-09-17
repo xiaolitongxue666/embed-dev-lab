@@ -22,7 +22,8 @@
  * SPI1：PA5/PA7/PA6 共用；PA3=BMP280 CSB Mode 0；PA8=LSM6 CS Mode 3（驱动保留，本阶段不访问）。
  *       JY003 PWM=PA1 TIM2_CH2（电机电源独立）。BMP280 SDO 禁止接地。
  *   PA3、PA5–PA7 手册未标 FT；PA8 为 FT；详表见 spi.c 与引脚总表。
- * ADC1：PA0 = ADC12_IN0（非 FT）；10 k 旋钮 SIG；映射 TIM2_CCR2。
+ * ADC1：PA0 = ADC12_IN0（非 FT）；DMA1 CH1 循环；映射 TIM2_CCR2。
+ * PB13 KEY：EXTI13 双沿。SPI1 多字节走 DMA1 CH2/CH3。
  *       PA0 不作风扇 PWM（TIM2_CH1 已被旋钮占用）。
  * PC13 LED：非 FT；Backup 域，须先 PWREN+DBP；灌电流，低电平点亮。
  * PB12 LED：FT；拉电流，PB12→220 Ω→LED+，LED-→GND；与 PC13 同步翻转、写相同电平。
@@ -42,6 +43,7 @@
 #include "bmp280.h"
 #include "gpioc_bitband.h"
 #include "i2c.h"
+#include "nvic.h"
 #include "sh1106.h"
 #include "spi.h"
 #include "systick.h"
@@ -63,10 +65,23 @@
 #define GPIOC_CRH  (*(volatile unsigned int *)(GPIOC_BASE + 0x04U))
 #define GPIOB_CRH  (*(volatile unsigned int *)(GPIOB_BASE + 0x04U))
 
+#define AFIO_BASE    0x40010000U
+#define AFIO_EXTICR4 (*(volatile unsigned int *)(AFIO_BASE + 0x14U))
+#define EXTI_BASE    0x40010400U
+#define EXTI_IMR     (*(volatile unsigned int *)(EXTI_BASE + 0x00U))
+#define EXTI_RTSR    (*(volatile unsigned int *)(EXTI_BASE + 0x08U))
+#define EXTI_FTSR    (*(volatile unsigned int *)(EXTI_BASE + 0x0CU))
+#define EXTI_PR      (*(volatile unsigned int *)(EXTI_BASE + 0x14U))
+
 #define RCC_APB1ENR_PWREN  (1U << 28)
+#define RCC_APB2ENR_AFIOEN (1U << 0)
 #define RCC_APB2ENR_IOPBEN (1U << 3)
 #define RCC_APB2ENR_IOPCEN (1U << 4)
 #define PWR_CR_DBP         (1U << 8)
+#define AFIO_EXTICR4_EXTI13_MASK (0xFU << 4)
+#define AFIO_EXTICR4_EXTI13_PB   (1U << 4)
+#define EXTI_LINE13        (1U << 13)
+#define KEY_EXTI_PRIO      7U
 
 #define GPIOC_CRH_PC13_MASK   (0xFU << 20)
 #define GPIOC_CRH_PC13_OUT_PP (3U << 20)
@@ -78,6 +93,8 @@
 #define BOARD_LED_PIN 13U
 #define EXT_LED_PIN   12U
 #define KEY_PIN       13U
+
+static volatile unsigned char g_key_edge;
 
 /**
  * @brief  软件延时（忙等待）
@@ -135,6 +152,30 @@ static void GPIOB_Init(void)
 }
 
 /**
+ * @brief  PB13 → EXTI13 双沿（RM0008 AFIO_EXTICR4 / EXTI IMR/FTSR/RTSR）
+ */
+static void Key_ExtiInit(void)
+{
+    RCC_APB2ENR |= RCC_APB2ENR_AFIOEN;
+    AFIO_EXTICR4 = (AFIO_EXTICR4 & ~AFIO_EXTICR4_EXTI13_MASK) |
+                   AFIO_EXTICR4_EXTI13_PB;
+    EXTI_FTSR |= EXTI_LINE13;
+    EXTI_RTSR |= EXTI_LINE13;
+    EXTI_IMR |= EXTI_LINE13;
+    EXTI_PR = EXTI_LINE13;
+    NVIC_IRQ_SetPriority(EXTI15_10_IRQn, KEY_EXTI_PRIO);
+    NVIC_IRQ_Enable(EXTI15_10_IRQn);
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+    if ((EXTI_PR & EXTI_LINE13) != 0U) {
+        EXTI_PR = EXTI_LINE13;
+        g_key_edge = 1U;
+    }
+}
+
+/**
  * @brief  RX 整帧回显（由 USART1_ProcessRx 在主循环调用，不在 ISR 内）
  */
 static void USART1_EchoFrame(const unsigned char *data, unsigned int len)
@@ -176,6 +217,7 @@ int main(void)
 
     GPIOC_Init();
     GPIOB_Init();
+    Key_ExtiInit();
     USART1_Init();
     USART1_SetRxHandle(USART1_EchoFrame);
     ADC1_Init();
@@ -220,6 +262,15 @@ int main(void)
     last_sec = 0xFFFFFFFFU;
     for (;;) {
         USART1_ProcessRx();
+
+        if (g_key_edge != 0U) {
+            g_key_edge = 0U;
+            if (PBin(KEY_PIN) != 0U) {
+                printf("PB13 KEY irq high\n");
+            } else {
+                printf("PB13 KEY irq low\n");
+            }
+        }
 
         knob_raw = ADC1_ReadRaw();
         fan_duty = knob_to_fan_duty(knob_raw);

@@ -18,6 +18,9 @@
 
 void SPI1_Init(void);
 unsigned char SPI1_TransferByte(unsigned char tx);
+/** 全双工 DMA1 CH3 TX + CH2 RX；len≤32；失败返回 0 */
+unsigned char SPI1_TransferBytes(const unsigned char *tx, unsigned char *rx,
+                                 unsigned int len);
 void SPI1_SetMode0(void);
 void SPI1_SetMode3(void);
 void BMP280_CsLow(void);

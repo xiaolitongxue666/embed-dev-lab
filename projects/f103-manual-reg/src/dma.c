@@ -3,7 +3,8 @@
  * @brief   DMA1 通道 MMIO：AHBENR.DMA1EN、CCR/CNDTR/CPAR/CMAR、ISR/IFCR
  *
  * 通道 n 寄存器块：0x40020008 + (n-1)×0x14（RM0008）。
- * CH4=0x40020044，CH5=0x40020058，CH6=0x4002006C（I2C1_TX）。
+ * CH1=ADC1，CH2=SPI1_RX，CH3=SPI1_TX，
+ * CH4=USART1_TX，CH5=USART1_RX，CH6=I2C1_TX。
  * 调用方须清 CCR.HTIE，只开 TCIE。
  *
  * DMA1 在 AHB：DMA1_ClockEnable 写 AHBENR.DMA1EN。C8T6 无 DMA2。
@@ -92,4 +93,22 @@ void DMA1_Channel_Start(unsigned int channel, unsigned int ccr,
 
     ccr_reg = dma1_reg(channel, 0U);
     *ccr_reg = (ccr & ~DMA_CCR_EN) | DMA_CCR_EN;
+}
+
+unsigned int DMA1_Channel_WaitTc(unsigned int channel, unsigned int loops)
+{
+    unsigned int tcif;
+
+    if ((channel < DMA1_CHANNEL_MIN) || (channel > DMA1_CHANNEL_MAX)) {
+        return 0U;
+    }
+
+    tcif = 1U << (dma1_flag_shift(channel) + 1U);
+    while (loops != 0U) {
+        if ((DMA1_ISR & tcif) != 0U) {
+            return 1U;
+        }
+        loops--;
+    }
+    return 0U;
 }

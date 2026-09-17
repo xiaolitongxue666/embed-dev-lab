@@ -92,9 +92,21 @@ unsigned char LSM6DS3_ReadRaw(LSM6DS3_RawSample *out)
     }
 
     LSM6DS3_CsLow();
-    (void)SPI1_TransferByte((unsigned char)(0x80U | LSM6DS3_REG_OUTX_L_G));
-    for (i = 0U; i < 12U; i++) {
-        buf[i] = SPI1_TransferByte(0x00U);
+    {
+        unsigned char tx[13];
+        unsigned char rx[13];
+
+        tx[0] = (unsigned char)(0x80U | LSM6DS3_REG_OUTX_L_G);
+        for (i = 1U; i < 13U; i++) {
+            tx[i] = 0x00U;
+        }
+        if (SPI1_TransferBytes(tx, rx, 13U) == 0U) {
+            LSM6DS3_CsHigh();
+            return 0U;
+        }
+        for (i = 0U; i < 12U; i++) {
+            buf[i] = rx[i + 1U];
+        }
     }
     LSM6DS3_CsHigh();
 

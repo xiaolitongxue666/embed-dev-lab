@@ -76,6 +76,7 @@
  * @see     RM0008 SPI 章（SPI1 基址 0x40013000）
  */
 
+#include "dma.h"
 #include "spi.h"
 
 /* -------------------------------------------------------------------------- */
@@ -95,6 +96,7 @@
 #define SPI1_BASE     0x40013000U
 /** @brief CR1：Control Register 1（配置主从、Mode、分频、SPE） */
 #define SPI1_CR1      (*(volatile unsigned int *)(SPI1_BASE + 0x00U))
+#define SPI1_CR2      (*(volatile unsigned int *)(SPI1_BASE + 0x04U))
 /** @brief SR：Status Register（TXE / RXNE） */
 #define SPI1_SR       (*(volatile unsigned int *)(SPI1_BASE + 0x08U))
 /** @brief DR：Data Register（写→硬件经 MOSI 发出；读←硬件经 MISO 收到） */
@@ -130,9 +132,21 @@
 #define SPI_CR1_SSI       (1U << 8)
 #define SPI_CR1_SSM       (1U << 9)
 
+#define SPI_CR2_RXDMAEN   (1U << 0)
+#define SPI_CR2_TXDMAEN   (1U << 1)
+
 /* SPI_SR 位 */
 #define SPI_SR_RXNE       (1U << 0)
 #define SPI_SR_TXE        (1U << 1)
+#define SPI_SR_BSY        (1U << 7)
+
+#define SPI1_DMA_MAX      32U
+#define SPI1_DMA_GUARD    100000U
+#define SPI1_DMA_CCR_RX   (DMA_CCR_MINC)
+#define SPI1_DMA_CCR_TX   (DMA_CCR_DIR | DMA_CCR_MINC)
+
+static unsigned char spi1_dma_tx[SPI1_DMA_MAX];
+static unsigned char spi1_dma_rx[SPI1_DMA_MAX];
 
 /** BMP280 CSB = PA3；LSM6 CS = PA8。低有效。 */
 #define BMP280_CS_PIN     3U
@@ -146,6 +160,7 @@
 void SPI1_Init(void)
 {
     RCC_APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_SPI1EN;
+    DMA1_ClockEnable();
 
     GPIOA_CRL &= ~(GPIOA_CRL_PA3_MASK | GPIOA_CRL_PA5_MASK |
                    GPIOA_CRL_PA6_MASK | GPIOA_CRL_PA7_MASK);
@@ -193,6 +208,62 @@ unsigned char SPI1_TransferByte(unsigned char tx)
         }
     }
     return (unsigned char)(SPI1_DR & 0xFFU);
+}
+
+unsigned char SPI1_TransferBytes(const unsigned char *tx, unsigned char *rx,
+                                 unsigned int len)
+{
+    unsigned int i;
+    unsigned int guard;
+
+    if ((len == 0U) || (len > SPI1_DMA_MAX) || (tx == 0) || (rx == 0)) {
+        return 0U;
+    }
+
+    for (i = 0U; i < len; i++) {
+        spi1_dma_tx[i] = tx[i];
+    }
+
+    if ((SPI1_SR & SPI_SR_RXNE) != 0U) {
+        (void)SPI1_DR;
+    }
+
+    SPI1_CR2 |= SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN;
+    DMA1_Channel_Start(DMA1_CHANNEL2,
+                       SPI1_DMA_CCR_RX,
+                       SPI1_BASE + 0x0CU,
+                       (unsigned int)spi1_dma_rx,
+                       len);
+    DMA1_Channel_Start(DMA1_CHANNEL3,
+                       SPI1_DMA_CCR_TX,
+                       SPI1_BASE + 0x0CU,
+                       (unsigned int)spi1_dma_tx,
+                       len);
+
+    if (DMA1_Channel_WaitTc(DMA1_CHANNEL2, SPI1_DMA_GUARD) == 0U) {
+        DMA1_Channel_Stop(DMA1_CHANNEL2);
+        DMA1_Channel_Stop(DMA1_CHANNEL3);
+        SPI1_CR2 &= ~(SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+        return 0U;
+    }
+    (void)DMA1_Channel_WaitTc(DMA1_CHANNEL3, SPI1_DMA_GUARD);
+
+    DMA1_Channel_Stop(DMA1_CHANNEL2);
+    DMA1_Channel_Stop(DMA1_CHANNEL3);
+    SPI1_CR2 &= ~(SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+
+    guard = SPI1_DMA_GUARD;
+    while ((SPI1_SR & SPI_SR_BSY) != 0U) {
+        guard--;
+        if (guard == 0U) {
+            break;
+        }
+    }
+
+    for (i = 0U; i < len; i++) {
+        rx[i] = spi1_dma_rx[i];
+    }
+    return 1U;
 }
 
 void SPI1_SetMode0(void)

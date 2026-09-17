@@ -15,11 +15,11 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/mcu-config.cmake)
 
 set(F103_SOURCES
     src/main.c                  # 应用入口：LED、BMP280 温度、旋钮→风扇、串口回显
-    src/nvic.c                  # NVIC ISER/IP 手写（USART1 / DMA1 CH4/CH5/CH6）
-    src/dma.c                   # DMA1 通道启停（USART1 TX=CH4 RX=CH5；I2C1 TX=CH6）
-    src/adc.c                   # ADC1 CH0（PA0）单次转换
+    src/nvic.c                  # NVIC ISER/IP 手写（USART1 / DMA1 CH4/CH5/CH6 / EXTI15_10）
+    src/dma.c                   # DMA1：ADC CH1、SPI CH2/CH3、USART CH4/CH5、I2C CH6
+    src/adc.c                   # ADC1 CH0（PA0）连续转换 + DMA1 CH1
     src/usart.c                 # USART1 DMA 收发 + 空闲定界
-    src/spi.c                   # SPI1 双 CS：PA3=BMP280 Mode0，PA8=LSM6 Mode3
+    src/spi.c                   # SPI1 双 CS + 多字节 DMA1 CH2/CH3
     src/bmp280.c                # BMP280 / BME280 SPI 校准与补偿温度/气压
     src/lsm6ds3.c               # LSM6DS3 SPI 读写（保留，本阶段不调用）
     src/tim2.c                  # TIM2_CH2 PA1 PWM → JY003

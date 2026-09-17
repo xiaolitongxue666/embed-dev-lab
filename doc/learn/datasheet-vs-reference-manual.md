@@ -34,7 +34,7 @@
 
 **以 RM0008 为主，Datasheet 为辅，两者结合用。**
 
-[`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 做的事很集中：配置 **RCC** 与 **Flash 等待周期**，把系统时钟升到 72 MHz。
+[`projects/f103-manual-reg/src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) 做的事很集中：配置 **RCC** 与 **Flash 等待周期**，把系统时钟升到 72 MHz。
 
 ### 必须看 RM0008（写代码的直接依据）
 

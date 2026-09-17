@@ -9,6 +9,7 @@
  *
  * @see     dma.c
  * @see     doc/reference/stm32f103/md/topics/dma1-ahb-clock.md
+ * @see     doc/reference/stm32f103/md/topics/dma1-irq-map.md
  * @see     doc/learn/interrupt-vector-table-and-nvic.md
  */
 

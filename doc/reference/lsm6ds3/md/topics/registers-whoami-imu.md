@@ -6,7 +6,7 @@
 | 版本 | Rev 8 |
 | PDF 页码 | 20–22（灵敏度）、42–45（映射）、53–55、63–66 |
 | 整理日期 | 2026-08-31 |
-| 源码 | [`projects/f103-manual-reg/src/lsm6ds3.c`](../../../../projects/f103-manual-reg/src/lsm6ds3.c) |
+| 源码 | [`projects/f103-manual-reg/src/driver/lsm6ds3.c`](../../../../projects/f103-manual-reg/src/driver/lsm6ds3.c) |
 
 ## WHO_AM_I (0Fh)
 

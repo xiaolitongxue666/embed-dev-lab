@@ -6,7 +6,7 @@
 | 版本 | Rev 9（本地 PDF）；编码与 Rev 21 一致 |
 | PDF 页码 | §8 起约 p.138；CRL/CRH 配置表约 p.142（以本地 PDF 为准） |
 | 学习笔记 | [gpio-eight-modes.md](../../../learn/gpio-eight-modes.md) |
-| 源码 | [`usart.c`](../../../../projects/f103-manual-reg/src/usart.c) · [`spi.c`](../../../../projects/f103-manual-reg/src/spi.c) · [`i2c.c`](../../../../projects/f103-manual-reg/src/i2c.c) · [`main.c`](../../../../projects/f103-manual-reg/src/main.c) |
+| 源码 | [`usart.c`](../../../../projects/f103-manual-reg/src/periph/usart.c) · [`spi.c`](../../../../projects/f103-manual-reg/src/periph/spi.c) · [`i2c.c`](../../../../projects/f103-manual-reg/src/periph/i2c.c) · [`gpio.c`](../../../../projects/f103-manual-reg/src/board/gpio.c) |
 
 ## 背景
 

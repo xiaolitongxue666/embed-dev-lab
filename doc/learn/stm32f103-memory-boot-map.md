@@ -65,7 +65,7 @@ F103 裸机无 MMU：链接器与调试器中的地址 **即 CPU 实际访问的
 | 类别 | 谁设计 | 地址区（F103） | 例子 | 本仓库 |
 |------|--------|----------------|------|--------|
 | **PPB 内核私有** | ARM | `0xE0000000` 起 | NVIC、SysTick、SCB/VTOR | 手写未直接访问；见 [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md) |
-| **ST 片上外设** | ST | `0x40000000` 起 | RCC @ `0x40021000`、GPIOC @ `0x40011000` | [`main.c`](../../projects/f103-manual-reg/src/main.c) MMIO |
+| **ST 片上外设** | ST | `0x40000000` 起 | RCC @ `0x40021000`、GPIOC @ `0x40011000` | [`gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c) MMIO |
 
 **都在同一块硅片上**，但 ARM 与 ST 在手册里分地址段、分章节。**NVIC 不是 GPIO 那种 ST 外设**；复位后查向量表由内核/NVIC 机制配合 Flash 中的 `g_pfnVectors` 完成。
 

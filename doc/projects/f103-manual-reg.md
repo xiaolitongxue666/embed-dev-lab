@@ -1,6 +1,6 @@
 # f103-manual-reg 模块
 
-**STM32F103C8T6** 核心板 demo：**PC13 / PB12 LED** + **PB13 KEY** + **USART1 DMA+空闲中断（printf + 整帧回显）** + **ADC1 PA0 旋钮** + **SPI1 BMP280 温度/气压 + LSM6DS3 六轴** + **I2C1 SH1106 数字时钟（右下温度）**，纯寄存器实现；PC13 行为对齐厂商例程 `vendor-pack/.../核心板测试程序(PC13闪烁)`。
+**STM32F103C8T6** 核心板 demo：**PC13 / PB12 LED** + **PB13 KEY（EXTI）** + **USART1 DMA+空闲中断（printf + 整帧回显）** + **ADC1 PA0 旋钮（DMA 连续）** + **TIM2 PA1 风扇** + **SPI1 BMP280 温度/气压**（LSM6 驱动保留、`main` 不访问）+ **I2C1 SH1106 数字时钟（右下温度，失败画 `0.00C`）**，纯寄存器实现；PC13 行为对齐厂商例程 `vendor-pack/.../核心板测试程序(PC13闪烁)`。
 
 ## 模块定位
 
@@ -8,8 +8,8 @@
 |----|------|
 | 目标芯片 | STM32F103C8T6（Cortex-M3，Medium-density F103xB，64 KB Flash / 20 KB RAM） |
 | 实现方式 | 全手写 `startup` / `system_stm32f1xx.c` / GPIO·USART·SPI·ADC·I2C 寄存器，**不链接** CMSIS submodule 与 HAL |
-| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉输入读按键（`PBin`）；USART1 @ PA9/PA10，1500000 bps，DMA TX/RX + 空闲定界 + `printf` + 整帧回显；ADC1 CH0 @ PA0 旋钮（`knob raw` / `mv`）；SPI1 → BMP280（校准补偿温度/气压，无湿度）+ LSM6DS3（WHO_AM_I + raw 六轴）；I2C1 → SH1106 中央 `HH:MM:SS`、右下温度（写地址 `0x78`） |
-| 标准库 | 工具链 **newlib**（`libc.a`）+ 工程内 [`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) 重定向 `_write` |
+| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉 + EXTI13 双沿；USART1 @ PA9/PA10，1500000 bps，DMA TX/RX + 空闲定界 + `printf` + 整帧回显；ADC1 CH0 @ PA0 连续 + DMA1 CH1，旋钮 raw→TIM2 风扇占空比；SPI1 → BMP280（校准补偿温度/气压，无湿度；失败 OLED `0.00C`）；LSM6DS3 驱动保留、`main` 不访问；I2C1 → SH1106 中央 `HH:MM:SS`、右下温度（写地址 `0x78`） |
+| 标准库 | 工具链 **newlib**（`libc.a`）+ 工程内 [`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 重定向 `_write` |
 | 对照工程 | [`f103-cmsis-hal`](f103-cmsis-hal.md) — 当前阶段 HAL 工程仍以 LED+USART 为主（本轮未同步 SPI / ADC） |
 | 参照关系 | vendor-pack 三层见 [ST F1 软件仓库归纳 §5](../learn/stm32-cmsis-component-repos.md#5-与-embed-dev-lab-的三层参照)；从零手写见 [从零手写构建指南](../learn/f103-manual-build-from-scratch.md) |
 
@@ -20,26 +20,31 @@ projects/f103-manual-reg/
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── src/
-│   ├── main.c              # GPIOC / GPIOB / USART1 / ADC1 / SPI1 / BMP280 / LSM6DS3 / SH1106
-│   ├── system_stm32f1xx.c  # SystemInit，HSE→72 MHz
-│   ├── system_stm32f1xx.h
-│   ├── gpioc_bitband.h     # PCout(n) / PBout(n) / PBin(n) 位带宏
-│   ├── nvic.c / nvic.h     # NVIC ISER/IP 手写（USART1 / DMA1 CH4/CH5）
-│   ├── dma.c / dma.h       # DMA1 通道启停（USART1 TX=CH4 RX=CH5）
-│   ├── adc.c / adc.h       # ADC1 CH0（PA0）校准与单次转换
-│   ├── usart.c / usart.h   # USART1 DMA 收发、IDLE 定界、RX 帧 handle
-│   ├── spi.c / spi.h       # SPI1 Mode0/3 + 双软件 CS：PA3=BMP280、PA8=LSM6
-│   ├── bmp280.c / bmp280.h # BMP280 校准、补偿温度/气压（CS=PA3）
-│   ├── lsm6ds3.c / lsm6ds3.h # LSM6DS3 寄存器读写与 raw 采样（CS=PA8）
-│   ├── i2c.c / i2c.h       # I2C1 PB6/PB7；命令轮询，页 DMA1 CH6
-│   ├── sh1106.c / sh1106.h # SH1106 帧缓冲、中央时钟、右下温度
-│   ├── sh1106_font.c / .h  # 8×16 数字、冒号、小数点、负号、C
-│   ├── systick.c / .h      # SysTick 1 ms
-│   └── syscalls.c          # newlib _write/_sbrk 等，printf → USART1
+│   ├── app/
+│   │   └── main.c              # 应用：初始化顺序、旋钮→风扇、OLED 时钟
+│   ├── board/
+│   │   ├── gpio.c / gpio.h     # PC13 Backup 域、PB12 LED、PB13 上拉
+│   │   ├── key.c / key.h       # EXTI13 双沿，IRQn 40
+│   │   └── gpioc_bitband.h     # PCout / PBout / PBin
+│   ├── periph/
+│   │   ├── nvic.c / nvic.h     # NVIC ISER/IP
+│   │   ├── dma.c / dma.h       # DMA1 通道启停
+│   │   ├── adc.c / adc.h       # ADC1 CH0 连续 + DMA1 CH1
+│   │   ├── usart.c / usart.h   # USART1 DMA + IDLE
+│   │   ├── spi.c / spi.h       # SPI1 Mode0/3，DMA1 CH2/CH3
+│   │   ├── tim2.c / tim2.h     # TIM2_CH2 PA1 PWM
+│   │   ├── i2c.c / i2c.h       # I2C1；页 DMA1 CH6
+│   │   ├── systick.c / .h      # SysTick 1 ms
+│   │   ├── syscalls.c          # printf → USART1
+│   │   └── system_stm32f1xx.c / .h
+│   └── driver/
+│       ├── bmp280.c / .h       # 校准、补偿 T/P（CS=PA3）
+│       ├── lsm6ds3.c / .h      # 保留，main 不调用
+│       └── sh1106.c / .h + font
 ├── startup/
-│   └── startup_stm32f103xb.s   # 向量表、.data/.bss、Reset_Handler
+│   └── startup_stm32f103xb.s
 └── linker/
-    └── STM32F103C8_FLASH.ld    # 64K Flash / 20K RAM；end/_end 堆起点
+    └── STM32F103C8_FLASH.ld
 ```
 
 ## 运行时初始化顺序
@@ -51,20 +56,22 @@ projects/f103-manual-reg/
        [1] Reset_Handler → PC
   → Reset_Handler（startup/startup_stm32f103xb.s）
        设 SP → 拷贝 .data → 清零 .bss
-  → bl SystemInit（src/system_stm32f1xx.c）
+  → bl SystemInit（src/periph/system_stm32f1xx.c）
        HSE 8 MHz × PLL×9 → SYSCLK 72 MHz（失败则 HSI 8 MHz）
-  → bl main（src/main.c）
+  → bl main（src/app/main.c）
        1. GPIOC_Init()    — PWR+DBP、PC13 推挽输出
        2. GPIOB_Init()    — IOPBEN、PB12 推挽、PB13 上拉输入
-       3. USART1_Init()   — RCC+GPIOA+USART1+DMA1，1500000 8N1，DMAT/DMAR + IDLEIE
-          USART1_SetRxHandle(整帧回显)
-       4. ADC1_Init()     — PA0 模拟、ADCPRE=/6、校准、规则组 CH0
-       5. SPI1_Init()     — PA5/6/7 + PA3/PA8 CS，默认 Mode 3，DIV16
-       6. I2C1_Init()     — PB6/PB7 复用开漏，400 kHz
-       7. 延时 ≥20 ms     — LSM6DS3 boot（见 AN4650 / electrical-spi-timing）
-       8. BMP280_Init — 校准 + normal；WHO_AM_I / LSM6DS3_Init
-       9. Probe 0x78 → SH1106_Init
-      10. for(;;) 每秒画中央时钟与右下温度 + USART1_ProcessRx + IMU + LED + KEY + knob
+       3. Key_ExtiInit()  — EXTI13 双沿，IRQn 40
+       4. USART1_Init()   — 1500000 8N1，DMAT/DMAR + IDLEIE；USART1_EnableEcho()
+       5. ADC1_Init()     — PA0 模拟、校准、CONT + DMA1 CH1
+       6. TIM2_PWM_Init() — PA1 PWM，24 kHz
+       7. SysTick_Init()  — 1 ms
+       8. SPI1_Init()     — PA5/6/7 + PA3/PA8 CS，默认 Mode 3
+       9. I2C1_Init()     — PB6/PB7，400 kHz
+      10. 延时 ≥20 ms     — 传感器上电
+      11. BMP280_Probe / Init（失败则循环画 0.00C）
+      12. SH1106_Probe / Init
+      13. for(;;) ProcessRx + EXTI 边沿日志 + 旋钮→风扇 + 1 Hz 时钟/温度 + LED/KEY/knob
 ```
 
 ```mermaid
@@ -72,10 +79,10 @@ flowchart TD
   rst[硬件复位] --> vt["g_pfnVectors\n0x08000000"]
   vt --> rh["Reset_Handler\nstartup_stm32f103xb.s"]
   rh --> data["拷贝 .data / 清 .bss"]
-  data --> si["bl SystemInit\nsystem_stm32f1xx.c"]
+  data --> si["bl SystemInit\nperiph/system_stm32f1xx.c"]
   si --> clk["HSE x PLL9 = 72 MHz"]
-  clk --> mainNode["bl main\nmain.c"]
-  mainNode --> app["GPIO / USART1 / ADC1 / SPI1 / I2C1 SH1106"]
+  clk --> mainNode["bl main\napp/main.c"]
+  mainNode --> app["board / USART1 / ADC DMA / TIM2 / SPI / I2C OLED"]
 ```
 
 `main` **不会**再调用 `SystemInit`。链接使用 `-nostartfiles`，无工具链 crt0；C 运行时最小初始化全在 `Reset_Handler`。
@@ -84,23 +91,42 @@ flowchart TD
 | 文件 | 职责 | 延伸阅读 |
 |------|------|----------|
 | [`startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表、`Reset_Handler`、`.data`/`.bss`、`bl SystemInit`、`bl main` | [编译流程](../learn/f103-module-build-flow.md)、[中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
-| [`src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：HSE×PLL→72 MHz；失败保持 HSI 8 MHz | [裸机 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
-| [`src/main.c`](../../projects/f103-manual-reg/src/main.c) | 应用入口：PC13、USART1、ADC1 旋钮、BMP280 温度、SPI/LSM6DS3、I2C/SH1106、printf | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
-| [`src/nvic.c`](../../projects/f103-manual-reg/src/nvic.c) | NVIC ISER/IP：USART1=37，DMA1 CH4=14 / CH5=15 | [中断向量表与 NVIC](../learn/interrupt-vector-table-and-nvic.md) |
-| [`src/dma.c`](../../projects/f103-manual-reg/src/dma.c) | DMA1 通道 CCR/CNDTR/CPAR/CMAR、IFCR | [DMA1 AHB 时钟](../reference/stm32f103/md/topics/dma1-ahb-clock.md) · 下文 § USART1 |
-| [`src/adc.c`](../../projects/f103-manual-reg/src/adc.c) | ADC1 CH0（PA0）校准、SWSTART 单次转换 | 下文 § ADC1 旋钮 |
-| [`src/usart.c`](../../projects/f103-manual-reg/src/usart.c) | USART1 MMIO：DMAT/DMAR、IDLE 定界、`ProcessRx` | 下文 § USART1 与 § printf |
-| [`src/spi.c`](../../projects/f103-manual-reg/src/spi.c) | SPI1 Mode0/3、软件 CS（PA3=BMP280、PA8=LSM6）、阻塞交换字节 | [SPI 时序](../reference/lsm6ds3/md/topics/electrical-spi-timing.md) · [接线可行性](../hardware/stm32f103-peripherals.md#引脚可行性阶段-1-核对) |
-| [`src/bmp280.c`](../../projects/f103-manual-reg/src/bmp280.c) | 24 字节校准、`0xF4`/`0xF5`、补偿温度/气压 | [BMP280](../reference/bmp280/README.md) |
-| [`src/lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c) | WHO_AM_I、CTRL、STATUS、连读 OUT 12 字节 | [SPI 协议](../reference/lsm6ds3/md/topics/spi-protocol.md)、[寄存器](../reference/lsm6ds3/md/topics/registers-whoami-imu.md) |
-| [`src/i2c.c`](../../projects/f103-manual-reg/src/i2c.c) | I2C1 主机写；命令轮询，页 DMA1 CH6 | [I2C1 写帧 / DMA](../reference/stm32f103/md/topics/i2c1-master-polling.md) |
-| [`src/sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) | 写地址 `0x78`、电荷泵、列偏移 2、中央时钟、右下温度 | [SH1106](../reference/sh1106/README.md) |
-| [`src/systick.c`](../../projects/f103-manual-reg/src/systick.c) | SysTick 1 ms，覆盖 weak Handler | [中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
-| [`src/syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) | newlib 底层 I/O；`_write`→串口，`_sbrk`→堆 | 下文 § printf 与 newlib syscall |
-| [`src/gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) | `PCout(n)` 位带写 ODR | [MMIO §5](../learn/stm32f103-mmio-basics.md#5-f103-manual-reg-pc13-点灯完整-mmio-流程) |
+| [`src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) | `SystemInit()`：HSE×PLL→72 MHz；失败保持 HSI 8 MHz | [裸机 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
+| [`src/app/main.c`](../../projects/f103-manual-reg/src/app/main.c) | 应用入口：LED、USART1、ADC→风扇、BMP280、SH1106；不访问 LSM6 | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
+| [`src/board/gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c) | PC13 Backup 域、PB12 LED、PB13 上拉 | [Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
+| [`src/board/key.c`](../../projects/f103-manual-reg/src/board/key.c) | EXTI13 双沿，IRQn 40 | 下文 § 中断与 DMA |
+| [`src/periph/nvic.c`](../../projects/f103-manual-reg/src/periph/nvic.c) | NVIC ISER/IP：USART1=37，DMA1 CH4=14 / CH5=15 / CH6=16，EXTI15_10=40 | [中断向量表与 NVIC](../learn/interrupt-vector-table-and-nvic.md) |
+| [`src/periph/dma.c`](../../projects/f103-manual-reg/src/periph/dma.c) | DMA1 通道 CCR/CNDTR/CPAR/CMAR、IFCR | [DMA1 AHB 时钟](../reference/stm32f103/md/topics/dma1-ahb-clock.md) · [请求与 IRQ](../reference/stm32f103/md/topics/dma1-irq-map.md) |
+| [`src/periph/adc.c`](../../projects/f103-manual-reg/src/periph/adc.c) | ADC1 CH0（PA0）校准、连续 + DMA1 CH1 循环 | 下文 § ADC1 旋钮 |
+| [`src/periph/usart.c`](../../projects/f103-manual-reg/src/periph/usart.c) | USART1 MMIO：DMAT/DMAR、IDLE 定界、`ProcessRx` | 下文 § USART1 与 § printf |
+| [`src/periph/spi.c`](../../projects/f103-manual-reg/src/periph/spi.c) | SPI1 Mode0/3、软件 CS、DMA1 CH2/CH3 `WaitTc` | [SPI 时序](../reference/lsm6ds3/md/topics/electrical-spi-timing.md) · [接线可行性](../hardware/stm32f103-peripherals.md#引脚可行性阶段-1-核对) |
+| [`src/periph/tim2.c`](../../projects/f103-manual-reg/src/periph/tim2.c) | TIM2_CH2 PA1 PWM，24 kHz | 下文 § 硬件参考 |
+| [`src/driver/bmp280.c`](../../projects/f103-manual-reg/src/driver/bmp280.c) | 24 字节校准、`0xF4`/`0xF5`、补偿温度/气压 | [BMP280](../reference/bmp280/README.md) |
+| [`src/driver/lsm6ds3.c`](../../projects/f103-manual-reg/src/driver/lsm6ds3.c) | WHO_AM_I、CTRL、STATUS、连读 OUT 12 字节（`main` 不调用） | [SPI 协议](../reference/lsm6ds3/md/topics/spi-protocol.md)、[寄存器](../reference/lsm6ds3/md/topics/registers-whoami-imu.md) |
+| [`src/periph/i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c) | I2C1 主机写；命令轮询，页 DMA1 CH6 | [I2C1 写帧 / DMA](../reference/stm32f103/md/topics/i2c1-master-polling.md) |
+| [`src/driver/sh1106.c`](../../projects/f103-manual-reg/src/driver/sh1106.c) | 写地址 `0x78`、电荷泵、列偏移 2、中央时钟、右下温度 | [SH1106](../reference/sh1106/README.md) |
+| [`src/periph/systick.c`](../../projects/f103-manual-reg/src/periph/systick.c) | SysTick 1 ms，覆盖 weak Handler | [中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
+| [`src/periph/syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) | newlib 底层 I/O；`_write`→串口，`_sbrk`→堆 | 下文 § printf 与 newlib syscall |
+| [`src/board/gpioc_bitband.h`](../../projects/f103-manual-reg/src/board/gpioc_bitband.h) | `PCout(n)` 位带写 ODR | [MMIO §5](../learn/stm32f103-mmio-basics.md#5-f103-manual-reg-pc13-点灯完整-mmio-流程) |
 | [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) | Flash/RAM 布局；`end`/`_ebss` 供 printf 堆 | [linker-vma-lma](../learn/linker-vma-lma.md)、[memory-map](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
 
-头文件 `usart.h`、`spi.h`、`bmp280.h`、`lsm6ds3.h`、`i2c.h`、`sh1106.h`、`gpioc_bitband.h`、`system_stm32f1xx.h` 由 `#include` 引入，**不**列入 CMake `SOURCES`。
+头文件由 `#include` 引入（`INCLUDE_DIRS` 为 `src/app` `src/board` `src/periph` `src/driver`），**不**列入 CMake `SOURCES`。
+
+## 中断与 DMA
+
+手册请求表与通道对照：[dma1-irq-map.md](../reference/stm32f103/md/topics/dma1-irq-map.md)。AHB 时钟：[dma1-ahb-clock.md](../reference/stm32f103/md/topics/dma1-ahb-clock.md)。
+
+| DMA1 CH | 请求 | 模式 | IRQ | 源文件 |
+|---------|------|------|-----|--------|
+| 1 | ADC1 | 循环 16-bit，无 TCIE | 无 | `periph/adc.c` |
+| 2 | SPI1_RX | 普通，等 TC | 无（`WaitTc`） | `periph/spi.c` |
+| 3 | SPI1_TX | 同上 | 无 | `periph/spi.c` |
+| 4 | USART1_TX | 普通，TCIE，关 HTIE | IRQn 14 | `periph/usart.c` |
+| 5 | USART1_RX | 普通 + IDLE 定界 | IRQn 15 + USART1 37 | `periph/usart.c` |
+| 6 | I2C1_TX 页数据 | 普通，TCIE，关 HTIE | IRQn 16 | `periph/i2c.c` |
+| 7 | 空 | — | — | — |
+
+另开：SysTick（异常 15，1 ms）；EXTI15_10（IRQn 40，线 13=PB13）。未开 I2C EV/ER、SPI IRQ、ADC EOC IRQ、TIM2 IRQ。
 
 ## 构建与烧录
 
@@ -136,15 +162,15 @@ Debug 构建下：源码写 `printf("...")` 时，GCC 常将**纯字符串**优�
 |------|-------------|--------|
 | 1 | 硬件读 [`g_pfnVectors`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | `[0]=_estack` → MSP；`[1]=Reset_Handler` → PC |
 | 2 | [`Reset_Handler`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 设 SP；`.data` Flash→RAM；`.bss` 清零 |
-| 3 | `bl SystemInit` → [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | RCC 默认化 + `SetSysClockTo72()` |
-| 4 | `bl main` → [`main.c`](../../projects/f103-manual-reg/src/main.c) | LED / USART1 / ADC1 PA0 / SPI1 LSM6DS3 / I2C1 SH1106 |
+| 3 | `bl SystemInit` → [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) | RCC 默认化 + `SetSysClockTo72()` |
+| 4 | `bl main` → [`main.c`](../../projects/f103-manual-reg/src/app/main.c) | board GPIO/KEY、USART1、ADC DMA、TIM2、SPI BMP280、I2C SH1106 |
 
-[`SystemInit`](../../projects/f103-manual-reg/src/system_stm32f1xx.c)：**HSE 8 MHz × PLL×9 → SYSCLK 72 MHz**；HSE 失败保持 **HSI 8 MHz**。成功时 **APB2=PCLK2=72 MHz**（USART1 BRR、SPI1 分频均按此假定）；APB1=36 MHz。
+[`SystemInit`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c)：**HSE 8 MHz × PLL×9 → SYSCLK 72 MHz**；HSE 失败保持 **HSI 8 MHz**。成功时 **APB2=PCLK2=72 MHz**（USART1 BRR、SPI1 分频均按此假定）；APB1=36 MHz。
 
 延伸阅读：[裸机 Q11 SystemInit 调用](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的) · [内存映射与启动](../learn/stm32f103-memory-boot-map.md) · [VMA/LMA 与 .data/.bss](../learn/linker-vma-lma.md) · [RCC/HSE](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)
 ## PC13 与 Backup 域
 
-PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 `GPIOC_CRH`。见 [`main.c`](../../projects/f103-manual-reg/src/main.c) 中 `GPIOC_Init()`。
+PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 `GPIOC_CRH`。见 [`gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c) 中 `GPIOC_Init()`。
 
 [Backup 域与 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md)
 
@@ -157,7 +183,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | `PCout(13)` 板载 | 灭 | 亮 |
 | `PBout(12)` 外接 | 亮 | 灭 |
 
-主循环：有新 IMU 样本则 `printf` 一行 `xl … g …`；每隔若干次循环两脚同步 `^= 1`（写相同电平，一亮一灭），并打印 `PBin(13)` 与 `knob raw` / `mv`。串口 `PC13 LED` / `PB12 LED` 的 on/off 指 GPIO 电平；`PB13 KEY high` / `low` 指 IDR（low=按下）。
+主循环：`USART1_ProcessRx`；EXTI 边沿打印 `key irq high/low`；`ADC1_ReadRaw` → `Fan_SetDuty`；每秒刷新 OLED 时钟与温度（BMP280 失败画 `0.00C`）；每隔 200 次循环翻转 LED，并打印 `KEY` / `knob` / `duty`。`PBin(13)` 的 high/low 指 IDR（low=按下）。`main` 不访问 LSM6。
 
 ## PB13 按键
 
@@ -167,6 +193,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | 模式 | `GPIOB_CRH` CNF=10 MODE=00，`ODR.13=1` 选上拉 |
 | 电平 | 松开 `PBin(13)=1`；按下 `PBin(13)=0` |
 | 读法 | 位带读 **IDR**（`PBin`），勿用 ODR |
+| 中断 | EXTI13 双沿，IRQn 40，见 `board/key.c` |
 
 ## ADC1 旋钮（PA0）
 
@@ -176,8 +203,8 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | 接线 | 模块 VCC→面包板 3.3V；GND→面包板 GND 轨；SIG→PA0（蓝板 **对面排针**，靠近 PC13；B12/B13 侧无 ADC） |
 | GPIO | `GPIOA_CRL` CNF=00 MODE=00 模拟输入 |
 | 时钟 | `RCC_CFGR.ADCPRE=/6`（PCLK2 72 MHz → ADC 12 MHz，上限 14 MHz） |
-| 采样 | 软件触发单次转换；CH0 采样时间 239.5 周期；`mv = raw * 3300 / 4095` |
-| 日志 | 与 LED/KEY 同频：`knob raw=%u mv=%u` |
+| 采样 | 连续转换 + DMA1 CH1 循环 16-bit，无 TCIE；`ADC1_ReadRaw` 读最近 DMA 值 |
+| 用途 | raw 映射 TIM2 CCR2（死区 80）；日志 `knob=%u duty=%u` |
 
 B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接到 5V。
 
@@ -215,7 +242,7 @@ B12/B13 侧 `PB12–PB15` / `PA8–PA12` **没有** ADC。勿把模块 VCC 接�
 | 片内寄存器 | `SPI1_SR` | Status Register：`TXE` / `RXNE` |
 | 片内寄存器 | `SPI1_DR` | Data Register：写→经 MOSI 发出；读←经 MISO 收到 |
 
-软件写 `CR1`/`DR`、读 `SR` → SPI 硬件再驱动 SCK/MOSI/MISO；详细注释见 [`spi.c`](../../projects/f103-manual-reg/src/spi.c) 文件头。
+软件写 `CR1`/`DR`、读 `SR` → SPI 硬件再驱动 SCK/MOSI/MISO；多字节走 DMA1 CH2/CH3 `WaitTc`。实现见 [`spi.c`](../../projects/f103-manual-reg/src/periph/spi.c)。
 
 ### 模块丝印 ↔ MCU 引脚
 
@@ -240,7 +267,7 @@ BMP280（同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）�
 | 地址 | 8 位写 **`0x78`** 原样进 `DR`，禁止再 `<< 1` |
 | 显示 | 128×64 可视；每页列偏移 `0x02`+`0x10`；电荷泵 `0x8D,0x14` |
 | demo | 中央 HH:MM:SS（8×16×2）；SysTick 1 ms，从 00:00:00 起每秒刷新 |
-| 实现 | [`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c) |
+| 实现 | [`i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/driver/sh1106.c) |
 | 应用 API | `I2C1_Init` / `I2C1_Probe` / `I2C1_Write` / `I2C1_WriteDma`；`SH1106_Init` / `Clear` / `DrawPixel` / `DrawClock` / `DrawTemp` / `Refresh` |
 | 手册 | [I2C1 轮询 · 地址 / 写帧](../reference/stm32f103/md/topics/i2c1-master-polling.md#主机写一帧) · [从零：页](../reference/sh1106/README.md#从零页和怎么上屏) · [SH1106 显示图像](../reference/sh1106/README.md#显示图像) · [时钟 00:00:00 总线字节](../reference/sh1106/README.md#实际例子画出电子时钟-000000) |
 
@@ -253,7 +280,7 @@ BMP280（同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）�
 | 帧格式 | 1500000 bps，8N1 |
 | CH341 | 模块 **RX←PA9**，**TX→PA10**，**GND→面包板 GND 轨** |
 | Windows ↔ WSL | `./scripts/serial-ch341-switch.sh status\|to-win\|to-wsl`；WSL 读串口：`picocom -b 1500000 /dev/ttyUSB0`（见 [scripts-reference § picocom](../scripts-reference.md#wsl-下用-picocom-读串口1500000-8n1)） |
-| 实现 | [`usart.c`](../../projects/f103-manual-reg/src/usart.c) + [`dma.c`](../../projects/f103-manual-reg/src/dma.c)：`CR3.DMAT/DMAR`；TX=DMA1 CH4，RX=DMA1 CH5 普通模式；只开 `CCR.TCIE`，**关 `HTIE`**；`CR1.IDLEIE` 定界不定长帧；`USART1_ProcessRx` 调整帧 handle（原样回显） |
+| 实现 | [`usart.c`](../../projects/f103-manual-reg/src/periph/usart.c) + [`dma.c`](../../projects/f103-manual-reg/src/periph/dma.c)：`CR3.DMAT/DMAR`；TX=DMA1 CH4，RX=DMA1 CH5 普通模式；只开 `CCR.TCIE`，**关 `HTIE`**；`CR1.IDLEIE` 定界不定长帧；`USART1_ProcessRx` 调整帧 handle（原样回显） |
 | NVIC | USART1 IRQn=37；DMA1 CH4=14、CH5=15 |
 | 手动回显 | Windows：`to-win` 后串口助手 **1500000 8N1**，关本地回显；CH341 COM 用 `serial-ch341-read.sh --list` 认。Agent：`./scripts/serial-ch341-read.sh --send PING --seconds 3`。停发后线空闲即切一帧回显，会夹在 LED/KEY 行之间。先开串口再 `probe-rs reset` 才能抓到 `WHO_AM_I` 启动行 |
 
@@ -264,15 +291,15 @@ BMP280（同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）�
 ```text
 printf / vfprintf     → libc.a（工具链，不在本仓库）
 stdio → _write_r()      → libc.a
-_write()                → src/syscalls.c（本工程，强符号）
-USART1_Write()          → src/usart.c（DMA1 CH4 写 USART1_DR）
+_write()                → src/periph/syscalls.c（本工程，强符号）
+USART1_Write()          → src/periph/usart.c（DMA1 CH4 写 USART1_DR）
 ```
 
 ### 与 libnosys 的关系（链接期替换，非 weak 覆盖）
 
 `--specs=nosys.specs` 引入 **libnosys.a** 默认 `_write` / `_sbrk` 桩（`nm` 为 **T** 强符号，非 **W** weak）。
 
-本工程 [`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) 提供同名实现；链接时 `.obj` 先满足符号，**不再**从 libnosys 拉入占位桩。机制是 **链接期符号解析**，不是 `__attribute__((weak))` 覆盖。
+本工程 [`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 提供同名实现；链接时 `.obj` 先满足符号，**不再**从 libnosys 拉入占位桩。机制是 **链接期符号解析**，不是 `__attribute__((weak))` 覆盖。
 
 [`f103-cmsis-hal`](f103-cmsis-hal.md) **不用** `printf`，见 [裸机 newlib 与串口输出 §5](../learn/newlib-nosys-stdio-retarget.md#5-printf-与-hal_uart_transmit-如何选)。
 
@@ -282,11 +309,11 @@ newlib 跨平台，无法在库内假定 USART 引脚/波特率；`nosys` 只给
 
 ### 堆与链接脚本
 
-`printf` 可能触发 newlib 堆分配。链接脚本在 `.bss` 后导出 `end`/`_end`（与 `_ebss` 同址）；[`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) 中 `_sbrk` 以 `_ebss` 为堆起点，上限距 `_estack` 留 512 字节。
+`printf` 可能触发 newlib 堆分配。链接脚本在 `.bss` 后导出 `end`/`_end`（与 `_ebss` 同址）；[`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 中 `_sbrk` 以 `_ebss` 为堆起点，上限距 `_estack` 留 512 字节。
 
 ### 换行
 
-Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) 的 `_write` 在 `\n` 前自动补 `\r`；`main.c` 中字符串只需 `\n`。
+Windows 串口助手需 **CRLF**。[`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 的 `_write` 在 `\n` 前自动补 `\r`；`main.c` 中字符串只需 `\n`。
 
 概念总览：[裸机 newlib、nosys 与串口输出](../learn/newlib-nosys-stdio-retarget.md)
 

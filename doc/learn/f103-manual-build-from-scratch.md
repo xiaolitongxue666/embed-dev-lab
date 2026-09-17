@@ -75,9 +75,9 @@ ST Device Family Pack 惯例提供 **三件套**：启动汇编、系统初始�
 | 用途 | CMSIS 官方路径（submodule） | 本仓库手写对应 |
 |------|----------------------------|----------------|
 | GCC 启动 | [`vendor-pack/cmsis-device-f1/Source/Templates/gcc/startup_stm32f103xb.s`](../../vendor-pack/cmsis-device-f1/Source/Templates/gcc/startup_stm32f103xb.s) | [`projects/f103-manual-reg/startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) |
-| 系统初始化 | [`vendor-pack/cmsis-device-f1/Source/Templates/system_stm32f1xx.c`](../../vendor-pack/cmsis-device-f1/Source/Templates/system_stm32f1xx.c) | [`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) |
+| 系统初始化 | [`vendor-pack/cmsis-device-f1/Source/Templates/system_stm32f1xx.c`](../../vendor-pack/cmsis-device-f1/Source/Templates/system_stm32f1xx.c) | [`projects/f103-manual-reg/src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) |
 | 链接脚本 | [`vendor-pack/cmsis-device-f1/Source/Templates/gcc/linker/STM32F103XB_FLASH.ld`](../../vendor-pack/cmsis-device-f1/Source/Templates/gcc/linker/STM32F103XB_FLASH.ld) | [`projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) |
-| 寄存器定义（对照） | [`vendor-pack/cmsis-device-f1/Include/stm32f103xb.h`](../../vendor-pack/cmsis-device-f1/Include/stm32f103xb.h) | **不 `#include`**；[`main.c`](../../projects/f103-manual-reg/src/main.c) 手写基址宏 |
+| 寄存器定义（对照） | [`vendor-pack/cmsis-device-f1/Include/stm32f103xb.h`](../../vendor-pack/cmsis-device-f1/Include/stm32f103xb.h) | **不 `#include`**；[`gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c) 等手写基址宏 |
 
 CubeF1 全包内等价路径为 `Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/...`（见 [`vendor-pack/STM32CubeF1/README.md`](../../vendor-pack/STM32CubeF1/README.md)）。
 
@@ -196,8 +196,8 @@ projects/f103-manual-reg/
 
 **文件**：
 
-- [`projects/f103-manual-reg/src/system_stm32f1xx.h`](../../projects/f103-manual-reg/src/system_stm32f1xx.h) — 声明 `void SystemInit(void);`
-- [`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) — HSE 8 MHz × PLL9 → 72 MHz；HSE 超时保持 HSI
+- [`projects/f103-manual-reg/src/periph/system_stm32f1xx.h`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.h) — 声明 `void SystemInit(void);`
+- [`projects/f103-manual-reg/src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) — HSE 8 MHz × PLL9 → 72 MHz；HSE 超时保持 HSI
 
 **为什么先于 main**：startup 在 `main` 前 `bl SystemInit`。
 
@@ -207,8 +207,9 @@ projects/f103-manual-reg/
 
 **文件**：
 
-- [`projects/f103-manual-reg/src/gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) — `PCout(n)` 位带宏（可选，本工程使用）
-- [`projects/f103-manual-reg/src/main.c`](../../projects/f103-manual-reg/src/main.c) — PWR+DBP → GPIOC 时钟 → PC13 推挽 → 闪烁循环
+- [`projects/f103-manual-reg/src/board/gpioc_bitband.h`](../../projects/f103-manual-reg/src/board/gpioc_bitband.h) — `PCout(n)` 位带宏（可选，本工程使用）
+- [`projects/f103-manual-reg/src/board/gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c) — PWR+DBP → GPIOC 时钟 → PC13 推挽
+- [`projects/f103-manual-reg/src/app/main.c`](../../projects/f103-manual-reg/src/app/main.c) — 应用入口与主循环
 
 **关键约束**：PC13 属于 Backup 域，必须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再写 `GPIOC_CRH`；否则 LED 不亮。详见 [Backup 域与 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) 与 [MMIO 基础](stm32f103-mmio-basics.md)。
 
@@ -225,8 +226,8 @@ projects/f103-manual-reg/
 
 ```cmake
 set(F103_SOURCES
-    src/main.c
-    src/system_stm32f1xx.c
+    src/app/main.c
+    src/periph/system_stm32f1xx.c
     startup/startup_stm32f103xb.s
 )
 

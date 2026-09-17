@@ -12,7 +12,10 @@
  *
  * PWM mode 1：CNT < CCR2 时通道有效（高）。
  * GPIO：PA1 复用推挽 50 MHz（CNF=10 MODE=11 → 0xB），见 gpio-cnf-mode.md。
- * 不改 AFIO_MAPR，保持 TIM2 默认映射 CH2=PA1。
+ * 不改 AFIO_MAPR，保持 TIM2 默认映射 CH2=PA1。未开 TIM2 IRQ。
+ *
+ * @see     tim2.h
+ * @see     doc/projects/f103-manual-reg.md
  */
 
 #include "tim2.h"

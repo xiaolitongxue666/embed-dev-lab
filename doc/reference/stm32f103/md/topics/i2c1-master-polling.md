@@ -3,7 +3,7 @@
 | 字段 | 值 |
 |------|-----|
 | 来源 | RM0008 I2C 章（CR1/CR2/CCR/TRISE/SR1/SR2/DR） |
-| 源码 | [`projects/f103-manual-reg/src/i2c.c`](../../../../../projects/f103-manual-reg/src/i2c.c) |
+| 源码 | [`projects/f103-manual-reg/src/periph/i2c.c`](../../../../../projects/f103-manual-reg/src/periph/i2c.c) |
 | 接线 | [stm32f103-peripherals.md](../../../../hardware/stm32f103-peripherals.md) |
 | 屏幕 | [sh1106](../../../sh1106/README.md)（含时钟 `00:00:00` 总线字节） |
 
@@ -68,7 +68,7 @@ StdPeriph 的 `I2C_Send7bitAddress(I2C1, 0x78>>1, …)` 会先右移再由库左
 
 短包不走 DMA：`I2C1_Probe`、命令 `00 cmd`、控制字节 `0x40` 本身。DMA **不**发 START / STOP / `0x78` / `0x40`。
 
-没有 HAL `Callback`。完成处理是 [`i2c.c`](../../../../../projects/f103-manual-reg/src/i2c.c) 的 `DMA1_Channel6_IRQHandler`（覆盖 startup 弱符号）。不开 I2C EV/ER。
+没有 HAL `Callback`。完成处理是 [`i2c.c`](../../../../../projects/f103-manual-reg/src/periph/i2c.c) 的 `DMA1_Channel6_IRQHandler`（覆盖 startup 弱符号）。不开 I2C EV/ER。
 
 `I2C1_Init`：开 AHB 上 DMA1 时钟 + NVIC CH6（IRQn 16）。每次写页再 `DMA1_Channel_Start` 并置 `CR2.DMAEN`。DMA 时钟见 [dma1-ahb-clock.md](dma1-ahb-clock.md)。
 

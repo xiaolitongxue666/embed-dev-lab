@@ -41,4 +41,4 @@ Bosch 气压/温度传感器，本仓库走 **SPI1 4 线**，与 LSM6DS3 共用 
 
 OLED：每秒与时钟同拍，`SH1106_DrawTemp` 画在右下（y=48），时钟几何不变。串口 `temp xx.xx C  press … Pa`。
 
-源码：[`bmp280.c`](../../../projects/f103-manual-reg/src/bmp280.c)
+源码：[`bmp280.c`](../../../projects/f103-manual-reg/src/driver/bmp280.c)

@@ -1,6 +1,6 @@
 /**
  * @file    usart.c
- * @brief   USART1 纯寄存器：DMA TX/RX + 空闲中断定界不定长帧
+ * @brief   USART1：DMA1 CH4 TX（IRQn 14）/ CH5 RX（IRQn 15）+ USART1 IDLE（IRQn 37）
  *
  * @target  STM32F103C8T6，USART1 默认引脚 PA9(TX) / PA10(RX)，挂 APB2 总线
  *

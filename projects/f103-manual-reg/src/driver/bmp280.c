@@ -4,6 +4,9 @@
  *
  * 读：地址最高位置 1（reg | 0x80）；写：最高位清 0（reg & 0x7F）。
  * 访问前切 Mode 0，只拉 PA3；结束后 CS 拉高。无湿度寄存器。
+ *
+ * @see     bmp280.h
+ * @see     doc/reference/bmp280/README.md
  */
 
 #include "bmp280.h"

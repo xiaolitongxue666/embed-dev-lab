@@ -8,6 +8,7 @@
  * EXTI15_10 IRQn = 40（PB13 按键）。
  *
  * @see     doc/learn/interrupt-vector-table-and-nvic.md
+ * @see     doc/reference/stm32f103/md/topics/dma1-irq-map.md
  */
 
 #ifndef NVIC_H

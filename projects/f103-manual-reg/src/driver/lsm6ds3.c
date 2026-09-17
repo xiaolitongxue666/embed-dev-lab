@@ -1,6 +1,6 @@
 /**
  * @file    lsm6ds3.c
- * @brief   LSM6DS3 SPI 寄存器访问与六轴轮询
+ * @brief   LSM6DS3 SPI 寄存器访问（驱动保留，main 不调用）
  *
  * 帧格式（DocID026899 §6.2）：首字节 RW|AD(6:0)，随后数据；MSB first。
  * 读：首字节 bit7=1；写：bit7=0。多字节依赖 CTRL3_C.IF_INC 复位默认 1。

@@ -6,7 +6,7 @@
 | 版本 | Rev 9（本地 PDF）；寄存器与 Rev 21 一致 |
 | PDF 页码 | 54–55, 62–65, 138, 142 |
 | 整理日期 | 2026-06-11 |
-| 源码 | [`projects/f103-manual-reg/src/main.c`](../../../projects/f103-manual-reg/src/main.c) |
+| 源码 | [`projects/f103-manual-reg/src/board/gpio.c`](../../../projects/f103-manual-reg/src/board/gpio.c) |
 
 ## 背景
 
@@ -65,7 +65,7 @@ GPIOC_CRH    = ... PC13 推挽输出 ... // 4. 配置 PC13
 
 PC13–PC15 经 Backup 开关，拉/灌约 **±3 mA**，不要再并联无电阻 LED，也不要把 PC13 当普通脚的 8 mA 电流源。拉/灌拓扑与电阻计算见 [gpio-led-source-sink.md](../../../../learn/gpio-led-source-sink.md)。
 
-位带宏见 [`gpioc_bitband.h`](../../../projects/f103-manual-reg/src/gpioc_bitband.h)（`GPIOC_ODR` @ `0x4001100C`）。
+位带宏见 [`gpioc_bitband.h`](../../../projects/f103-manual-reg/src/board/gpioc_bitband.h)（`GPIOC_ODR` @ `0x4001100C`）。
 
 ## 核对表（与 main.c 一致）
 

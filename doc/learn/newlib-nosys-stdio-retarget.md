@@ -112,7 +112,7 @@ arm-none-eabi-nm projects/f103-manual-reg/build/f103-manual-reg.elf | grep _writ
 
 | 工程 | 串口输出方式 | 说明 |
 |------|--------------|------|
-| [`f103-manual-reg`](../../projects/f103-manual-reg/) | `printf` → [`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) → [`USART1_Write`](../../projects/f103-manual-reg/src/usart.c) | 演示 newlib 重定向 + 手写寄存器 |
+| [`f103-manual-reg`](../../projects/f103-manual-reg/) | `printf` → [`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) → [`USART1_Write`](../../projects/f103-manual-reg/src/periph/usart.c) | 演示 newlib 重定向 + 手写寄存器 |
 | [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/) | [`USART1_WriteStr`](../../projects/f103-cmsis-hal/src/usart.c) → `HAL_UART_Transmit` | **无** `syscalls.c`、不链 libc I/O |
 
 若 HAL 工程日后需要 `printf`，可复制 manual-reg 的 `syscalls.c` 思路，在 `_write` 内调 `HAL_UART_Transmit`。
@@ -125,7 +125,7 @@ C 字符串 `\n`（LF）在 Windows 串口终端上往往只换行不回列首�
 
 两工程均在发送层补 `\r`：
 
-- manual-reg：[`syscalls.c`](../../projects/f103-manual-reg/src/syscalls.c) 的 `_write`
+- manual-reg：[`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 的 `_write`
 - cmsis-hal：[`usart.c`](../../projects/f103-cmsis-hal/src/usart.c) 的 `USART1_WriteStr`
 
 应用层字符串只需写 `\n`。

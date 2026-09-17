@@ -40,11 +40,17 @@ g_pfnVectors:
 
 CMakeLists 注释中的「向量表」即指这张表：
 
-```15:18:projects/f103-manual-reg/CMakeLists.txt
+```16:34:projects/f103-manual-reg/CMakeLists.txt
 set(F103_SOURCES
-    src/main.c                  # 应用入口与 GPIO 闪烁
-    src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
-    startup/startup_stm32f103xb.s # 向量表、.data/.bss、跳转 main
+    src/app/main.c
+    src/board/gpio.c
+    src/board/key.c
+    src/periph/nvic.c
+    ...
+    src/periph/system_stm32f1xx.c
+    src/driver/bmp280.c
+    ...
+    startup/startup_stm32f103xb.s
 ```
 
 链接脚本要求向量表必须位于 Flash 最前（`ALIGN` / `KEEP` 语义见 [从零手写 §2.2](f103-manual-build-from-scratch.md#22-align-与-keepisr_vector-段常用)）：
@@ -110,7 +116,7 @@ Cortex-M3 上电或复位后 **不会** 直接从 `main()` 开始。硬件固定
 
 ### 本仓库向量表的范围
 
-f103-manual-reg 的 [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 已按 F103xB 顺序列出内核异常（索引 0–15）与片上外设 IRQ（至 USBWakeUp + BootRAM）。USART1 为索引 **53**（外设 IRQn=**37**），`USART1_IRQHandler` 处理 **IDLE**（不定长收帧）。DMA1 CH4/CH5 为索引 **30/31**（IRQn=**14/15**），`DMA1_Channel4/5_IRQHandler` 处理 USART1 TX/RX 传输完成（**不开 HTIE**），由 [`usart.c`](../../projects/f103-manual-reg/src/usart.c) 覆盖。DMA1 CH6 为索引 **32**（IRQn=**16**），`DMA1_Channel6_IRQHandler` 处理 I2C1 页数据 TX 完成，由 [`i2c.c`](../../projects/f103-manual-reg/src/i2c.c) 覆盖。NVIC 见 [`nvic.c`](../../projects/f103-manual-reg/src/nvic.c)。对照 [CMSIS 概述 — startup 实例对照](cmsis-overview.md#42-本仓库实例对照)。
+f103-manual-reg 的 [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) 已按 F103xB 顺序列出内核异常（索引 0–15）与片上外设 IRQ（至 USBWakeUp + BootRAM）。USART1 为索引 **53**（外设 IRQn=**37**），`USART1_IRQHandler` 处理 **IDLE**（不定长收帧）。DMA1 CH4/CH5 为索引 **30/31**（IRQn=**14/15**），`DMA1_Channel4/5_IRQHandler` 处理 USART1 TX/RX 传输完成（**不开 HTIE**），由 [`usart.c`](../../projects/f103-manual-reg/src/periph/usart.c) 覆盖。DMA1 CH6 为索引 **32**（IRQn=**16**），`DMA1_Channel6_IRQHandler` 处理 I2C1 页数据 TX 完成，由 [`i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c) 覆盖。EXTI15_10 为索引 **56**（IRQn=**40**），`EXTI15_10_IRQHandler` 处理 PB13，由 [`key.c`](../../projects/f103-manual-reg/src/board/key.c) 覆盖。NVIC 见 [`nvic.c`](../../projects/f103-manual-reg/src/periph/nvic.c)。通道表：[dma1-irq-map.md](../reference/stm32f103/md/topics/dma1-irq-map.md)。对照 [CMSIS 概述 — startup 实例对照](cmsis-overview.md#42-本仓库实例对照)。
 
 ---
 
@@ -147,7 +153,7 @@ GPIO 边沿 → EXTI（配置线、边沿、屏蔽）→ 请求 → NVIC → 向
 USART 收满 → USART 外设中断请求 → NVIC → USART1_IRQHandler
 ```
 
-EXTI 章节索引：[rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§10 External interrupt/event controller）。`f103-manual-reg` 已用手写 NVIC 开启 USART1 IDLE、DMA1 CH4/CH5 TC（USART）与 DMA1 CH6 TC（I2C1 页数据）；`f103-cmsis-hal` 的 startup 含完整 IRQ 弱符号，该 demo 仍未开外设中断。
+EXTI 章节索引：[rm0008-index.md](../reference/stm32f103/md/rm0008-index.md)（§10 External interrupt/event controller）。`f103-manual-reg` 已用手写 NVIC 开启 USART1 IDLE、DMA1 CH4/CH5 TC（USART）、DMA1 CH6 TC（I2C1 页数据）与 EXTI15_10（PB13）；通道表见 [dma1-irq-map.md](../reference/stm32f103/md/topics/dma1-irq-map.md)。`f103-cmsis-hal` 的 startup 含完整 IRQ 弱符号，该 demo 仍未开外设中断。
 
 ---
 

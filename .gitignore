@@ -15,6 +15,22 @@ compile_commands.json
 # --- IDE 本地配置（launch/tasks/extensions 仍提交）---
 .vscode/settings.local.json
 .cursor/plans/
+.idea/
+
+# --- CMake 本机 preset / 源码树误配产物（projects/*/build/ 已由 **/build/ 覆盖）---
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+.ninja_*
+.idea/
+
+# --- CMake 本机 preset / 源码树误配（projects/*/build/ 已由 **/build/ 覆盖）---
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+.ninja_*
 
 # --- Python（install-mcp-skills / mcp-merge.py 等）---
 __pycache__/

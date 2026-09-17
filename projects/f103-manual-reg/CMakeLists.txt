@@ -14,28 +14,34 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/mcu-config.cmake)
 
 set(F103_SOURCES
-    src/main.c                  # 应用入口：LED、BMP280 温度、旋钮→风扇、串口回显
-    src/nvic.c                  # NVIC ISER/IP 手写（USART1 / DMA1 CH4/CH5/CH6 / EXTI15_10）
-    src/dma.c                   # DMA1：ADC CH1、SPI CH2/CH3、USART CH4/CH5、I2C CH6
-    src/adc.c                   # ADC1 CH0（PA0）连续转换 + DMA1 CH1
-    src/usart.c                 # USART1 DMA 收发 + 空闲定界
-    src/spi.c                   # SPI1 双 CS + 多字节 DMA1 CH2/CH3
-    src/bmp280.c                # BMP280 / BME280 SPI 校准与补偿温度/气压
-    src/lsm6ds3.c               # LSM6DS3 SPI 读写（保留，本阶段不调用）
-    src/tim2.c                  # TIM2_CH2 PA1 PWM → JY003
-    src/i2c.c                   # I2C1 PB6/PB7；命令轮询，页数据 DMA1 CH6
-    src/sh1106.c                # SH1106 帧缓冲：中央时钟 + 右下温度
-    src/sh1106_font.c           # 8x16 数字/冒号/小数点/负号/C
-    src/systick.c               # SysTick 1 ms
-    src/syscalls.c              # printf → USART1
-    src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
-    startup/startup_stm32f103xb.s # 向量表（含外设 IRQ）、.data/.bss、跳转 main
+    src/app/main.c
+    src/board/gpio.c
+    src/board/key.c
+    src/periph/nvic.c
+    src/periph/dma.c
+    src/periph/adc.c
+    src/periph/usart.c
+    src/periph/spi.c
+    src/periph/tim2.c
+    src/periph/i2c.c
+    src/periph/systick.c
+    src/periph/syscalls.c
+    src/periph/system_stm32f1xx.c
+    src/driver/bmp280.c
+    src/driver/lsm6ds3.c
+    src/driver/sh1106.c
+    src/driver/sh1106_font.c
+    startup/startup_stm32f103xb.s
 )
 
 # 生成 f103-manual-reg.elf（链接）+ f103-manual-reg.hex（POST_BUILD objcopy，见 mcu-config.cmake）
 embed_mcu_add_executable(f103-manual-reg
     SOURCES ${F103_SOURCES}
-    INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
+    INCLUDE_DIRS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/app
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/board
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/periph
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/driver
     LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker/STM32F103C8_FLASH.ld
     MCU_FLAGS "-mcpu=cortex-m3 -mthumb"
 )

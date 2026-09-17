@@ -4,6 +4,10 @@
  *
  * ADC1 @ 0x40012400（RM0008）。规则组 CH0；CR2.CONT + CR2.DMA。
  * DMA1 CH1 循环写 g_adc1_raw，不开 TCIE（避免每样本进 ISR）。
+ * ADC1_ReadRaw 只读 DMA 最近值，不再 SWSTART 空等。
+ *
+ * @see     adc.h
+ * @see     doc/projects/f103-manual-reg.md
  */
 
 #include "adc.h"

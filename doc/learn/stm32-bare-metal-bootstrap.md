@@ -29,7 +29,7 @@ projects/f103-manual-reg/        可构建 demo：手写 startup / system / GPIO
 
 **与本仓库**
 
-- 源码：[`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c)
+- 源码：[`projects/f103-manual-reg/src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c)
 - 寄存器核对：[`doc/reference/stm32f103/md/topics/rcc-clock-hse-pll.md`](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md)
 
 ---
@@ -70,9 +70,9 @@ RCC 是 STM32 片上的一路 **ST 外设**（基址 `0x40021000`，见 RM0008 m
 
 | 职责 | 说明 | 本仓库涉及 |
 |------|------|------------|
-| 系统时钟源与倍频 | HSE / HSI / PLL、SYSCLK 切换 | [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) |
+| 系统时钟源与倍频 | HSE / HSI / PLL、SYSCLK 切换 | [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) |
 | 总线分频 | AHB、APB1、APB2 相对 HCLK 的分频 | 同上 |
-| **外设时钟门控** | 各模块时钟使能（未开时钟则 MMIO 无效） | [`main.c`](../../projects/f103-manual-reg/src/main.c) 中 `RCC_APB1ENR` / `RCC_APB2ENR` |
+| **外设时钟门控** | 各模块时钟使能（未开时钟则 MMIO 无效） | [`gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c) 中 `RCC_APB1ENR` / `RCC_APB2ENR` |
 | 复位相关控制 | 部分外设/域的复位与释放 | 间接（如先开 PWR 时钟再配 Backup 域） |
 
 时钟是单片机的 **「心跳」**——CPU 指令节拍、外设采样与通信都依赖它。RCC 寄存器就是控制心跳的 **开关、分频器、切换器**；也可记作芯片的 **「时钟配电箱」**：决定电从哪来（HSE/HSI/PLL）、主频多少、分到哪条总线、哪路外设有没有电。
@@ -156,7 +156,7 @@ CubeMX 与 CMSIS 的三类依赖（固定 / 随时钟变化 / 可选扩展）详
 
 ## Q9：为什么需要轮询 `HSERDY`？
 
-[`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 中：
+[`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) 中：
 
 ```c
 #define HSE_STARTUP_TIMEOUT 0x0500U   /* 与 CMSIS 一致，1280 次循环 */
@@ -199,9 +199,9 @@ HSEON → 轮询 HSERDY（计数 < HSE_STARTUP_TIMEOUT）
 
 | 位置 | 体现 |
 |------|------|
-| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `HSE_STARTUP_TIMEOUT`、轮询 `HSERDY`、超时 `return`；文件头 `@note` 说明 HSE 失败保持 HSI |
+| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) | `HSE_STARTUP_TIMEOUT`、轮询 `HSERDY`、超时 `return`；文件头 `@note` 说明 HSE 失败保持 HSI |
 | [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | `Reset_Handler` 在 `main` 前 `bl SystemInit` |
-| [`main.c`](../../projects/f103-manual-reg/src/main.c) | 注释指向 `system_stm32f1xx.c`；`delay()` 按 CPU 主频忙等，**不区分** 72 MHz / 8 MHz |
+| [`main.c`](../../projects/f103-manual-reg/src/app/main.c) | 注释指向 `system_stm32f1xx.c`；`delay()` 按 CPU 主频忙等，**不区分** 72 MHz / 8 MHz |
 
 HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：同一延时约慢 9 倍，LED 仍闪，符合「超时退回 HSI、main 照常跑」的设计。
 
@@ -215,7 +215,7 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 
 - **`main.c` 不调用** `SystemInit`；进入 `main()` 前，启动汇编已完成时钟初始化。
 - 上电/复位后，Cortex-M3 从向量表基址读**中断向量表**（Flash 启动：逻辑 `0x00000000/+4`，别名到物理 `0x08000000/+4`）；第二项为 `Reset_Handler` 入口。详见 **[内存映射与启动流程](stm32f103-memory-boot-map.md)** 与 **[中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)**。
-- `Reset_Handler` 完成 C 运行环境最小初始化后，用 `bl SystemInit` 跳转；链接阶段解析到 [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) 中的同名函数。
+- `Reset_Handler` 完成 C 运行环境最小初始化后，用 `bl SystemInit` 跳转；链接阶段解析到 [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) 中的同名函数。
 
 **调用链（对照本仓库源码）**
 
@@ -239,8 +239,8 @@ HSE 正常时：`delay(0xFFFFF)` 按约 72 MHz 节奏闪烁。HSE 失败时：�
 | 位置 | 作用 |
 |------|------|
 | [`startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表第二项指向 `Reset_Handler`；末尾 `bl SystemInit` / `bl main` |
-| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) | `SystemInit()`：RCC 复位默认化 + `SetSysClockTo72()` |
-| [`main.c`](../../projects/f103-manual-reg/src/main.c) | 仅业务初始化；假定时钟已由 startup 配好 |
+| [`system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) | `SystemInit()`：RCC 复位默认化 + `SetSysClockTo72()` |
+| [`main.c`](../../projects/f103-manual-reg/src/app/main.c) | 仅业务初始化；假定时钟已由 startup 配好 |
 | [`f103-manual-reg.md`](../projects/f103-manual-reg.md) § 启动与时钟 | 模块文档中的同链表格与 mermaid |
 
 `bl`（branch with link）等价于 x86 的 `call`：把返回地址写入 `lr`（r14），再跳转到目标。链接加 `-nostartfiles`，无 gcc crt0；`.data`/`.bss` 初始化全由 `Reset_Handler` 完成。
@@ -324,8 +324,8 @@ ST 官方 CMSIS 模板按工具链分 `gcc` / `iar` / `arm`（Keil）三版，�
 
 **与本仓库**
 
-- [`main.c`](../../projects/f103-manual-reg/src/main.c) — RCC/PWR/GPIOC MMIO；PC13 点灯 walkthrough
-- [`gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) — `PCout` 位带写 `GPIOC_ODR` @ `0x4001100C`
+- [`main.c`](../../projects/f103-manual-reg/src/app/main.c) — RCC/PWR/GPIOC MMIO；PC13 点灯 walkthrough
+- [`gpioc_bitband.h`](../../projects/f103-manual-reg/src/board/gpioc_bitband.h) — `PCout` 位带写 `GPIOC_ODR` @ `0x4001100C`
 
 详见 **[STM32F103 MMIO 基础](stm32f103-mmio-basics.md)**。
 

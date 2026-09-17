@@ -3,6 +3,8 @@
  * @brief   SysTick 1 ms 时基（处理器时钟，72 MHz 下 1 kHz）
  *
  * 覆盖 startup 中 weak 的 SysTick_Handler。HSE 失败则节拍变慢（与 USART 同类）。
+ *
+ * @see     systick.c
  */
 
 #ifndef SYSTICK_H

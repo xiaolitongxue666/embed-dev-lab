@@ -6,7 +6,7 @@
 | 版本 | Rev 8 |
 | PDF 页码 | 34–39 |
 | 整理日期 | 2026-08-31 |
-| 源码 | [`projects/f103-manual-reg/src/lsm6ds3.c`](../../../../projects/f103-manual-reg/src/lsm6ds3.c) |
+| 源码 | [`projects/f103-manual-reg/src/driver/lsm6ds3.c`](../../../../projects/f103-manual-reg/src/driver/lsm6ds3.c) |
 
 ## 引脚与模式选择
 
@@ -30,9 +30,9 @@ Table 9（PDF p.34）：I2C 与 SPI 共用引脚。要使用 **I2C** 时须把 *
 | `SAO` | PA6 | MISO / SDO |
 | `CS` | **PA8** | 片选（软件 GPIO）；勿与 BMP280 共用 PA3 |
 
-`SCK`/`MOSI`/`MISO`/`CS` 是板级信号名。本仓库 `spi.c` 用 **硬件 SPI1**（写 `CR1`/`SR`/`DR`，由片内外设打时钟移位），不是 GPIO 一位一位模拟时序的软 SPI；二者物理线相同，软件入口不同。分层说明见 [`spi.c`](../../../../projects/f103-manual-reg/src/spi.c) 与 [f103-manual-reg.md § SPI1](../../../projects/f103-manual-reg.md#软-spi-vs-硬件-spi本工程)。
+`SCK`/`MOSI`/`MISO`/`CS` 是板级信号名。本仓库 `spi.c` 用 **硬件 SPI1**（写 `CR1`/`SR`/`DR`，由片内外设打时钟移位），不是 GPIO 一位一位模拟时序的软 SPI；二者物理线相同，软件入口不同。分层说明见 [`spi.c`](../../../../projects/f103-manual-reg/src/periph/spi.c) 与 [f103-manual-reg.md § SPI1](../../../projects/f103-manual-reg.md#软-spi-vs-硬件-spi本工程)。
 
-完整板级说明见 [stm32f103-peripherals.md](../../../hardware/stm32f103-peripherals.md)；源码头注释见 [`spi.c`](../../../../projects/f103-manual-reg/src/spi.c)。
+完整板级说明见 [stm32f103-peripherals.md](../../../hardware/stm32f103-peripherals.md)；源码头注释见 [`spi.c`](../../../../projects/f103-manual-reg/src/periph/spi.c)。
 
 ## CS 规则
 

@@ -85,7 +85,7 @@ CPU 发出地址 0x4001100C
 
 ## 4. `volatile` 指针惯用法
 
-本仓库 [`main.c`](../../projects/f103-manual-reg/src/main.c)：
+本仓库 [`gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c)：
 
 ```c
 #define RCC_APB2ENR  (*(volatile unsigned int *)(RCC_BASE + 0x18U))
@@ -114,7 +114,7 @@ RCC_APB2ENR |= RCC_APB2ENR_IOPCEN;
 
 寄存器位域与 Backup 域顺序见 [backup-domain-pc13 topic](../reference/stm32f103/md/topics/backup-domain-pc13.md)。
 
-### 5.2 初始化（[`GPIOC_Init`](../../projects/f103-manual-reg/src/main.c)）
+### 5.2 初始化（[`GPIOC_Init`](../../projects/f103-manual-reg/src/board/gpio.c)）
 
 ```c
 RCC_APB1ENR |= RCC_APB1ENR_PWREN;      /* MMIO 写 0x4002101C */
@@ -124,9 +124,9 @@ GPIOC_CRH &= ~GPIOC_CRH_PC13_MASK;    /* 读-改-写 0x40011004 */
 GPIOC_CRH |= GPIOC_CRH_PC13_OUT_PP;
 ```
 
-### 5.3 闪烁（[`main`](../../projects/f103-manual-reg/src/main.c) + 位带）
+### 5.3 闪烁（[`main`](../../projects/f103-manual-reg/src/app/main.c) + 位带）
 
-[`gpioc_bitband.h`](../../projects/f103-manual-reg/src/gpioc_bitband.h) 中 `PCout(13)` 通过 **位带别名** 写 `GPIOC_ODR` bit13，本质仍是 MMIO，目标寄存器 **`0x4001100C`**。下面 `Store` 步骤经 [§2.1](#21-地址如何对应总线解码不是映进-ram) 解码树选中 GPIOC 的 ODR。
+[`gpioc_bitband.h`](../../projects/f103-manual-reg/src/board/gpioc_bitband.h) 中 `PCout(13)` 通过 **位带别名** 写 `GPIOC_ODR` bit13，本质仍是 MMIO，目标寄存器 **`0x4001100C`**。下面 `Store` 步骤经 [§2.1](#21-地址如何对应总线解码不是映进-ram) 解码树选中 GPIOC 的 ODR。
 
 ```mermaid
 flowchart LR

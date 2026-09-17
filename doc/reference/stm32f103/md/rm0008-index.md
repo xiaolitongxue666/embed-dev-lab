@@ -18,7 +18,7 @@
 | 6 RCC (medium-density) → 6.2 Clocks / 6.3 Registers | 74–102 | [rcc-clock-hse-pll.md](topics/rcc-clock-hse-pll.md) |
 | 8 GPIOs and AFIOs | 138–167 | [gpio-cnf-mode.md](topics/gpio-cnf-mode.md) · [backup-domain-pc13.md](topics/backup-domain-pc13.md)；学习 [gpio-eight-modes](../../../learn/gpio-eight-modes.md) · [gpio-protection](../../../learn/gpio-protection-and-negative-voltage.md) |
 | I2C | 见 PDF 目录 | [i2c1-master-polling.md](topics/i2c1-master-polling.md)；屏幕 [sh1106](../../sh1106/README.md) |
-| DMA | 见 PDF 目录 | [dma1-ahb-clock.md](topics/dma1-ahb-clock.md)（AHB `DMA1EN`；CH4/5 USART、CH6 I2C1_TX） |
+| DMA | 见 PDF 目录 | [dma1-ahb-clock.md](topics/dma1-ahb-clock.md)（AHB `DMA1EN`）· [dma1-irq-map.md](topics/dma1-irq-map.md)（请求表与本工程占用） |
 
 > **Connectivity line（F105/F107）** 使用第 7 章 RCC，**F103C8 请读第 6 章**。
 

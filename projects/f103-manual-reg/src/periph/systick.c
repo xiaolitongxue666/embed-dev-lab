@@ -3,7 +3,10 @@
  * @brief   Cortex-M3 SysTick：HCLK=72 MHz 时 1 ms 中断
  *
  * 寄存器：ARMv7-M SysTick（0xE000E010），非 STM32 外设。
- * LOAD = 72000-1 → 72 MHz / 72000 = 1 kHz。
+ * LOAD = 72000-1 → 72 MHz / 72000 = 1 kHz。异常号 15，非 NVIC 外设 IRQ。
+ *
+ * @see     systick.h
+ * @see     doc/learn/interrupt-vector-table-and-nvic.md
  */
 
 #include "systick.h"

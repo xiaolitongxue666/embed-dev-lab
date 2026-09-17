@@ -82,17 +82,20 @@ endif()
 
 ```cmake
 set(F103_SOURCES
-    src/main.c                  # 应用入口：LED / KEY / LSM6DS3 / 串口回显
-    src/nvic.c                  # NVIC ISER/IP（USART1 / DMA1 CH4/CH5）
-    src/dma.c                   # DMA1 通道启停
-    src/usart.c                 # USART1 DMA + IDLE
-    src/syscalls.c              # newlib _write/_sbrk → 串口
-    src/system_stm32f1xx.c      # SystemInit / 72 MHz 时钟
-    startup/startup_stm32f103xb.s # 向量表（含外设 IRQ）、.data/.bss、跳转 main
+    src/app/main.c
+    src/board/gpio.c
+    src/board/key.c
+    src/periph/nvic.c
+    src/periph/dma.c
+    src/periph/usart.c
+    src/periph/syscalls.c
+    src/periph/system_stm32f1xx.c
+    src/driver/bmp280.c
+    startup/startup_stm32f103xb.s
 )
 ```
 
-`gpioc_bitband.h`、`usart.h`、`system_stm32f1xx.h` 为头文件，由 `#include` 引入，**不**列入 `SOURCES`。
+头文件由 `#include` 引入（`INCLUDE_DIRS`：`src/app` `src/board` `src/periph` `src/driver`），**不**列入 `SOURCES`。完整列表见工程 `CMakeLists.txt`。
 
 链接 `--specs=nosys.specs` 还会拉入 **libc.a** / **libnosys.a**（printf 用）；工程内 `syscalls.c` 的 `_write` 等于链接期替换 nosys 桩，见 [f103-manual-reg § printf](../projects/f103-manual-reg.md#printf-与-newlib-syscall)。
 
@@ -122,10 +125,10 @@ target_link_options(${target_name}.elf PRIVATE
 Ninja 规则示例（`build/` 内；Windows 下扩展名为 `.obj`，Linux 下多为 `.o`）：
 
 ```text
-CMakeFiles/f103-manual-reg.elf.dir/src/main.c.obj
-CMakeFiles/f103-manual-reg.elf.dir/src/usart.c.obj
-CMakeFiles/f103-manual-reg.elf.dir/src/syscalls.c.obj
-CMakeFiles/f103-manual-reg.elf.dir/src/system_stm32f1xx.c.obj
+CMakeFiles/f103-manual-reg.elf.dir/src/app/main.c.obj
+CMakeFiles/f103-manual-reg.elf.dir/src/periph/usart.c.obj
+CMakeFiles/f103-manual-reg.elf.dir/src/periph/syscalls.c.obj
+CMakeFiles/f103-manual-reg.elf.dir/src/periph/system_stm32f1xx.c.obj
 CMakeFiles/f103-manual-reg.elf.dir/startup/startup_stm32f103xb.s.obj
   → 链接 → f103-manual-reg.elf（另含 libc.a / libgcc.a / libnosys.a）
 ```
@@ -213,8 +216,8 @@ build f103-manual-reg.elf: ... main.c.obj system_stm32f1xx.c.obj startup_stm32f1
 ```cmake
 set(F103_SOURCES
     startup/startup_stm32f103xb.s
-    src/system_stm32f1xx.c
-    src/main.c
+    src/periph/system_stm32f1xx.c
+    src/app/main.c
 )
 ```
 
@@ -375,8 +378,8 @@ Flash 布局（简化）：
 
 | startup 引用 | 定义位置 |
 |--------------|----------|
-| `bl SystemInit` | [`src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c) |
-| `bl main` | [`src/main.c`](../../projects/f103-manual-reg/src/main.c) |
+| `bl SystemInit` | [`src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) |
+| `bl main` | [`src/app/main.c`](../../projects/f103-manual-reg/src/app/main.c) |
 
 C 中的 `delay()`、`GPIOC_Init()` 等进入 `.text`，与 `Reset_Handler` 同处 Flash，由链接器统一排布地址；无需 startup 显式调用。
 

@@ -96,13 +96,13 @@ USART RX、SPI MISO 常用浮空输入：对端（CH341 TX、传感器 MISO）�
 
 ### PC13 LED — 推挽输出
 
-[`main.c`](../../projects/f103-manual-reg/src/main.c)：`GPIOC_CRH_PC13_OUT_PP`（CNF=00, MODE=11 → `0x3`）。须先 PWREN + DBP，见 [backup-domain-pc13](../reference/stm32f103/md/topics/backup-domain-pc13.md)。多数核心板为 **灌电流、低电平点亮**；PC13–PC15 仅约 ±3 mA，见 [gpio-led-source-sink.md](gpio-led-source-sink.md)。
+[`gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c)：`GPIOC_CRH_PC13_OUT_PP`（CNF=00, MODE=11 → `0x3`）。须先 PWREN + DBP，见 [backup-domain-pc13](../reference/stm32f103/md/topics/backup-domain-pc13.md)。多数核心板为 **灌电流、低电平点亮**；PC13–PC15 仅约 ±3 mA，见 [gpio-led-source-sink.md](gpio-led-source-sink.md)。
 
 HAL：[`MX_GPIO_Init`](../../projects/f103-cmsis-hal/src/main.c) 中 `GPIO_MODE_OUTPUT_PP`。
 
 ### USART1 — 复用推挽 TX + 浮空输入 RX
 
-[`usart.c`](../../projects/f103-manual-reg/src/usart.c)：
+[`usart.c`](../../projects/f103-manual-reg/src/periph/usart.c)：
 
 - PA9：`0xB`（复用推挽 50 MHz）
 - PA10：`0x4`（浮空输入）
@@ -111,7 +111,7 @@ HAL：[`HAL_UART_MspInit`](../../projects/f103-cmsis-hal/src/stm32f1xx_hal_msp.c
 
 ### SPI1 — 复用推挽 + 浮空 MISO + 推挽 CS
 
-[`spi.c`](../../projects/f103-manual-reg/src/spi.c)：
+[`spi.c`](../../projects/f103-manual-reg/src/periph/spi.c)：
 
 - PA5/PA7：复用推挽 `0xB`
 - PA6：浮空输入 `0x4`
@@ -119,11 +119,11 @@ HAL：[`HAL_UART_MspInit`](../../projects/f103-cmsis-hal/src/stm32f1xx_hal_msp.c
 
 ### ADC1 PA0 — 模拟输入
 
-[`adc.c`](../../projects/f103-manual-reg/src/adc.c)：`GPIOA_CRL` PA0 半字节 `0x0`（CNF=00, MODE=00）。旋钮 SIG→PA0；B12/B13 侧无 ADC。
+[`adc.c`](../../projects/f103-manual-reg/src/periph/adc.c)：`GPIOA_CRL` PA0 半字节 `0x0`（CNF=00, MODE=00）。旋钮 SIG→PA0；B12/B13 侧无 ADC。
 
 ### I2C1 — 复用开漏 + 模块上拉
 
-[`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)：PB6/PB7 半字节 `0xF`（CNF=11 MODE=11）。模块板载上拉。见 [硬件外设与接线](../hardware/stm32f103-peripherals.md)。
+[`i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c)：PB6/PB7 半字节 `0xF`（CNF=11 MODE=11）。模块板载上拉。见 [硬件外设与接线](../hardware/stm32f103-peripherals.md)。
 
 ---
 

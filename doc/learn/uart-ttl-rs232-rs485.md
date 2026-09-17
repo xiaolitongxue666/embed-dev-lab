@@ -88,4 +88,4 @@ UART 负责「比特怎么排、波特多少」；转换芯片负责「线上电
 | 接线与 CH341 | [stm32f103-peripherals.md](../hardware/stm32f103-peripherals.md) · [getting-started.md](../getting-started.md) |
 | C8T6 引脚总表 | [stm32f103c8t6-pinout.md](../hardware/stm32f103c8t6-pinout.md) |
 | GPIO 复用推挽 / 浮空 RX | [gpio-eight-modes.md](gpio-eight-modes.md) |
-| 源码 | [`usart.c`](../../projects/f103-manual-reg/src/usart.c) |
+| 源码 | [`usart.c`](../../projects/f103-manual-reg/src/periph/usart.c) |

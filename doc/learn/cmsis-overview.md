@@ -158,7 +158,7 @@ CubeMX **常规生成**的是 HAL 层内容：`main.c`、`SystemClock_Config()`�
 | 狭义 | **未依赖**官方 CMSIS 代码 |
 | 广义 | **符合** CMSIS 接口规范，可替换官方对应文件 |
 
-源码：[`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/system_stm32f1xx.c)
+源码：[`projects/f103-manual-reg/src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c)
 
 #### 实例 2：`startup_stm32f103xb.s`
 

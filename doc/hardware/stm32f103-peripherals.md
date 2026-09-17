@@ -27,12 +27,12 @@
 
 源码占用依据：
 
-- LED / KEY：[`projects/f103-manual-reg/src/main.c`](../../projects/f103-manual-reg/src/main.c)（`BOARD_LED_PIN` PC13、`EXT_LED_PIN` PB12、`KEY_PIN` PB13）
-- USART1：[`projects/f103-manual-reg/src/usart.c`](../../projects/f103-manual-reg/src/usart.c)（默认映射，无 AFIO remap）
-- ADC1 / 旋钮：[`adc.c`](../../projects/f103-manual-reg/src/adc.c)（PA0 = ADC12_IN0）
-- SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/lsm6ds3.c)（PA8 CS + Mode 3）
-- I2C1 / SH1106：[`i2c.c`](../../projects/f103-manual-reg/src/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/sh1106.c)（8 位写地址 `0x78`）
-- BMP280：[`bmp280.c`](../../projects/f103-manual-reg/src/bmp280.c)（PA3 CS + Mode 0，校准补偿 T/P）；JY003：[`tim2.c`](../../projects/f103-manual-reg/src/tim2.c)（PA1 TIM2_CH2，旋钮 raw→占空比）
+- LED / KEY：[`gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c)、[`key.c`](../../projects/f103-manual-reg/src/board/key.c)（`BOARD_LED_PIN` PC13、`EXT_LED_PIN` PB12、`KEY_PIN` PB13）
+- USART1：[`usart.c`](../../projects/f103-manual-reg/src/periph/usart.c)（默认映射，无 AFIO remap）
+- ADC1 / 旋钮：[`adc.c`](../../projects/f103-manual-reg/src/periph/adc.c)（PA0 = ADC12_IN0，DMA1 CH1）
+- SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/periph/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/driver/lsm6ds3.c)（PA8 CS + Mode 3；`main` 不访问 IMU）
+- I2C1 / SH1106：[`i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/driver/sh1106.c)（8 位写地址 `0x78`）
+- BMP280：[`bmp280.c`](../../projects/f103-manual-reg/src/driver/bmp280.c)（PA3 CS + Mode 0，校准补偿 T/P）；JY003：[`tim2.c`](../../projects/f103-manual-reg/src/periph/tim2.c)（PA1 TIM2_CH2，旋钮 raw→占空比）
 - HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI / I2C）
 
 全部当前模块 **3.3 V** 供电。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / GND** 拉到面包板（方案 A：5V 闲置）——**禁止**把 ST-Link 电源接到蓝板。共地以面包板 GND 轨为汇集点。详解：[供电、共地与 SWD](power-and-common-ground.md)。
@@ -92,7 +92,7 @@
 
 1. **最少**：只焊上述 **6 个**焊盘（或只焊这 6 根针脚），杜邦线/面包板接到 MCU。
 2. **图省事**：把附带排针整条焊上，未用脚悬空即可，不影响 SPI 轮询。
-3. 焊完后核对丝印 → MCU 表见下文 [§4 LSM6DS3](#lsm6ds3)；源码表见 [`spi.c`](../../projects/f103-manual-reg/src/spi.c) 头注释。
+3. 焊完后核对丝印 → MCU 表见下文 [§4 LSM6DS3](#lsm6ds3)；源码表见 [`spi.c`](../../projects/f103-manual-reg/src/periph/spi.c)。
 
 ---
 

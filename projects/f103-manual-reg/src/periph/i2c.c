@@ -1,6 +1,6 @@
 /**
  * @file    i2c.c
- * @brief   I2C1 纯寄存器主机写：400 kHz Fast；短包轮询，页数据 DMA1 CH6
+ * @brief   I2C1 主机写：400 kHz；短包轮询，页数据 DMA1 CH6（IRQn 16）
  *
  * @target  STM32F103C8T6，I2C1 默认映射 PB6(SCL)/PB7(SDA)
  *

@@ -1,6 +1,6 @@
 # SH1106 1.3″ 4 针 I2C OLED
 
-供 [`f103-manual-reg`](../../../projects/f103-manual-reg/) 查阅。源码：[`sh1106.c`](../../../projects/f103-manual-reg/src/sh1106.c)。
+供 [`f103-manual-reg`](../../../projects/f103-manual-reg/) 查阅。源码：[`sh1106.c`](../../../projects/f103-manual-reg/src/driver/sh1106.c)。
 
 I2C 写帧与寄存器步骤：[i2c1-master-polling.md](../stm32f103/md/topics/i2c1-master-polling.md)。
 
@@ -55,13 +55,13 @@ START  78  40  128字节  STOP     // 图只在 40 后面（128 列由 DMA1 CH6 
 3. `SH1106_Clear` → `SH1106_DrawClock(0,0,0)`（只改 RAM）
 4. `SH1106_Refresh`：对 page 0..7 各做上面 4 次事务（命令轮询，128 列 DMA；共 32 次 START/STOP）
 
-记住三句：页是 8 像素高的横带；一页 128 个列字节；真正的图只在 `40` 后面。命令轮询、128 列 DMA、ISR 在 [`i2c.c`](../../../projects/f103-manual-reg/src/i2c.c) 的 `DMA1_Channel6_IRQHandler`。白话见 [谁走 DMA](../stm32f103/md/topics/i2c1-master-polling.md#白话谁走-dma中断在哪)；DMA1 须开 AHB 时钟，见 [dma1-ahb-clock.md](../stm32f103/md/topics/dma1-ahb-clock.md)。总线帧格式见 [I2C1 主机写一帧](../stm32f103/md/topics/i2c1-master-polling.md#主机写一帧)。
+记住三句：页是 8 像素高的横带；一页 128 个列字节；真正的图只在 `40` 后面。命令轮询、128 列 DMA、ISR 在 [`i2c.c`](../../../projects/f103-manual-reg/src/periph/i2c.c) 的 `DMA1_Channel6_IRQHandler`。白话见 [谁走 DMA](../stm32f103/md/topics/i2c1-master-polling.md#白话谁走-dma中断在哪)；DMA1 须开 AHB 时钟，见 [dma1-ahb-clock.md](../stm32f103/md/topics/dma1-ahb-clock.md)。总线帧格式见 [I2C1 主机写一帧](../stm32f103/md/topics/i2c1-master-polling.md#主机写一帧)。
 
 ### 字库
 
 **SH1106 片内没有字库。** 只有 GDDRAM，不认 ASCII，也不能「写一个 `'0'` 就出字」。
 
-本仓库的字形在 MCU Flash：[`sh1106_font.c`](../../../projects/f103-manual-reg/src/sh1106_font.c) 有 **`'0'`–`'9'`、`':'`、`'.'`、`'-'`、`'C'`** 的 8×16 点阵。`DrawClock`（×2）/ `DrawTemp`（1×）查表再 `DrawPixel`。没有汉字。
+本仓库的字形在 MCU Flash：[`sh1106_font.c`](../../../projects/f103-manual-reg/src/driver/sh1106_font.c) 有 **`'0'`–`'9'`、`':'`、`'.'`、`'-'`、`'C'`** 的 8×16 点阵。`DrawClock`（×2）/ `DrawTemp`（1×）查表再 `DrawPixel`。没有汉字。
 
 要更多字：自行取模，加 `const` 数组，或按点画。字库占的是 **F103 的 64 KB Flash**，不是 OLED 芯片。
 
@@ -93,7 +93,7 @@ START  78  40  d0..d127 STOP     // 该页 128 列（DMA1 CH6）；图源不要�
 
 ## 固件接口
 
-源码：[`sh1106.h`](../../../projects/f103-manual-reg/src/sh1106.h) / [`i2c.h`](../../../projects/f103-manual-reg/src/i2c.h)。
+源码：[`sh1106.h`](../../../projects/f103-manual-reg/src/driver/sh1106.h) / [`i2c.h`](../../../projects/f103-manual-reg/src/periph/i2c.h)。
 
 ```text
 I2C1_Init()
@@ -120,7 +120,7 @@ SH1106_Init()              → 命令序列 + 清 RAM + 0xAF
 
 ## 实际例子：画出电子时钟 `00:00:00`
 
-对照 [`main.c`](../../../projects/f103-manual-reg/src/main.c)：`SH1106_Clear` → `SH1106_DrawClock` → `SH1106_DrawTemp` → `SH1106_Refresh`。软件只改 RAM；**上屏的 I2C 字节全部来自 Refresh**（外加 Probe / Init）。
+对照 [`main.c`](../../../projects/f103-manual-reg/src/app/main.c)：`SH1106_Clear` → `SH1106_DrawClock` → `SH1106_DrawTemp` → `SH1106_Refresh`。软件只改 RAM；**上屏的 I2C 字节全部来自 Refresh**（外加 Probe / Init）。
 
 几何（与源码一致）：时钟 8 个字形 × 16 像素宽 = 128，高 32；`x=0`，`y=16`，占 **page 2–5**（`y=16..47`）。温度 1× 8×16 右对齐，`y=48`，占 **page 6–7**。page 0/1 全是 `00`。
 
@@ -158,7 +158,7 @@ page 0 时第一条命令是 `B0`，page 2 是 `B2`，page 7 是 `B7`。
 
 ### page 2 数据帧（时钟最上 8 行）
 
-`y=16..23`。字形从左到右：`0 0 : 0 0 : 0 0`，各占 16 列。字节由 [`sh1106_font.c`](../../../projects/f103-manual-reg/src/sh1106_font.c) 的 8×16 点阵按 `DrawPixel`（`bit = y%8`）再 2×2 放大得到，可用逻辑分析仪对照。
+`y=16..23`。字形从左到右：`0 0 : 0 0 : 0 0`，各占 16 列。字节由 [`sh1106_font.c`](../../../projects/f103-manual-reg/src/driver/sh1106_font.c) 的 8×16 点阵按 `DrawPixel`（`bit = y%8`）再 2×2 放大得到，可用逻辑分析仪对照。
 
 `'0'` 切片 16 字节：
 
@@ -225,7 +225,7 @@ y23  .  .  #  #  #  #  .  .  .  .  #  #  #  #  .  .
 
 ## 显示图像
 
-页、列、bit 与 [从零：页和怎么上屏](#从零页和怎么上屏) 相同。坐标系与 [`SH1106_DrawPixel`](../../../projects/f103-manual-reg/src/sh1106.c) 一致：
+页、列、bit 与 [从零：页和怎么上屏](#从零页和怎么上屏) 相同。坐标系与 [`SH1106_DrawPixel`](../../../projects/f103-manual-reg/src/driver/sh1106.c) 一致：
 
 - 可视 `x=0..127`，`y=0..63`
 - `page = y / 8`，`bit = y % 8`，亮点：`buf[page][x] |= 1 << bit`

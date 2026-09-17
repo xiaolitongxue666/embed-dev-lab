@@ -5,7 +5,7 @@
 | 来源 | RM0008 §6 RCC；DS5319 §2.3.7 / §5.3.6–5.3.8 |
 | PDF 页码 | RM0008 p.74–86, 97–98；DS5319 p.15, 50, 56 |
 | 整理日期 | 2026-06-11 |
-| 源码 | [`projects/f103-manual-reg/src/system_stm32f1xx.c`](../../../projects/f103-manual-reg/src/system_stm32f1xx.c) |
+| 源码 | [`projects/f103-manual-reg/src/periph/system_stm32f1xx.c`](../../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) |
 
 ## RCC 概述
 

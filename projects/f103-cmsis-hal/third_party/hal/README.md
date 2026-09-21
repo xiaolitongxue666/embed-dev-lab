@@ -20,7 +20,10 @@ main.c
   HAL_RCC_ClockConfig()         → hal_rcc.c, hal_flash.c (latency)
   HAL_PWR_EnableBkUpAccess()    → hal_pwr.c
   HAL_GPIO_Init / WritePin      → hal_gpio.c
-  SysTick_Handler → HAL_IncTick → hal.c
+  SysTick_Handler → HAL_IncTick + TimerEvent_OnTick → hal.c / timer_event.c
+
+log.c
+  LOG_* → vsnprintf → HAL_UART_Transmit → hal_uart.c
 
 usart.c
   USART1_WriteStr → HAL_UART_Transmit → hal_uart.c

@@ -26,6 +26,7 @@ projects/f103-cmsis-hal/
 └── src/
     ├── main.c
     ├── gpio.c / spi.c / i2c.c / adc.c / tim.c / key.c / usart.c
+    ├── timer_event.c / log.c     # 软件定时 flag + 分级日志
     ├── driver/                   # bmp280、lsm6ds3（main 不调用）、sh1106
     ├── system_stm32f1xx.c
     ├── stm32f1xx_hal_conf.h
@@ -81,11 +82,11 @@ probe-rs chip：**`STM32F103C8Tx`**
 |------|-----------------|----------------|
 | 系统时钟 | `SystemInit` 内手写 RCC → 进 `main` 前已是 72 MHz | CMSIS `SystemInit` **不配 PLL**；`main` 内 `SystemClock_Config`（HAL） |
 | PC13 Backup 域 | `PWREN` + `DBP` + `GPIOC_CRH` | `HAL_PWR_EnableBkUpAccess` + `HAL_GPIO_Init` |
-| 闪烁 | `PCout` / `PBout` + 忙等 | `HAL_GPIO_WritePin` + 同等忙等 |
-| SysTick | `systick.c` 1 ms | `SysTick_Handler` → `HAL_IncTick`（OLED 时钟用 `HAL_GetTick`） |
-| 串口输出 | `printf` + `syscalls.c` | `USART1_WriteStr` → `HAL_UART_Transmit`（不链 libc I/O） |
+| 闪烁 | `PCout` / `PBout` + 软件定时 1s | `HAL_GPIO_WritePin` + 软件定时 1s |
+| SysTick | `systick.c` 1 ms → `TimerEvent_OnTick` | `SysTick_Handler` → `HAL_IncTick` + `TimerEvent_OnTick`（不改 `uwTick`） |
+| 串口输出 | `LOG_*` → `printf` + `syscalls.c` | `LOG_*` → 一次 `HAL_UART_Transmit`（无 `printf` / `syscalls.c`） |
 | SPI 传感器 | 寄存器 SPI1 | `HAL_SPI_TransmitReceive`；BMP280 进 main，LSM6 仅链驱动 |
-| I2C OLED | 寄存器 I2C1 + 页 DMA | `HAL_I2C_Master_Transmit` 轮询 |
+| I2C OLED | 寄存器 I2C1 + 页 DMA；中央 `00:00:00:00` | `HAL_I2C_Master_Transmit` 轮询；同布局四段钟 |
 | ADC / 风扇 | ADC1 DMA + TIM2 PWM | `HAL_ADC_Start_DMA` + `HAL_TIM_PWM_*` |
 | 链接脚本 | 手写 `STM32F103C8_FLASH.ld` | CMSIS `STM32F103XB_FLASH.ld` |
 | startup | 精简手写 | CMSIS 官方（跳过 `__libc_init_array`） |
@@ -102,26 +103,43 @@ ADC 连续采样走 `hal_dma.c`（DMA1 CH1）；USART TX 仍阻塞 `HAL_UART_Tra
 
 ## USART1 串口输出
 
-本工程**有意不用 `printf`**，直接走 HAL（无 `syscalls.c`、不链 libc I/O）：
+本工程**有意不用 `printf` / `syscalls.c`**。应用日志走 `LOG_*`：`vsnprintf` 拼一行后 **一次** `HAL_UART_Transmit`（`\n` 已写成 `\r\n`）。`USART1_WriteStr` 仍供底层逐字节发送（RX 回显），主循环不再用它打 demo 行。
 
 ```text
-USART1_WriteStr("...\n")  →  HAL_UART_Transmit(&huart1, ...)  →  PA9
+LOG_I("...")  →  vsnprintf  →  HAL_UART_Transmit(&huart1, line, n)  →  PA9
 ```
+
+行格式（时间只到秒；`LOG_COLOR=1` 时带 ANSI）：
+
+```text
+<ANSI>[HH:MM:SS][<字母>] <正文>\033[0m
+```
+
+例：`[00:00:01][D] LED on  KEY high  knob raw=1796 mv=1447 duty=438  clock 00:00:01:00`
+
+| 级别 | 字母 | ANSI |
+|------|------|------|
+| ERROR | E | `\033[31m` 红 |
+| WARN | W | `\033[33m` 黄 |
+| INFO | I | `\033[32m` 绿 |
+| DEBUG | D | `\033[36m` 青 |
+
+启动 / ACK / 按键 irq → INFO；ID 不符、init 失败、OLED NACK → ERROR；1s LED/旋钮/clock（BMP 成功则同附温度）合成 **一行** DEBUG。OLED 第四段是百分秒；日志前缀只有 `HH:MM:SS`。
 
 ### 为何 HAL 工程仍不必写 `_write`
 
 | 问题 | 说明 |
 |------|------|
-| HAL 能替代 `syscalls.c` 吗？ | **能 bypass**：不调用 `printf` 则不需要 `_write`；HAL 只负责发字节 |
+| HAL 能替代 `syscalls.c` 吗？ | **能 bypass**：不调用 `printf` 则不需要 `_write`；`vsnprintf` 只拼缓冲，发送走 HAL |
 | 以前用 HAL 为何还要 `syscalls.c`？ | 那是因为用了 **`printf`**；libc 必须有人实现 `_write` |
-| 本工程选型 | `USART1_WriteStr` → `HAL_UART_Transmit`，Flash 更小，与 HAL API 一致 |
+| 本工程选型 | `LOG_*` → 一次 `HAL_UART_Transmit`，与 HAL API 一致 |
 
 | 项 | 说明 |
 |----|------|
-| 需要 `%d` 等格式化 | 可链 libc 并参考 [f103-manual-reg § printf](f103-manual-reg.md#printf-与-newlib-syscall) 增加 `syscalls.c` |
-| 引脚 / 波特率 | PA9 TX，1500000 8N1；`\n` 在 `USART1_WriteStr` 内补 `\r` |
+| 需要 `%d` 等格式化 | `log.c` 用 `vsnprintf` 拼正文；不链 `syscalls.c` |
+| 引脚 / 波特率 | PA9 TX，1500000 8N1；日志行自带 `\r\n` |
 | CH341 宿主切换 | `./scripts/serial-ch341-switch.sh status\|to-win\|to-wsl`；WSL：`picocom -b 1500000 /dev/ttyUSB0`（见 [scripts-reference § picocom](../scripts-reference.md#wsl-下用-picocom-读串口1500000-8n1)） |
-| Flash 参考 | Debug 约 **6 KB** text（无 libc I/O）；manual-reg 当前 Debug `.text` **41304**（2026-09-17，带格式符 `printf`） |
+| Flash 参考 | 现含 `vsnprintf`；manual-reg 走 `printf` + DMA TX |
 
 概念总览：[裸机 newlib、nosys 与串口输出 §5](../learn/newlib-nosys-stdio-retarget.md#5-printf-与-hal_uart_transmit-如何选)
 
@@ -156,7 +174,7 @@ USART1_WriteStr("...\n")  →  HAL_UART_Transmit(&huart1, ...)  →  PA9
 | 烧录成功但 LED 不闪 | PWR+DBP；先 `build` 再 `flash` |
 | fetch 后 startup/linker 注释变英文 | 重新 `./scripts/fetch-f103-cmsis-hal-deps.sh`（含中文注释补丁） |
 | 有 LED 无串口 | `MX_USART1_UART_Init()`；COM/波特率/GND；CH341 宿主 `serial-ch341-switch.sh status` |
-| 串口逐行右移 | 字符串用 `\n`；`USART1_WriteStr` 会补 `\r` |
+| 串口逐行右移 | `LOG_*` 行已带 `\r\n`；`USART1_WriteStr` 遇 `\n` 也会补 `\r` |
 
 ## 调试
 

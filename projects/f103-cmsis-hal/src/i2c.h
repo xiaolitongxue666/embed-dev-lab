@@ -1,6 +1,8 @@
 /**
  * @file    i2c.h
  * @brief   I2C1 主机写：PB6/PB7，地址为 8 位写地址（SH1106 用 0x78）
+ *
+ * I2C1_WriteDma 名保留对齐 manual-reg；实现为 HAL_I2C_Master_Transmit 轮询。
  */
 
 #ifndef I2C_H

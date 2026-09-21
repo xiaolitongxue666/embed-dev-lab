@@ -259,7 +259,7 @@ LOAD .../startup/startup_stm32f103xb.s.obj
 
 其后 `START GROUP … libgcc.a libc.a libnosys.a` 为 `--specs=nosys.specs` 引入的运行库。
 
-若工程含 `syscalls.c` 并实现 `_write` / `_sbrk` 等，则这些 **强符号** 在链接期替换 libnosys.a 中的同名占位桩（非 weak 覆盖）；详见 [裸机 newlib 与串口输出](../learn/newlib-nosys-stdio-retarget.md) 与 [f103-manual-reg § printf](../projects/f103-manual-reg.md#printf-与-newlib-syscall)。**f103-cmsis-hal 无 syscalls.c**，串口走 `HAL_UART_Transmit`。
+若工程含 `syscalls.c` 并实现 `_write` / `_sbrk` 等，则这些 **强符号** 在链接期替换 libnosys.a 中的同名占位桩（非 weak 覆盖）；详见 [裸机 newlib 与串口输出](../learn/newlib-nosys-stdio-retarget.md) 与 [f103-manual-reg § printf](../projects/f103-manual-reg.md#printf-与-newlib-syscall)。**f103-cmsis-hal 无 syscalls.c**，串口走 `LOG_*` → `vsnprintf` → `HAL_UART_Transmit`。
 
 **② `Discarded input sections`**
 

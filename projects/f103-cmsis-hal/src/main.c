@@ -3,7 +3,7 @@
  * @brief   CMSIS + HAL demo：LED、USART1、ADC、风扇、I2C OLED、SPI BMP280
  *
  * 主循环不访问 LSM6。BMP280 失败时 OLED 画 0.00C。
- * 串口用 USART1_WriteStr（无 printf）。
+ * 周期任务走软件定时 flag。串口走 LOG_*（一次 HAL_UART_Transmit）。
  */
 
 #include "adc.h"
@@ -11,22 +11,19 @@
 #include "gpio.h"
 #include "i2c.h"
 #include "key.h"
+#include "log.h"
 #include "lsm6ds3.h"
 #include "main.h"
 #include "sh1106.h"
 #include "spi.h"
 #include "tim.h"
+#include "timer_event.h"
 #include "usart.h"
 
 /* 保留 LSM6 驱动进 ELF（--gc-sections）；main 运行时不调用 */
 static void (*const s_lsm6ds3_keep)(void) = LSM6DS3_Init;
 
-/* OLED 轮询刷新会拉长循环；LED/旋钮日志按 tick，约对齐 manual-reg 200 圈 */
-#define LED_LOG_PERIOD_MS 1000U
-
 static void SystemClock_Config(void);
-static void delay(volatile uint32_t count);
-static void log_temp_press(int32_t temp_centi, uint32_t press_pa);
 static uint32_t knob_to_fan_duty(uint32_t knob_raw);
 
 int main(void)
@@ -34,18 +31,19 @@ int main(void)
     uint8_t bmp_id;
     uint8_t bmp_ok;
     uint8_t oled_ok;
-    uint32_t last_led_ms;
-    uint32_t now_ms;
     uint32_t knob_raw;
     uint32_t knob_mv;
     uint32_t fan_duty;
-    uint32_t last_sec;
-    uint32_t elapsed_sec;
+    SysTime_t now;
     uint32_t clock_h;
     uint32_t clock_m;
     uint32_t clock_s;
-    int32_t temp_centi;
+    uint32_t clock_cs;
+    int32_t temp_centi_cached;
     uint32_t press_pa;
+    uint32_t temp_abs;
+    const char *led_str;
+    const char *key_str;
     GPIO_PinState led_level;
 
     HAL_Init();
@@ -53,8 +51,9 @@ int main(void)
     SystemClock_Config();
     MX_GPIO_Init();
     MX_USART1_UART_Init();
-    USART1_WriteStr("Stm32 cmsis hal BMP280 + JY003 fan + SH1106 I2C demo start\n");
-    USART1_WriteStr("LSM6DS3 deferred (driver linked, main unused)\n");
+
+    LOG_I("Stm32 cmsis hal BMP280 + JY003 fan + SH1106 I2C demo start");
+    LOG_I("LSM6DS3 deferred (driver linked, main unused)");
 
     Key_ExtiInit();
     MX_ADC1_Init();
@@ -66,41 +65,43 @@ int main(void)
     HAL_Delay(20U);
 
     bmp_id = BMP280_ReadID();
-    USART1_WriteStr("BMP280 ID=0x");
-    USART1_WriteHex8(bmp_id);
-    USART1_WriteStr(" (expect 0x");
-    USART1_WriteHex8(BMP280_ID_VALUE);
-    USART1_WriteStr(" / BME 0x");
-    USART1_WriteHex8(BME280_ID_VALUE);
-    USART1_WriteStr(")\n");
+    LOG_I("BMP280 ID=0x%02X (expect 0x%02X / BME 0x%02X)",
+          (unsigned int)bmp_id,
+          (unsigned int)BMP280_ID_VALUE,
+          (unsigned int)BME280_ID_VALUE);
     if ((bmp_id != BMP280_ID_VALUE) && (bmp_id != BME280_ID_VALUE)) {
-        USART1_WriteStr("BMP280 ID mismatch; check CSB/SDO/Mode0/3V3/GND\n");
+        LOG_E("BMP280 ID mismatch; check CSB/SDO/Mode0/3V3/GND");
     }
 
     bmp_ok = BMP280_Init();
     if (bmp_ok != 0U) {
-        USART1_WriteStr("BMP280 init: calib + normal, osrs_t x2 / osrs_p x16\n");
+        LOG_I("BMP280 init: calib + normal, osrs_t x2 / osrs_p x16");
     } else {
-        USART1_WriteStr("BMP280 init failed\n");
+        LOG_E("BMP280 init failed");
     }
 
     oled_ok = 0U;
+    temp_centi_cached = 0;
     if (I2C1_Probe(SH1106_ADDR_WR) != 0U) {
-        USART1_WriteStr("SH1106 ACK addr=0x78\n");
+        LOG_I("SH1106 ACK addr=0x78");
         SH1106_Init();
+        SysTime_Reset();
         oled_ok = 1U;
     } else {
-        USART1_WriteStr("SH1106 NACK; check PB6/PB7/3V3/GND\n");
+        LOG_E("SH1106 NACK; check PB6/PB7/3V3/GND");
     }
 
-    last_led_ms = HAL_GetTick();
-    last_sec = 0xFFFFFFFFU;
+    (void)TimerEvent_Register((uint8_t)TIMER_EVT_OLED_CLOCK, 50U,
+                              (uint8_t)TIMER_MODE_PERIODIC);
+    (void)TimerEvent_Register((uint8_t)TIMER_EVT_LED_LOG, 1000U,
+                              (uint8_t)TIMER_MODE_PERIODIC);
+
     for (;;) {
         if (Key_TakeEdge() != 0U) {
             if (HAL_GPIO_ReadPin(KEY_PORT, KEY_PIN) != GPIO_PIN_RESET) {
-                USART1_WriteStr("PB13 KEY irq high\n");
+                LOG_I("PB13 KEY irq high");
             } else {
-                USART1_WriteStr("PB13 KEY irq low\n");
+                LOG_I("PB13 KEY irq low");
             }
         }
 
@@ -108,88 +109,67 @@ int main(void)
         fan_duty = knob_to_fan_duty(knob_raw);
         Fan_SetDuty(fan_duty);
 
-        elapsed_sec = HAL_GetTick() / 1000U;
-        if ((oled_ok != 0U) && (elapsed_sec != last_sec)) {
-            last_sec = elapsed_sec;
-            clock_h = (elapsed_sec / 3600U) % 24U;
-            clock_m = (elapsed_sec / 60U) % 60U;
-            clock_s = elapsed_sec % 60U;
-            SH1106_Clear();
-            SH1106_DrawClock(clock_h, clock_m, clock_s);
-            if (bmp_ok != 0U) {
-                temp_centi = BMP280_ReadTemp();
-                press_pa = BMP280_ReadPressure();
-                SH1106_DrawTemp(temp_centi);
-                log_temp_press(temp_centi, press_pa);
-            } else {
-                SH1106_DrawTemp(0);
+        if (TimerEvent_TakeFlag((uint8_t)TIMER_EVT_OLED_CLOCK) != 0U) {
+            if (oled_ok != 0U) {
+                SysTime_Get(&now);
+                clock_h = (now.sec / 3600U) % 100U;
+                clock_m = (now.sec / 60U) % 60U;
+                clock_s = now.sec % 60U;
+                clock_cs = now.ms / 10U;
+                SH1106_Clear();
+                SH1106_DrawClock(clock_h, clock_m, clock_s, clock_cs);
+                SH1106_DrawTemp(temp_centi_cached);
+                SH1106_Refresh();
             }
-            SH1106_Refresh();
-            USART1_WriteStr("clock ");
-            USART1_WriteDec2(clock_h);
-            USART1_WriteStr(":");
-            USART1_WriteDec2(clock_m);
-            USART1_WriteStr(":");
-            USART1_WriteDec2(clock_s);
-            USART1_WriteStr("\n");
         }
 
-        now_ms = HAL_GetTick();
-        if ((now_ms - last_led_ms) >= LED_LOG_PERIOD_MS) {
-            last_led_ms = now_ms;
+        if (TimerEvent_TakeFlag((uint8_t)TIMER_EVT_LED_LOG) != 0U) {
+            SysTime_Get(&now);
+            clock_h = (now.sec / 3600U) % 100U;
+            clock_m = (now.sec / 60U) % 60U;
+            clock_s = now.sec % 60U;
+            clock_cs = now.ms / 10U;
+
             led_level = HAL_GPIO_ReadPin(BOARD_LED_PORT, BOARD_LED_PIN);
             if (led_level != GPIO_PIN_RESET) {
                 HAL_GPIO_WritePin(BOARD_LED_PORT, BOARD_LED_PIN, GPIO_PIN_RESET);
                 HAL_GPIO_WritePin(EXT_LED_PORT, EXT_LED_PIN, GPIO_PIN_RESET);
-                USART1_WriteStr("PC13 LED off\n");
-                USART1_WriteStr("PB12 LED off\n");
             } else {
                 HAL_GPIO_WritePin(BOARD_LED_PORT, BOARD_LED_PIN, GPIO_PIN_SET);
                 HAL_GPIO_WritePin(EXT_LED_PORT, EXT_LED_PIN, GPIO_PIN_SET);
-                USART1_WriteStr("PC13 LED on\n");
-                USART1_WriteStr("PB12 LED on\n");
             }
-            if (HAL_GPIO_ReadPin(KEY_PORT, KEY_PIN) != GPIO_PIN_RESET) {
-                USART1_WriteStr("PB13 KEY high\n");
-            } else {
-                USART1_WriteStr("PB13 KEY low\n");
-            }
+            led_str = (HAL_GPIO_ReadPin(BOARD_LED_PORT, BOARD_LED_PIN) != GPIO_PIN_RESET)
+                          ? "on"
+                          : "off";
+            key_str = (HAL_GPIO_ReadPin(KEY_PORT, KEY_PIN) != GPIO_PIN_RESET)
+                          ? "high"
+                          : "low";
             knob_mv = (knob_raw * ADC1_VDDA_MV) / ADC1_FULL_SCALE;
-            USART1_WriteStr("knob raw=");
-            USART1_WriteU32(knob_raw);
-            USART1_WriteStr(" mv=");
-            USART1_WriteU32(knob_mv);
-            USART1_WriteStr(" duty=");
-            USART1_WriteU32(fan_duty);
-            USART1_WriteStr("\n");
             if (bmp_ok != 0U) {
-                temp_centi = BMP280_ReadTemp();
+                temp_centi_cached = BMP280_ReadTemp();
                 press_pa = BMP280_ReadPressure();
-                log_temp_press(temp_centi, press_pa);
+                temp_abs = (temp_centi_cached < 0)
+                               ? (uint32_t)(-temp_centi_cached)
+                               : (uint32_t)temp_centi_cached;
+                LOG_D("LED %s  KEY %s  knob raw=%u mv=%u duty=%u  clock %02u:%02u:%02u:%02u  temp %s%u.%02u C press %u Pa",
+                      led_str, key_str, (unsigned int)knob_raw, (unsigned int)knob_mv,
+                      (unsigned int)fan_duty, (unsigned int)clock_h,
+                      (unsigned int)clock_m, (unsigned int)clock_s,
+                      (unsigned int)clock_cs,
+                      (temp_centi_cached < 0) ? "-" : "",
+                      (unsigned int)(temp_abs / 100U),
+                      (unsigned int)(temp_abs % 100U),
+                      (unsigned int)press_pa);
+            } else {
+                temp_centi_cached = 0;
+                LOG_D("LED %s  KEY %s  knob raw=%u mv=%u duty=%u  clock %02u:%02u:%02u:%02u",
+                      led_str, key_str, (unsigned int)knob_raw, (unsigned int)knob_mv,
+                      (unsigned int)fan_duty, (unsigned int)clock_h,
+                      (unsigned int)clock_m, (unsigned int)clock_s,
+                      (unsigned int)clock_cs);
             }
         }
-
-        delay(0x7FFFU);
     }
-}
-
-static void log_temp_press(int32_t temp_centi, uint32_t press_pa)
-{
-    uint32_t temp_abs;
-
-    USART1_WriteStr("temp ");
-    if (temp_centi < 0) {
-        USART1_WriteStr("-");
-        temp_abs = (uint32_t)(-temp_centi);
-    } else {
-        temp_abs = (uint32_t)temp_centi;
-    }
-    USART1_WriteU32(temp_abs / 100U);
-    USART1_WriteStr(".");
-    USART1_WriteDec2(temp_abs % 100U);
-    USART1_WriteStr(" C  press ");
-    USART1_WriteU32(press_pa);
-    USART1_WriteStr(" Pa\n");
 }
 
 static uint32_t knob_to_fan_duty(uint32_t knob_raw)
@@ -223,13 +203,6 @@ static void SystemClock_Config(void)
     clk.APB2CLKDivider = RCC_HCLK_DIV1;
     if (HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_2) != HAL_OK) {
         return;
-    }
-}
-
-static void delay(volatile uint32_t count)
-{
-    while (count != 0U) {
-        count--;
     }
 }
 

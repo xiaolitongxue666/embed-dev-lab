@@ -324,7 +324,7 @@ USART1_Write()          → src/periph/usart.c（DMA1 CH4 写 USART1_DR）
 
 本工程 [`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 提供同名实现；链接时 `.obj` 先满足符号，**不再**从 libnosys 拉入占位桩。机制是 **链接期符号解析**，不是 `__attribute__((weak))` 覆盖。
 
-[`f103-cmsis-hal`](f103-cmsis-hal.md) **不用** `printf`，见 [裸机 newlib 与串口输出 §5](../learn/newlib-nosys-stdio-retarget.md#5-printf-与-hal_uart_transmit-如何选)。
+[`f103-cmsis-hal`](f103-cmsis-hal.md) **不用** `printf`，`LOG_*` 经一次 `HAL_UART_Transmit`，见 [裸机 newlib 与串口输出 §5](../learn/newlib-nosys-stdio-retarget.md#5-printf-与-hal_uart_transmit-如何选)。
 
 ### 为何 libc 没有自带「能用的」`_write`
 

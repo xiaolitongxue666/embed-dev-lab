@@ -212,7 +212,7 @@ apply_f103_third_party_embed_notes() {
   inject_third_party_embed_note "$hal_src/stm32f1xx_hal_flash_ex.c" \
     "Flash 扩展操作；RCC 配置依赖"
   inject_third_party_embed_note "$hal_src/stm32f1xx_hal_uart.c" \
-    "USART 阻塞发送；usart.c USART1_WriteStr → HAL_UART_Transmit"
+    "USART 阻塞发送；log.c / USART1_WriteStr → HAL_UART_Transmit"
   inject_third_party_embed_note "$hal_src/stm32f1xx_hal_dma.c" \
     "DMA1；ADC1 连续转换与其它外设 DMA 共用"
   inject_third_party_embed_note "$hal_src/stm32f1xx_hal_spi.c" \

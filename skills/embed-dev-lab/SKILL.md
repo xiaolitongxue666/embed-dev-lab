@@ -23,8 +23,8 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 
 | 工程 | 实现 | 串口 | 产物 |
 |------|------|------|------|
-| `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL）；`src/app` `board` `periph` `driver` | `printf` + DMA TX/RX + IDLE + `syscalls.c`；ADC1 PA0 DMA；TIM2 风扇；SPI1 BMP280（LSM6 驱动保留）；I2C1 SH1106 时钟+右下温度 | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
-| `f103-cmsis-hal` | CMSIS+HAL / Cube 风格对照路线（非 CubeMX 生成）；HAL Src 16 个 `.c` | `HAL_UART_Transmit`（无 printf）；demo 对齐 manual-reg（LSM6 仅链驱动） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+| `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL）；`src/app` `board` `periph` `driver` | `LOG_*` → `printf` + DMA TX/RX + IDLE + `syscalls.c`；ADC1 PA0 DMA；TIM2 风扇；SPI1 BMP280（LSM6 驱动保留）；I2C1 SH1106 四段钟+右下温度 | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
+| `f103-cmsis-hal` | CMSIS+HAL / Cube 风格对照路线（非 CubeMX 生成）；HAL Src 16 个 `.c` | `LOG_*` → 一次 `HAL_UART_Transmit`（无 printf）；`TimerEvent` + 四段钟；demo 对齐 manual-reg（LSM6 仅链驱动） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
 
 两工程为**同一芯片上的并列路线**，对外具体功能应对齐；详见 `.cursor/rules/embed-dev-lab-core.mdc`。
 

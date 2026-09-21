@@ -61,13 +61,13 @@ build/f103-cmsis-hal.elf                         ← 烧录到板子
 
 ## USART1 串口（无 printf）
 
-本工程**不用 `printf`**，串口走 `USART1_WriteStr` → `HAL_UART_Transmit`（无 `syscalls.c`）。若要用 libc 格式化输出，见 [`doc/learn/newlib-nosys-stdio-retarget.md`](../../doc/learn/newlib-nosys-stdio-retarget.md) 与 [`f103-manual-reg`](../f103-manual-reg/) 的 `syscalls.c`。
+本工程**不用 `printf` / `syscalls.c`**。应用日志走 `LOG_*`：`vsnprintf` 拼一行后一次 `HAL_UART_Transmit`（行已带 `\r\n`）。`USART1_WriteStr` 仅底层逐字节发送（RX 回显）。格式见 [`doc/projects/f103-cmsis-hal.md`](../../doc/projects/f103-cmsis-hal.md)。
 
 | 项 | 说明 |
 |----|------|
 | 引脚 | PA9 TX，PA10 RX；CH341 RX←PA9，GND→面包板 GND 轨 |
 | 波特率 | 1500000 8N1 |
-| 换行 | 字符串写 `\n`；`USART1_WriteStr` 自动补 `\r` |
+| 行格式 | `[HH:MM:SS][I]` + ANSI；1s 一行 DEBUG |
 
 ---
 
@@ -91,11 +91,13 @@ f103-cmsis-hal/
 │   ├── main.c                  # HAL_Init、时钟、MX_*、BMP280/OLED/风扇主循环（不读 LSM6）
 │   ├── main.h                  # 包含 stm32f1xx_hal.h；声明 Error_Handler
 │   ├── gpio.c / spi.c / i2c.c / adc.c / tim.c / key.c
+│   ├── timer_event.c / .h      # 软件定时 flag（OLED 50ms / LED 1s）+ SysTime
+│   ├── log.c / log.h           # LOG_*：[HH:MM:SS][I]，一次 HAL_UART_Transmit
 │   ├── driver/                 # bmp280、lsm6ds3、sh1106
 │   ├── usart.c / usart.h       # USART1_WriteStr（HAL_UART_Transmit，无 printf/syscalls）
 │   ├── stm32f1xx_hal_conf.h    # HAL 模块裁剪、HSE_VALUE
 │   ├── stm32f1xx_hal_msp.c     # HAL MSP 回调（本 demo 空实现）
-│   ├── stm32f1xx_it.c          # Cortex-M3 异常处理；SysTick_Handler → HAL_IncTick
+│   ├── stm32f1xx_it.c          # SysTick_Handler → HAL_IncTick + TimerEvent_OnTick
 │   ├── stm32f1xx_it.h          # 异常处理函数声明
 │   └── system_stm32f1xx.c      # CMSIS SystemInit 模板；PLL 时钟在 main.c HAL 中配置
 │
@@ -217,7 +219,7 @@ f103-cmsis-hal/
   third_party/hal/Inc/*.h        ── 仅编译期 #include（API 声明；无对应 .c 的不占 .text）
 ```
 
-CMake 定义见 [`CMakeLists.txt`](CMakeLists.txt)：`F103_HAL_SOURCES`（L19–33）、`INCLUDE_DIRS`（`src/` + CMSIS + HAL Inc）、宏 `STM32F103xB` / `USE_HAL_DRIVER` / `HSE_VALUE=8000000U`。
+CMake 定义见 [`CMakeLists.txt`](CMakeLists.txt)：`F103_HAL_SOURCES`（含 `log.c` / `timer_event.c`）、`INCLUDE_DIRS`（`src/` + CMSIS + HAL Inc）、宏 `STM32F103xB` / `USE_HAL_DRIVER` / `HSE_VALUE=8000000U`。
 
 Reset 后执行顺序：`startup`（SystemInit → .data → .bss）→ `main`（HAL_Init → 时钟 → GPIO → 闪烁）。
 

@@ -8,8 +8,8 @@
  *
  * 与 printf / syscalls 的关系（本工程选型）：
  *   - HAL 不提供 printf；stdout 也不会自动接到 UART。
- *   - 本文件 bypass libc：USART1_WriteStr → HAL_UART_Transmit，无 _write、无 syscalls.c。
- *   - 优点：Flash 小（约 6 KB text vs printf 约 30 KB）；路径与 HAL API 一致。
+ *   - 应用日志：log.c vsnprintf 后一次 HAL_UART_Transmit，无 _write、无 syscalls.c。
+ *   - 本文件 USART1_WriteStr 仍逐字节发送（遇 \\n 补 \\r），供 RX 回显等。
  *   - 需 printf 时：参考 f103-manual-reg 的 syscalls.c，在 _write 内调 HAL_UART_Transmit。
  *
  * `\n` 自动补 `\r`，适配 Windows 串口助手（同 manual-reg 的 _write 行为）。

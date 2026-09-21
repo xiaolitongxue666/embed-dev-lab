@@ -5,7 +5,7 @@
 | 工程 | 芯片 | 文档 | 源码 |
 |------|------|------|------|
 | `f103-manual-reg` | STM32F103C8T6 | [f103-manual-reg.md](f103-manual-reg.md) | [`projects/f103-manual-reg/`](../../projects/f103-manual-reg/) — LED/KEY/USART/ADC/风扇/SPI BMP280/I2C SH1106 |
-| `f103-cmsis-hal` | STM32F103C8T6 | [f103-cmsis-hal.md](f103-cmsis-hal.md) | [`projects/f103-cmsis-hal/`](../../projects/f103-cmsis-hal/) — 同上行为，HAL 路径，无 printf |
+| `f103-cmsis-hal` | STM32F103C8T6 | [f103-cmsis-hal.md](f103-cmsis-hal.md) | [`projects/f103-cmsis-hal/`](../../projects/f103-cmsis-hal/) — 同上行为，HAL 路径；`LOG_*` 无 printf |
 
 ## 与 `projects/` 的关系
 

@@ -6,11 +6,12 @@
  *          Fault 类处理进入死循环，便于在调试器中查看 CFSR/BFAR 等寄存器。
  *
  * SysTick：HAL_Init 默认配置 SysTick 为 1 ms 节拍，供 HAL_GetTick/HAL_Delay 使用；
- *          本 demo 闪烁用 main.c 中忙等 delay，不依赖 HAL_Delay。
+ *          本 demo 在 HAL_IncTick 后再调 TimerEvent_OnTick，主循环只轮询 flag。
  */
 
 #include "adc.h"
 #include "stm32f1xx_it.h"
+#include "timer_event.h"
 #include "usart.h"
 
 /** @brief  不可屏蔽中断；本 demo 无 NMI 源配置 */
@@ -62,12 +63,13 @@ void PendSV_Handler(void)
 }
 
 /**
- * @brief  SysTick 1 ms 中断；维护 HAL 内部 uwTick 计数
- * @note   由 HAL_Init → HAL_InitTick 配置；即使不用 HAL_Delay 也应保留
+ * @brief  SysTick 1 ms 中断：先维护 HAL uwTick，再倒计时软件定时槽
+ * @note   由 HAL_Init → HAL_InitTick 配置；禁止在此做 I2C / 串口
  */
 void SysTick_Handler(void)
 {
     HAL_IncTick();
+    TimerEvent_OnTick();
 }
 
 void USART1_IRQHandler(void)

@@ -25,6 +25,8 @@ set(F103_HAL_SOURCES
     src/tim.c
     src/i2c.c
     src/key.c
+    src/timer_event.c
+    src/log.c
     src/driver/bmp280.c
     src/driver/lsm6ds3.c
     src/driver/sh1106.c

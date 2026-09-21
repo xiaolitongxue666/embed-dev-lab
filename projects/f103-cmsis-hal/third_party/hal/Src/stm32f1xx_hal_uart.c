@@ -1,5 +1,5 @@
 /**
- * @note    embed-dev-lab third_party：USART 阻塞发送；usart.c USART1_WriteStr → HAL_UART_Transmit
+ * @note    embed-dev-lab third_party：USART 阻塞发送；log.c / USART1_WriteStr → HAL_UART_Transmit
  *          ST 下方原文与 Copyright 保留；fetch 后由 apply 脚本恢复本注释块。
  */
 

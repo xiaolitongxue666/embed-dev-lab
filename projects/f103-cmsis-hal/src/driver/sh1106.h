@@ -3,6 +3,7 @@
  * @brief   SH1106 1.3″ 4 针 I2C OLED 应用接口
  *
  * 分层：main → 本头文件 → sh1106.c → 命令 I2C1_Write / 页 I2C1_WriteDma → i2c.c
+ * （HAL 路径：I2C1_WriteDma 名保留，实为 HAL_I2C_Master_Transmit 轮询）
  *
  * 总线 / 地址：
  *   PB6=SCL，PB7=SDA（I2C1 默认映射，复用开漏）。模块板载上拉。
@@ -15,7 +16,7 @@
  *
  * 显存：片内 132×64，可视 128×64。页 = 8 行高的横带，共 8 条（page0=y0..7）。
  * 缓冲 buf[page][x]：一字节一列，bit0=该页最上一行，bit7=最下一行。
- * 每页写前发 0xB0+page、列 0x02、0x10（轮询）；0x40 后 128 字节 DMA1 CH6。
+ * 每页写前发 0xB0+page、列 0x02、0x10（轮询）；0x40 后 128 字节走 I2C1_WriteDma（HAL 轮询）。
  *
  * 调用顺序：I2C1_Init → I2C1_Probe(0x78) → SH1106_Init
  *   → 改缓冲（Clear / DrawPixel / DrawClock / DrawTemp）→ SH1106_Refresh。
@@ -52,10 +53,11 @@ void SH1106_Refresh(void);
 void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set);
 
 /**
- * @brief  在缓冲中央画 HH:MM:SS（8×16 点阵 ×2 → 16×32）
- * @note   不 Refresh；时基在 main / SysTick，本函数不管计时
+ * @brief  在缓冲中央画 00:00:00:00（8×16，时:分:秒:百分秒）
+ * @note   不 Refresh；时基在 main / TimerEvent，本函数不管计时
  */
-void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int second);
+void SH1106_DrawClock(unsigned int hour, unsigned int minute,
+                      unsigned int second, unsigned int centi);
 
 /**
  * @brief  右下角画补偿温度（8×16，y=48），单位 0.01℃

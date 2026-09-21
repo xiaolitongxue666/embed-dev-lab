@@ -21,7 +21,8 @@
 printf → vfprintf → _write_r → _write（syscalls.c）→ USART1_Write（DMA1 CH4）→ PA9
 
 【路径 B：不用 printf】
-USART1_WriteStr → HAL_UART_Transmit → PA9
+LOG_* → vsnprintf → HAL_UART_Transmit → PA9
+（USART1_WriteStr 仍可供底层逐字节发送）
 ```
 
 ---
@@ -53,7 +54,7 @@ newlib 要跑在 Linux、RTOS、semihosting、各种 UART 引脚上，**不可�
 | 场景 | 是否需要 `_write` |
 |------|-------------------|
 | 使用 `printf` | **需要**（否则走 libnosys 空桩，无串口输出） |
-| 只用 `HAL_UART_Transmit` / `USART1_WriteStr` | **不需要** |
+| 只用 `HAL_UART_Transmit` / `vsnprintf` + `LOG_*` | **不需要** |
 | 不用任何 libc I/O | 不必写；libnosys 占位即可链接 |
 
 未在工程里实现的 syscall，仍用 libnosys 默认桩；**你提供的同名强符号会替换** libnosys 里对应成员。
@@ -76,7 +77,7 @@ newlib 要跑在 Linux、RTOS、semihosting、各种 UART 引脚上，**不可�
 
 1. 裸机无 OS，stdout 没有现成设备。
 2. `nosys.specs` 告诉工具链按无 OS 链接，libnosys 提供空桩。
-3. 只有当你用 libc 的 `printf` 时，才需要 `_write` 把 stdout 接到 UART；本仓库 **cmsis-hal 选 bypass**，**manual-reg 选 printf**。
+3. 只有当你用 libc 的 `printf` 时，才需要 `_write` 把 stdout 接到 UART；本仓库 **cmsis-hal 用 `vsnprintf` + HAL 直发**，**manual-reg 选 printf**。
 
 ---
 
@@ -103,17 +104,17 @@ arm-none-eabi-nm projects/f103-manual-reg/build/f103-manual-reg.elf | grep _writ
 
 | | `printf` + `_write` | `HAL_UART_Transmit` / `WriteStr` |
 |---|----------------------|----------------------------------|
-| **Flash** | 当前 Debug demo `.text` **41304**（2026-09-17，带格式符 `printf`）；纯字符串常优化为 `puts` 会小一截 | 约 **6 KB** 量级（本仓库 HAL demo 实测） |
-| **依赖** | `syscalls.c`、常需 `_sbrk`、链接脚本 `end` | 仅 HAL UART |
-| **格式化** | 支持 `%d` `%x` 等 | 仅字符串；要格式可先 `snprintf` 再发 |
-| **适用** | 学习 newlib 重定向、调试信息多 | HAL 最小 demo、体积敏感 |
+| **Flash** | 当前 Debug demo `.text` **41304**（2026-09-17，带格式符 `printf`）；纯字符串常优化为 `puts` 会小一截 | 含 `vsnprintf` 后大于早期纯字符串 HAL demo |
+| **依赖** | `syscalls.c`、常需 `_sbrk`、链接脚本 `end` | HAL UART + libc 格式化（不链 `_write`） |
+| **格式化** | 支持 `%d` `%x` 等 | `log.c` 先 `vsnprintf` 再一次 `HAL_UART_Transmit` |
+| **适用** | 学习 newlib 重定向、调试信息多 | HAL 对照 demo、不接 stdout |
 
 **本仓库约定：**
 
 | 工程 | 串口输出方式 | 说明 |
 |------|--------------|------|
 | [`f103-manual-reg`](../../projects/f103-manual-reg/) | `printf` → [`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) → [`USART1_Write`](../../projects/f103-manual-reg/src/periph/usart.c) | 演示 newlib 重定向 + 手写寄存器 |
-| [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/) | [`USART1_WriteStr`](../../projects/f103-cmsis-hal/src/usart.c) → `HAL_UART_Transmit` | **无** `syscalls.c`、不链 libc I/O |
+| [`f103-cmsis-hal`](../../projects/f103-cmsis-hal/) | [`LOG_*`](../../projects/f103-cmsis-hal/src/log.c) → `vsnprintf` → `HAL_UART_Transmit` | **无** `syscalls.c`；格式化不经 `_write` |
 
 若 HAL 工程日后需要 `printf`，可复制 manual-reg 的 `syscalls.c` 思路，在 `_write` 内调 `HAL_UART_Transmit`。
 
@@ -126,9 +127,9 @@ C 字符串 `\n`（LF）在 Windows 串口终端上往往只换行不回列首�
 两工程均在发送层补 `\r`：
 
 - manual-reg：[`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 的 `_write`
-- cmsis-hal：[`usart.c`](../../projects/f103-cmsis-hal/src/usart.c) 的 `USART1_WriteStr`
+- cmsis-hal：`LOG_*` 行已带 `\r\n`；[`usart.c`](../../projects/f103-cmsis-hal/src/usart.c) 的 `USART1_WriteStr` 遇 `\n` 也会补 `\r`
 
-应用层字符串只需写 `\n`。
+应用层 `LOG_*` 不必再写 `\n`。
 
 ---
 
@@ -137,7 +138,7 @@ C 字符串 `\n`（LF）在 Windows 串口终端上往往只换行不回列首�
 | 文档 | 内容 |
 |------|------|
 | [f103-manual-reg § printf](../projects/f103-manual-reg.md#printf-与-newlib-syscall) | 本仓库 printf 路径与堆 |
-| [f103-cmsis-hal § USART1](../projects/f103-cmsis-hal.md#usart1-串口输出) | HAL 直发、不用 printf |
+| [f103-cmsis-hal § USART1](../projects/f103-cmsis-hal.md#usart1-串口输出) | `LOG_*` → 一次 HAL 发送、不用 printf |
 | [UART / TTL / RS232 / RS485](uart-ttl-rs232-rs485.md) | 外设 vs 电气标准、CH341 |
 | [SWD ≠ USART](swd-vs-usart.md) | 调试通道与串口独立 |
 | [f103-module-build-flow § map](../learn/f103-module-build-flow.md#32-f103-manual-regmap-精读链接顺序实证) | libnosys / libc 链接顺序 |

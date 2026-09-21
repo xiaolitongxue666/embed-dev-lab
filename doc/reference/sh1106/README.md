@@ -99,11 +99,11 @@ START  78  40  d0..d127 STOP     // 该页 128 列（DMA1 CH6）；图源不要�
 I2C1_Init()
 I2C1_Probe(0x78)           → 串口 SH1106 ACK addr=0x78
 SH1106_Init()              → 命令序列 + 清 RAM + 0xAF
-循环每秒：
+循环 50ms：
   SH1106_Clear()
-  SH1106_DrawClock(h,m,s)  → 中央 HH:MM:SS（只改缓冲）
-  SH1106_DrawTemp(centi)   → 右下 8×16 温度（y=48）
-  SH1106_Refresh()         → 8 页 × 上表 4 次事务（数据段 DMA）
+  SH1106_DrawClock(h,m,s,centi)  → 中央 00:00:00:00（只改缓冲）
+  SH1106_DrawTemp(centi)         → 右下 8×16 温度（y=48）
+  SH1106_Refresh()               → 8 页 × 上表 4 次事务（数据段 DMA / HAL 轮询）
 ```
 
 | 符号 | 作用 |
@@ -116,13 +116,13 @@ SH1106_Init()              → 命令序列 + 清 RAM + 0xAF
 | `SH1106_DrawPixel` / `SH1106_DrawClock` / `SH1106_DrawTemp` | 改缓冲 |
 | `SH1106_Refresh` | 缓冲 → GDDRAM |
 
-**当前上电行为**：屏中央 `HH:MM:SS`（8×16 点阵 ×2，y=16..47）；右下补偿温度（1× 8×16，y=48）。SysTick 1 ms，**不是 RTC**；`SH1106_Init` 后 `SysTick_SetMs(0)`，从 `00:00:00` 起。复位清零。自己画图见下文，不必走 `DrawClock`。
+**当前上电行为**：屏中央 `00:00:00:00`（8×16，11 字，x=20 y=24，时:分:秒:百分秒）；右下补偿温度（1× 8×16，y=48）。SysTick 1 ms，**不是 RTC**；`SH1106_Init` 后 manual-reg `SysTick_SetMs(0)` / cmsis-hal `SysTime_Reset()`，从 `00:00:00:00` 起。复位清零。自己画图见下文，不必走 `DrawClock`。
 
-## 实际例子：画出电子时钟 `00:00:00`
+## 实际例子：画出电子时钟 `00:00:00:00`
 
 对照 [`main.c`](../../../projects/f103-manual-reg/src/app/main.c)：`SH1106_Clear` → `SH1106_DrawClock` → `SH1106_DrawTemp` → `SH1106_Refresh`。软件只改 RAM；**上屏的 I2C 字节全部来自 Refresh**（外加 Probe / Init）。
 
-几何（与源码一致）：时钟 8 个字形 × 16 像素宽 = 128，高 32；`x=0`，`y=16`，占 **page 2–5**（`y=16..47`）。温度 1× 8×16 右对齐，`y=48`，占 **page 6–7**。page 0/1 全是 `00`。
+几何（与源码一致）：时钟 11 个字形 × 8 像素宽 = 88，高 16；`x=20`，`y=24`，占 **page 3–4**（`y=24..39`）。温度 1× 8×16 右对齐，`y=48`，占 **page 6–7**。page 0/1 全是 `00`。
 
 ### Probe
 

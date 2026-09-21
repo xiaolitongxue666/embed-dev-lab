@@ -6,10 +6,23 @@
 #   build 后 Ninja 链接 → <name>.elf
 #   POST_BUILD 自动     → <name>.hex（arm-none-eabi-objcopy -O ihex）
 #   当前不生成 .bin；烧录主路径 probe-rs 直接使用 .elf
+#   每次 build（含 ninja 无改动）→ 同步根 compile_commands.json + setup-clangd.sh
 #
 # 工具链说明:
 #   本项目使用 arm-none-eabi-gcc（裸机），非 arm-linux-gnueabihf（Linux 应用）
 # -----------------------------------------------------------------------------
+# 本文件被 include 时的目录是 cmake/；上一级为仓库根
+set(EMBED_DEV_LAB_ROOT "${CMAKE_CURRENT_LIST_DIR}/..")
+set(EMBED_SETUP_CLANGD "${EMBED_DEV_LAB_ROOT}/scripts/setup-clangd.sh")
+if(WIN32)
+    find_program(EMBED_BASH bash HINTS
+        "$ENV{ProgramFiles}/Git/bin"
+        "$ENV{ProgramFiles}/Git/usr/bin"
+        "C:/Program Files/Git/bin"
+        "C:/Program Files/Git/usr/bin")
+else()
+    find_program(EMBED_BASH bash)
+endif()
 # 添加裸机可执行目标：<name>.elf，并在 POST_BUILD 生成 <name>.hex
 #
 # 必选参数:
@@ -74,5 +87,25 @@ function(embed_mcu_add_executable target_name)
     add_custom_command(TARGET ${target_name}.elf POST_BUILD
         COMMAND "${_embed_objcopy}" -O ihex ${target_name}.elf ${target_name}.hex
         COMMENT "Generating ${target_name}.hex"
+    )
+
+    # ALL：每次 cmake --build / ninja 都跑，不只在 .elf 重链时
+    # 把模块 build/compile_commands.json 拷到仓库根，再写 settings.local.json
+    set(_embed_clangd_cmds
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_BINARY_DIR}/compile_commands.json"
+            "${EMBED_DEV_LAB_ROOT}/compile_commands.json"
+    )
+    if(EMBED_BASH)
+        list(APPEND _embed_clangd_cmds
+            COMMAND "${EMBED_BASH}" "${EMBED_SETUP_CLANGD}")
+    else()
+        message(WARNING "bash not found; compile_commands.json will sync, setup-clangd.sh skipped")
+    endif()
+    add_custom_target(${target_name}-clangd ALL
+        ${_embed_clangd_cmds}
+        WORKING_DIRECTORY "${EMBED_DEV_LAB_ROOT}"
+        COMMENT "Sync compile_commands.json and update clangd"
+        VERBATIM
     )
 endfunction()

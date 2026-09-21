@@ -25,6 +25,7 @@ Usage: ./scripts/build-flash.sh [module]
 
 Build then flash via probe-rs. Default module: f103-manual-reg.
 On build failure, compiler errors are shown and the script pauses.
+both is refused (one board can hold one firmware). Use ./scripts/build.sh both build.
 
 Examples:
   ./scripts/build-flash.sh
@@ -48,6 +49,9 @@ case "${1:-}" in
     exit 0
     ;;
   "")
+    ;;
+  both)
+    die "both is refused: one board can hold one firmware. Specify f103-manual-reg or f103-cmsis-hal"
     ;;
   *)
     MODULE="$1"

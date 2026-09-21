@@ -1,11 +1,11 @@
 # f103-cmsis-hal
 
-基于 **CMSIS-Core** + **CMSIS-Device F1** + **STM32F1 HAL** 的 F103 PC13 闪烁 demo，与 [`f103-manual-reg`](../f103-manual-reg/) 功能对等、构建框架一致。
+基于 **CMSIS-Core** + **CMSIS-Device F1** + **STM32F1 HAL** 的 F103 对照 demo，与 [`f103-manual-reg`](../f103-manual-reg/) 对外行为对齐、构建框架一致。
 
 | 项 | 说明 |
 |----|------|
 | 芯片 | STM32F103C8T6（64 KB Flash / 20 KB RAM） |
-| 实现 | CubeIDE 风格对照（`MX_*` / MSP / `hal_conf`）；`third_party` **vendored 并入构建**（9 个 HAL `.c` 链入 `.elf`） |
+| 实现 | CubeIDE 风格对照（`MX_*` / MSP / `hal_conf`）；`third_party` **vendored 并入构建**（16 个 HAL `.c` 链入 `.elf`） |
 | 构建 | `./scripts/build.sh f103-cmsis-hal`（CMake Preset + `embed_mcu_add_executable`，同 manual-reg） |
 | 链接脚本 | CMSIS [`linker/STM32F103XB_FLASH.ld`](linker/STM32F103XB_FLASH.ld)（C8 64K 裁剪；非 manual-reg 手写版） |
 | 长文档 | [`doc/projects/f103-cmsis-hal.md`](../../doc/projects/f103-cmsis-hal.md) |
@@ -34,20 +34,20 @@
 
 | 组件 | 拷贝范围 | 说明 |
 |------|----------|------|
-| **CMSIS 头** | **仅 7 个** → `third_party/cmsis/Include/` | PC13 demo 编译所需最小 Core+Device 头 |
+| **CMSIS 头** | **仅 7 个** → `third_party/cmsis/Include/` | demo 编译所需最小 Core+Device 头 |
 | **CMSIS 模板** | **不在 third_party** | `startup/`、`linker/`、`src/system_stm32f1xx.c` 单独拷贝到工程根目录 |
 | **HAL Inc** | **全部** `stm32f1xx_hal*.h` + `stm32f1xx_ll*.h` + `Legacy/` | 避免 `#include` 缺依赖；**多数无对应 .c，不占 Flash** |
-| **HAL Src** | **仅 9 个 .c** → `third_party/hal/Src/` | CMake 编译并链入 `f103-cmsis-hal.elf` |
+| **HAL Src** | **仅 16 个 .c** → `third_party/hal/Src/` | CMake 编译并链入 `f103-cmsis-hal.elf` |
 
 ```text
 vendor-pack/cmsis-core + cmsis-device-f1 + stm32f1xx-hal-driver   ← 完整 CMSIS/HAL（submodule，拷贝源）
         ↓ fetch 按需裁剪
 projects/f103-cmsis-hal/third_party/             ← 工程内 vendored 最小子集
-        ↓ CMake 仅链入 9 个 HAL .c
+        ↓ CMake 仅链入 16 个 HAL .c
 build/f103-cmsis-hal.elf                         ← 烧录到板子
 ```
 
-SPI、TIM 等未启用的 HAL 模块在 `hal/Inc/` 中虽有头文件，但 **无对应 `.c` 被链接**，因此不会增大固件体积。**UART 已链入** `stm32f1xx_hal_uart.c`。详见 [`third_party/README.md`](third_party/README.md)。
+未启用的 HAL 模块在 `hal/Inc/` 中虽有头文件，但 **无对应 `.c` 被链接**，因此不会增大固件体积。详见 [`third_party/README.md`](third_party/README.md)。
 
 ## 构建与烧录
 
@@ -88,10 +88,12 @@ f103-cmsis-hal/
 │   └── startup_stm32f103xb.s   # 向量表 @ 0x08000000；Reset：SystemInit→.data→.bss→main；跳过 __libc_init_array
 │
 ├── src/                        # 工程维护应用层（fetch 不覆盖，除 system_stm32f1xx.c）
-│   ├── main.c                  # HAL_Init、72 MHz 时钟、Backup 域 PC13、USART1、闪烁主循环
+│   ├── main.c                  # HAL_Init、时钟、MX_*、BMP280/OLED/风扇主循环（不读 LSM6）
 │   ├── main.h                  # 包含 stm32f1xx_hal.h；声明 Error_Handler
-│   ├── usart.c / usart.h       # USART1 初始化 + USART1_WriteStr（HAL_UART_Transmit，无 printf/syscalls）
-│   ├── stm32f1xx_hal_conf.h    # HAL 模块裁剪（GPIO/RCC/PWR/FLASH/CORTEX/UART/DMA）、HSE_VALUE
+│   ├── gpio.c / spi.c / i2c.c / adc.c / tim.c / key.c
+│   ├── driver/                 # bmp280、lsm6ds3、sh1106
+│   ├── usart.c / usart.h       # USART1_WriteStr（HAL_UART_Transmit，无 printf/syscalls）
+│   ├── stm32f1xx_hal_conf.h    # HAL 模块裁剪、HSE_VALUE
 │   ├── stm32f1xx_hal_msp.c     # HAL MSP 回调（本 demo 空实现）
 │   ├── stm32f1xx_it.c          # Cortex-M3 异常处理；SysTick_Handler → HAL_IncTick
 │   ├── stm32f1xx_it.h          # 异常处理函数声明
@@ -132,7 +134,7 @@ f103-cmsis-hal/
         │       ├── stm32f1xx_hal_can_legacy.h   # CAN 旧 API 兼容
         │       └── stm32f1xx_hal_can_ex_legacy.h
         │
-        └── Src/                # ★ 以下 9 个 .c 由 CMake 编译并链入 f103-cmsis-hal.elf
+        └── Src/                # ★ 以下 16 个 .c 由 CMake 编译并链入 f103-cmsis-hal.elf
             ├── stm32f1xx_hal.c           # HAL_Init、SysTick、HAL_IncTick、HAL_GetTick
             ├── stm32f1xx_hal_cortex.c      # NVIC 优先级、SysTick 配置（HAL_InitTick）
             ├── stm32f1xx_hal_gpio.c        # HAL_GPIO_Init / WritePin / ReadPin
@@ -141,7 +143,14 @@ f103-cmsis-hal/
             ├── stm32f1xx_hal_pwr.c         # HAL_PWR_EnableBkUpAccess（Backup 域 DBP）
             ├── stm32f1xx_hal_flash.c       # Flash 等待周期设置
             ├── stm32f1xx_hal_flash_ex.c    # Flash 扩展操作（时钟配置路径依赖）
-            └── stm32f1xx_hal_uart.c        # HAL_UART_Transmit（USART1 调试口）
+            ├── stm32f1xx_hal_uart.c        # HAL_UART_Transmit / Receive_IT（USART1）
+            ├── stm32f1xx_hal_dma.c         # ADC1 连续 DMA（DMA1 CH1）
+            ├── stm32f1xx_hal_spi.c         # SPI1 BMP280 / LSM6 轮询
+            ├── stm32f1xx_hal_i2c.c         # I2C1 SH1106 轮询
+            ├── stm32f1xx_hal_adc.c         # ADC1 PA0
+            ├── stm32f1xx_hal_adc_ex.c      # ADC 校准 / 连续模式
+            ├── stm32f1xx_hal_tim.c         # TIM2 PWM PA1 风扇
+            └── stm32f1xx_hal_tim_ex.c      # TIM 扩展
 ```
 
 ★ = 本 demo 直接 `#include` 链上的头文件（经 `stm32f1xx_hal_conf.h` 或 `main.h`）。
@@ -150,12 +159,12 @@ f103-cmsis-hal/
 
 | 分类 | 头文件 |
 |------|--------|
-| 模拟/转换 | `hal_adc.h` · `hal_adc_ex.h` · `hal_dac.h` · `hal_dac_ex.h` · `hal_crc.h` |
-| 通信 | `hal_can.h` · `hal_usart.h` · `hal_uart.h` · `hal_spi.h` · `hal_i2c.h` · `hal_i2s.h` · `hal_smartcard.h` · `hal_irda.h` · `hal_cec.h` |
+| 模拟/转换 | `hal_dac.h` · `hal_dac_ex.h` · `hal_crc.h` |
+| 通信 | `hal_can.h` · `hal_usart.h` · `hal_i2s.h` · `hal_smartcard.h` · `hal_irda.h` · `hal_cec.h` |
 | 存储/总线 | `hal_sd.h` · `hal_mmc.h` · `hal_nand.h` · `hal_nor.h` · `hal_sram.h` · `hal_pccard.h` |
 | USB/以太网 | `hal_pcd.h` · `hal_pcd_ex.h` · `hal_hcd.h` · `hal_eth.h` |
-| 定时/看门狗 | `hal_tim.h` · `hal_tim_ex.h` · `hal_iwdg.h` · `hal_wwdg.h` |
-| DMA/中断线 | `hal_dma.h` · `hal_dma_ex.h` · `hal_exti.h` |
+| 定时/看门狗 | `hal_iwdg.h` · `hal_wwdg.h` |
+| DMA/中断线 | `hal_dma_ex.h` · `hal_exti.h` |
 | RTC | `hal_rtc.h` · `hal_rtc_ex.h` |
 
 ### third_party/hal/Inc — LL 层头（本 demo 未使用）
@@ -195,7 +204,7 @@ f103-cmsis-hal/
   src/main.c              ├── compile (.c/.s → .o)
   src/stm32f1xx_hal_msp.c │
   src/stm32f1xx_it.c      │
-  third_party/hal/Src/    │   （9 个 HAL .c）
+  third_party/hal/Src/    │   （16 个 HAL .c）
        × 9                ──┘
                               │
                               ▼

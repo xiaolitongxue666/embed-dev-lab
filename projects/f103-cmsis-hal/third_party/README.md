@@ -1,6 +1,6 @@
 # third_party — f103-cmsis-hal 依赖说明
 
-本目录存放 **vendored 最小 CMSIS + HAL 子集**，供 PC13 闪烁 demo 编译链接。  
+本目录存放 **vendored 最小 CMSIS + HAL 子集**，供 cmsis-hal demo 编译链接。  
 **不是** ST 官方完整 CMSIS/HAL 软件包；**不由 git submodule 管理**；由 `./scripts/fetch-f103-cmsis-hal-deps.sh` 从 `vendor-pack` 与 HAL ref **按需裁剪**拷贝。
 
 ## 是否为完整 CMSIS/HAL？
@@ -20,17 +20,17 @@
 | `third_party/cmsis/Include/` | **7 个头文件**（见 [`cmsis/README.md`](cmsis/README.md)） | 否（编译期 `#include`） |
 | `startup/` · `linker/` · `src/system_stm32f1xx.c` | CMSIS GCC 模板（**不在 third_party 内**） | startup/system 是 |
 | `third_party/hal/Inc/` | **全部** `stm32f1xx_hal*.h`、`stm32f1xx_ll*.h`、`Legacy/*.h` | 否（仅声明；避免缺头文件） |
-| `third_party/hal/Src/` | **仅 9 个 .c**（GPIO/RCC/PWR/Flash/Cortex/UART 等） | **是** |
+| `third_party/hal/Src/` | **仅 16 个 .c**（GPIO/RCC/PWR/Flash/Cortex/UART 等） | **是** |
 
 ```text
 vendor-pack/cmsis-core + cmsis-device-f1 + stm32f1xx-hal-driver
         ↓ fetch 按需裁剪（非整包复制）
 third_party/  +  startup/ + linker/ + src/system_stm32f1xx.c
-        ↓ CMake：9 个 HAL .c + 工程 src/startup
+        ↓ CMake：16 个 HAL .c + 工程 src/startup
 f103-cmsis-hal.elf
 ```
 
-**结论**：`third_party` 是工程内 **最小 vendored 依赖** — CMSIS 只留 7 个必需头；HAL **头全拷、实现只拷 9 个 .c**（含 `hal_uart.c`）。新增外设模块时须在 fetch 脚本的 `HAL_SRC_FILES` 与 `CMakeLists.txt` 中追加对应 `.c`。
+**结论**：`third_party` 是工程内 **最小 vendored 依赖** — CMSIS 只留 7 个必需头；HAL **头全拷、实现只拷 16 个 .c**（含 `hal_uart.c`）。新增外设模块时须在 fetch 脚本的 `HAL_SRC_FILES` 与 `CMakeLists.txt` 中追加对应 `.c`。
 
 ## 目录结构
 
@@ -43,7 +43,7 @@ third_party/
 └── hal/
     ├── README.md
     ├── Inc/            ← ST HAL 头（拷贝 ref 中全部 stm32f1xx_hal*.h / ll*.h）
-    └── Src/            ← 本 demo 实际参与链接的 9 个 HAL 源文件
+    └── Src/            ← 本 demo 实际参与链接的 16 个 HAL 源文件
 ```
 
 ## 版本与来源
@@ -56,7 +56,7 @@ third_party/
 
 ## 编译参与范围
 
-CMake [`CMakeLists.txt`](../CMakeLists.txt) 仅链接 **9 个 HAL .c**；`hal/Inc` 中其余头文件供 `#include` 依赖解析，**不进入 .text**。
+CMake [`CMakeLists.txt`](../CMakeLists.txt) 仅链接 **16 个 HAL .c**；`hal/Inc` 中其余头文件供 `#include` 依赖解析，**不进入 .text**。
 
 | 路径 | 本 demo 用途 |
 |------|----------------|
@@ -68,11 +68,16 @@ CMake [`CMakeLists.txt`](../CMakeLists.txt) 仅链接 **9 个 HAL .c**；`hal/In
 | `hal/Src/stm32f1xx_hal_pwr.c` | `HAL_PWR_EnableBkUpAccess`（Backup 域） |
 | `hal/Src/stm32f1xx_hal_flash.c` | Flash 等待周期（LATENCY_2） |
 | `hal/Src/stm32f1xx_hal_flash_ex.c` | Flash 扩展操作 |
-| `hal/Src/stm32f1xx_hal_uart.c` | `HAL_UART_Transmit`（USART1） |
+| `hal/Src/stm32f1xx_hal_uart.c` | `HAL_UART_Transmit` / `HAL_UART_Receive_IT`（USART1） |
+| `hal/Src/stm32f1xx_hal_dma.c` | ADC1 连续 DMA（DMA1 CH1） |
+| `hal/Src/stm32f1xx_hal_spi.c` | SPI1 BMP280 / LSM6（轮询） |
+| `hal/Src/stm32f1xx_hal_i2c.c` | I2C1 SH1106（轮询） |
+| `hal/Src/stm32f1xx_hal_adc.c` | ADC1 PA0 |
+| `hal/Src/stm32f1xx_hal_adc_ex.c` | ADC 校准 / 连续模式 |
+| `hal/Src/stm32f1xx_hal_tim.c` | TIM2 PWM PA1 风扇 |
+| `hal/Src/stm32f1xx_hal_tim_ex.c` | TIM 扩展 |
 
 工程维护配置在 **`src/stm32f1xx_hal_conf.h`**（模块裁剪、`assert_param`），不在 `third_party` 内。
-
-`HAL_DMA_MODULE_ENABLED` 在 conf 中开启但**未**链入 `hal_dma.c`：当前仅阻塞 UART；若启用 UART DMA，须同步 fetch/`CMakeLists.txt`/conf。
 
 ## 注释与语言约定
 

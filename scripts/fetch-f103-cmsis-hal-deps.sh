@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# 为 f103-cmsis-hal 拷贝 GPIO + UART + 72 MHz 所需最小 CMSIS + HAL 子集
+# 为 f103-cmsis-hal 拷贝 CMSIS + HAL 最小子集
 # 参考源：vendor-pack CMSIS + HAL submodules（stm32f1xx-hal-driver@v1.1.8）
-# HAL Src：9 个 .c（含 stm32f1xx_hal_uart.c）
+# HAL Src：16 个 .c（GPIO/UART/时钟 + SPI/I2C/ADC/TIM/DMA）
 # 用法: ./scripts/fetch-f103-cmsis-hal-deps.sh [--verify-only]
 # -----------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ usage() {
   cat <<EOF
 Usage: ./scripts/fetch-f103-cmsis-hal-deps.sh [options]
 
-Copy minimal CMSIS/HAL files into projects/f103-cmsis-hal/ for PC13 blink demo.
+Copy minimal CMSIS/HAL files into projects/f103-cmsis-hal/.
 Requires vendor-pack CMSIS + HAL submodules (run ./scripts/fetch-cmsis.sh first).
 
 Options:
@@ -71,7 +71,7 @@ CMSIS_DEVICE_HEADERS=(
   system_stm32f1xx.h
 )
 
-# HAL sources: GPIO blink + UART + 72 MHz clock + backup domain (9 files)
+# HAL sources: clock/GPIO/UART + SPI/I2C/ADC/TIM/DMA (16 files)
 HAL_SRC_FILES=(
   stm32f1xx_hal.c
   stm32f1xx_hal_cortex.c
@@ -82,6 +82,13 @@ HAL_SRC_FILES=(
   stm32f1xx_hal_flash.c
   stm32f1xx_hal_flash_ex.c
   stm32f1xx_hal_uart.c
+  stm32f1xx_hal_dma.c
+  stm32f1xx_hal_spi.c
+  stm32f1xx_hal_i2c.c
+  stm32f1xx_hal_adc.c
+  stm32f1xx_hal_adc_ex.c
+  stm32f1xx_hal_tim.c
+  stm32f1xx_hal_tim_ex.c
 )
 
 verify_paths() {

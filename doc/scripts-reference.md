@@ -79,6 +79,8 @@ flowchart TB
 
 `f103-cmsis-hal` 首次 configure 前须：`./scripts/fetch-f103-cmsis-hal-deps.sh`。
 
+`<module>` 为 `f103-manual-reg` | `f103-cmsis-hal` | `both`。`both` 对 `configure|build|clean|all` 顺序跑两个工程；`both flash` / `both flash-openocd` 拒绝（一块板只能驻留一份固件）。
+
 示例：
 
 ```bash
@@ -89,6 +91,7 @@ flowchart TB
 ./scripts/build-flash.sh f103-manual-reg   # 同上；编译失败时暂停
 ./scripts/fetch-f103-cmsis-hal-deps.sh && ./scripts/build.sh f103-cmsis-hal
 ./scripts/build-flash.sh f103-cmsis-hal
+./scripts/build.sh both build
 ```
 
 ---
@@ -101,6 +104,7 @@ flowchart TB
 ./scripts/build-flash.sh              # 默认 f103-manual-reg
 ./scripts/build-flash.sh f103-manual-reg
 ./scripts/build-flash.sh f103-cmsis-hal
+# ./scripts/build-flash.sh both        # 拒绝：一块板只能驻留一份固件
 ```
 
 | 步骤 | 行为 |
@@ -362,7 +366,7 @@ git clone --recursive <repo-url>
 
 ### fetch-f103-cmsis-hal-deps.sh — f103-cmsis-hal 最小 CMSIS/HAL
 
-从 `vendor-pack` CMSIS + HAL submodule（`stm32f1xx-hal-driver@v1.1.8`）拷贝 PC13 闪烁所需最小子集至 `projects/f103-cmsis-hal/third_party/`，并拷贝 CMSIS `startup` / `system` / `STM32F103XB_FLASH.ld`（C8 64K 裁剪）。
+从 `vendor-pack` CMSIS + HAL submodule（`stm32f1xx-hal-driver@v1.1.8`）拷贝 cmsis-hal demo 所需最小子集至 `projects/f103-cmsis-hal/third_party/`（HAL Src **16** 个 `.c`），并拷贝 CMSIS `startup` / `system` / `STM32F103XB_FLASH.ld`（C8 64K 裁剪）。
 
 ```bash
 ./scripts/fetch-cmsis.sh

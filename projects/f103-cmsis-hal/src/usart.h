@@ -19,5 +19,9 @@ extern UART_HandleTypeDef huart1;
 
 void MX_USART1_UART_Init(void);
 void USART1_WriteStr(const char *str);
+void USART1_WriteHex8(uint8_t value);
+void USART1_WriteU32(uint32_t value);
+void USART1_WriteDec2(uint32_t value);
+void USART1_StartRxEcho(void);
 
 #endif /* USART_H */

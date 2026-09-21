@@ -24,5 +24,8 @@ void SVC_Handler(void);
 void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
+void USART1_IRQHandler(void);
+void EXTI15_10_IRQHandler(void);
+void DMA1_Channel1_IRQHandler(void);
 
 #endif /* STM32F1XX_IT_H */

@@ -12,7 +12,7 @@ alwaysApply: true
 | 工程 | 路线 |
 |------|------|
 | `f103-manual-reg` | **手写寄存器**：直接操作外设寄存器完成功能；**不**链接官方 CMSIS Device / HAL |
-| `f103-cmsis-hal` | **CMSIS + HAL**：用 ST 官方 CMSIS/HAL，按 STM32Cube / CubeIDE 生成工程的分层与风格手写对照（`MX_*` / MSP / `hal_conf` 等）；**非** CubeMX 一键生成、**非**占位 stub |
+| `f103-cmsis-hal` | **CMSIS + HAL**：用 ST 官方 CMSIS/HAL，按 STM32Cube / CubeIDE 生成工程的分层与风格手写对照（`MX_*` / MSP / `hal_conf` 等）；**非** CubeMX 一键生成、**非**占位 stub；HAL Src 16 个 `.c` |
 
 新增或变更 demo 行为时，两条路线应同步对齐，除非用户明确只改其一。
 

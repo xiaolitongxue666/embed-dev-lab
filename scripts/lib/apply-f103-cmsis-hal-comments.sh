@@ -213,6 +213,20 @@ apply_f103_third_party_embed_notes() {
     "Flash 扩展操作；RCC 配置依赖"
   inject_third_party_embed_note "$hal_src/stm32f1xx_hal_uart.c" \
     "USART 阻塞发送；usart.c USART1_WriteStr → HAL_UART_Transmit"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_dma.c" \
+    "DMA1；ADC1 连续转换与其它外设 DMA 共用"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_spi.c" \
+    "SPI1 主机轮询；spi.c MX_SPI1_Init / TransferByte"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_i2c.c" \
+    "I2C1 主机；i2c.c MX_I2C1_Init / SH1106 页写"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_adc.c" \
+    "ADC1 PA0 连续转换；adc.c MX_ADC1_Init"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_adc_ex.c" \
+    "ADC 注入/校准扩展；F1 HAL_ADC_Start_DMA 依赖"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_tim.c" \
+    "TIM2 CH2 PWM；tim.c MX_TIM2_Init / Fan_SetDuty"
+  inject_third_party_embed_note "$hal_src/stm32f1xx_hal_tim_ex.c" \
+    "TIM 互补/主从扩展；F1 PWM 配置依赖"
 
   log_ok "Applied f103-cmsis-hal third_party embed notes"
 }

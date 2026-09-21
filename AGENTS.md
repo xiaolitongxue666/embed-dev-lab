@@ -3,11 +3,11 @@
 **双路线（同一芯片，功能对齐，路径不同）：**
 
 - **f103-manual-reg**：手写外设寄存器完成功能；不链接官方 CMSIS Device / HAL；分层 `src/app` `src/board` `src/periph` `src/driver`；串口 `printf` + `syscalls.c` → `_write` → DMA TX；RX 为 DMA + 空闲中断 + `USART1_ProcessRx`；ADC1 PA0 连续 + DMA1 CH1；TIM2 PA1 风扇；SPI1 LSM6DS3 与 BMP280 共用三线（LSM6 CS=PA8、BMP280 CS=PA3，补偿温度/气压，无湿度；`main` 不访问 LSM6）；I2C1 PB6/PB7 SH1106（写地址 `0x78`，中央 `HH:MM:SS`，右下温度，失败画 `0.00C`，页数据 DMA1 CH6）；PB13 EXTI15_10；SysTick 1 ms；时钟在 `SystemInit`（进 `main` 前）升至 72 MHz
-- **f103-cmsis-hal**：ST 官方 CMSIS + HAL，按 STM32Cube / CubeIDE 生成工程分层与风格手写对照（`MX_*` / MSP / `hal_conf`）；**非** CubeMX 一键生成、**非**占位；工程内 CMSIS+HAL 最小子集（HAL Src **9** 个 `.c`）；串口 `HAL_UART_Transmit`（无 printf/syscalls）；时钟在 `main` 的 `SystemClock_Config`
+- **f103-cmsis-hal**：ST 官方 CMSIS + HAL，按 STM32Cube / CubeIDE 生成工程分层与风格手写对照（`MX_*` / MSP / `hal_conf`）；**非** CubeMX 一键生成、**非**占位；工程内 CMSIS+HAL 最小子集（HAL Src **16** 个 `.c`）；串口 `HAL_UART_Transmit`（无 printf/syscalls）；时钟在 `main` 的 `SystemClock_Config`；demo 行为对齐 manual-reg（LSM6 仅链驱动）
 
 新增/变更 demo 行为时两条路线应同步对齐（除非用户明确只改其一）。
 
-- 构建：`./scripts/build.sh <module> build`；烧录：`flash`（**不**自动 compile / configure；改代码后须先 build；`clean` 后须先 `build.sh <module>` 再 flash）
+- 构建：`./scripts/build.sh <module> build` 或 `./scripts/build.sh both build`；烧录：`flash`（**不**自动 compile / configure；`both flash` 拒绝；改代码后须先 build；`clean` 后须先 `build.sh <module>` 再 flash）
 - cmsis-hal 依赖：`./scripts/fetch-f103-cmsis-hal-deps.sh`（须先 `fetch-cmsis.sh`）
 - probe-rs chip：`STM32F103C8Tx`；CLI 使用 `--binary-format elf`
 - PC13 属于 Backup 域：配置前须 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`（manual-reg）或 HAL `HAL_PWR_EnableBkUpAccess()`（cmsis-hal）

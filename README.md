@@ -121,7 +121,7 @@ embed-dev-lab/
 │   └── mcu-config.cmake            # embed_mcu_add_executable()
 ├── projects/
 │   ├── README.md                   # 固件小工程索引
-│   ├── f103-manual-reg/            # 全手写寄存器 PC13 闪烁 + printf
+│   ├── f103-manual-reg/            # 全手写寄存器 demo + printf
 │   │   ├── src/
 │   │   ├── startup/
 │   │   └── linker/

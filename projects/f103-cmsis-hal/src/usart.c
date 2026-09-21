@@ -25,6 +25,7 @@
 #define USART1_BAUDRATE 1500000U
 
 UART_HandleTypeDef huart1;
+static uint8_t s_usart1_rx_byte;
 
 void MX_USART1_UART_Init(void)
 {
@@ -38,6 +39,31 @@ void MX_USART1_UART_Init(void)
     huart1.Init.OverSampling = UART_OVERSAMPLING_16;
     if (HAL_UART_Init(&huart1) != HAL_OK) {
         Error_Handler();
+    }
+}
+
+void USART1_StartRxEcho(void)
+{
+    HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(USART1_IRQn);
+    if (HAL_UART_Receive_IT(&huart1, &s_usart1_rx_byte, 1U) != HAL_OK) {
+        Error_Handler();
+    }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance != USART1) {
+        return;
+    }
+    (void)HAL_UART_Transmit(&huart1, &s_usart1_rx_byte, 1U, 10U);
+    (void)HAL_UART_Receive_IT(&huart1, &s_usart1_rx_byte, 1U);
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1) {
+        (void)HAL_UART_Receive_IT(&huart1, &s_usart1_rx_byte, 1U);
     }
 }
 
@@ -61,4 +87,47 @@ void USART1_WriteStr(const char *str)
         ch = (uint8_t)*str;
         (void)HAL_UART_Transmit(&huart1, &ch, 1U, HAL_MAX_DELAY);
     }
+}
+
+static void usart1_write_digits(uint32_t value, uint32_t min_width)
+{
+    char buf[10];
+    uint32_t n = 0U;
+
+    if (value == 0U) {
+        buf[n++] = '0';
+    } else {
+        while (value != 0U) {
+            buf[n++] = (char)('0' + (value % 10U));
+            value /= 10U;
+        }
+    }
+    while (n < min_width) {
+        buf[n++] = '0';
+    }
+    while (n > 0U) {
+        n--;
+        (void)HAL_UART_Transmit(&huart1, (uint8_t *)&buf[n], 1U, HAL_MAX_DELAY);
+    }
+}
+
+void USART1_WriteHex8(uint8_t value)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    uint8_t ch;
+
+    ch = (uint8_t)hex[(value >> 4) & 0x0FU];
+    (void)HAL_UART_Transmit(&huart1, &ch, 1U, HAL_MAX_DELAY);
+    ch = (uint8_t)hex[value & 0x0FU];
+    (void)HAL_UART_Transmit(&huart1, &ch, 1U, HAL_MAX_DELAY);
+}
+
+void USART1_WriteU32(uint32_t value)
+{
+    usart1_write_digits(value, 1U);
+}
+
+void USART1_WriteDec2(uint32_t value)
+{
+    usart1_write_digits(value % 100U, 2U);
 }

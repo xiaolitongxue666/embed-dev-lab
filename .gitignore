@@ -23,14 +23,6 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 .ninja_*
-.idea/
-
-# --- CMake 本机 preset / 源码树误配（projects/*/build/ 已由 **/build/ 覆盖）---
-CMakeUserPresets.json
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-.ninja_*
 
 # --- Python（install-mcp-skills / mcp-merge.py 等）---
 __pycache__/
@@ -136,6 +128,9 @@ dkms.conf
 #
 # 注意：cmsis-core / cmsis-device-f1 / stm32f1xx-hal-driver 为 submodule，内容由 .gitmodules 管理，此处勿 ignore。
 # 参考：scripts/fetch-cmsis.sh、scripts/fetch-stm32cubef1.sh、doc/learn/stm32-cmsis-component-repos.md
+#
+# projects/f103-cmsis-hal/third_party/ 是 fetch-f103-cmsis-hal-deps.sh 从上述
+# submodule 裁剪拷贝的最小 CMSIS/HAL，**继续入库**（非 submodule）。勿 ignore。
 
 # 核心板参考包（体积大，与仓库 demo 无构建依赖）
 vendor-pack/STM32F103C8T6核心板/

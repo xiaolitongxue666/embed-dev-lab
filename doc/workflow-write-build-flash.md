@@ -45,6 +45,7 @@ flowchart TB
 |------|----------|--------------|
 | `f103-manual-reg` | 无 CMSIS/HAL fetch | `./scripts/build.sh f103-manual-reg` |
 | `f103-cmsis-hal` | `./scripts/fetch-cmsis.sh` → `./scripts/fetch-f103-cmsis-hal-deps.sh` | `./scripts/build.sh f103-cmsis-hal` |
+| `both` | 同上（cmsis-hal 须已 fetch） | `./scripts/build.sh both build`（`both flash` 拒绝） |
 
 probe-rs chip：`STM32F103C8Tx`。烧录格式：`--binary-format elf`。
 

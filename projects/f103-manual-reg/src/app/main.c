@@ -76,7 +76,7 @@ int main(void)
     SysTick_Init();
 
     printf("Stm32 manual reg BMP280 + JY003 fan + SH1106 I2C demo start\n");
-    printf("LSM6DS3 deferred (not connected)\n");
+    printf("LSM6DS3 deferred (driver linked, main unused)\n");
 
     SPI1_Init();
     I2C1_Init();

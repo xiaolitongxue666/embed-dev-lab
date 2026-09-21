@@ -9,7 +9,9 @@
  *          本 demo 闪烁用 main.c 中忙等 delay，不依赖 HAL_Delay。
  */
 
+#include "adc.h"
 #include "stm32f1xx_it.h"
+#include "usart.h"
 
 /** @brief  不可屏蔽中断；本 demo 无 NMI 源配置 */
 void NMI_Handler(void)
@@ -66,4 +68,19 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
     HAL_IncTick();
+}
+
+void USART1_IRQHandler(void)
+{
+    HAL_UART_IRQHandler(&huart1);
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+}
+
+void DMA1_Channel1_IRQHandler(void)
+{
+    HAL_DMA_IRQHandler(&hdma_adc1);
 }

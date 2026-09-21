@@ -24,7 +24,7 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 | 工程 | 实现 | 串口 | 产物 |
 |------|------|------|------|
 | `f103-manual-reg` | 手写寄存器路线（无 CMSIS/HAL）；`src/app` `board` `periph` `driver` | `printf` + DMA TX/RX + IDLE + `syscalls.c`；ADC1 PA0 DMA；TIM2 风扇；SPI1 BMP280（LSM6 驱动保留）；I2C1 SH1106 时钟+右下温度 | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
-| `f103-cmsis-hal` | CMSIS+HAL / Cube 风格对照路线（非 CubeMX 生成） | `HAL_UART_Transmit`（无 printf） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+| `f103-cmsis-hal` | CMSIS+HAL / Cube 风格对照路线（非 CubeMX 生成）；HAL Src 16 个 `.c` | `HAL_UART_Transmit`（无 printf）；demo 对齐 manual-reg（LSM6 仅链驱动） | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
 
 两工程为**同一芯片上的并列路线**，对外具体功能应对齐；详见 `.cursor/rules/embed-dev-lab-core.mdc`。
 
@@ -35,7 +35,7 @@ description: STM32F103 embed-dev-lab 开发规范 — probe-rs 烧录、Backup �
 
 一键环境：`./scripts/bootstrap.sh`（默认不含 MCP；加 `--with-mcp` 安装 embedded-debugger）。
 
-编写 → 编译 → 下载：[`doc/workflow-write-build-flash.md`](doc/workflow-write-build-flash.md)（含「烧写脚本在哪里」）。真正烧录在 `scripts/build.sh flash`；一键用 `scripts/build-flash.sh`。`flash` 不 configure；`clean` 后须先 `./scripts/build.sh <module>`。
+编写 → 编译 → 下载：[`doc/workflow-write-build-flash.md`](doc/workflow-write-build-flash.md)（含「烧写脚本在哪里」）。真正烧录在 `scripts/build.sh flash`；一键用 `scripts/build-flash.sh`。`flash` 不 configure；`both flash` 拒绝；`clean` 后须先 `./scripts/build.sh <module>`。`./scripts/build.sh both build` 可回归两工程。
 
 CH341 串口：`serial-ch341-switch.sh`（to-win/to-wsl）。Windows Agent 读：`./scripts/serial-ch341-read.sh [--baud N] [--send TEXT]`（自动 COM；波特/端口可变）。WSL：`picocom -b <固件波特> /dev/ttyUSB*`。规则：`.cursor/rules/serial-ch341.mdc`。
 

@@ -21,7 +21,7 @@
 | SWD | PA13 SWDIO / PA14 SWCLK | **接线保留**，禁止改普通 GPIO |
 | SH1106 1.3 寸 OLED（4 针 I2C） | I2C1 PB6/PB7，写地址 `0x78` | **已实现**（`f103-manual-reg`） |
 | FT6236U 触摸盖板 | I2C1 + PB0 INT + PB1 RST | **暂不使用**（条目保留，接线可选） |
-| LSM6DS3 / LSM6DS3TR 模块 | SPI1 全双工；CS=PA8 | **固件已实现**；硬件尚未接 |
+| LSM6DS3 / LSM6DS3TR 模块 | SPI1 全双工；CS=PA8 | **驱动已链入**；`main` 不访问 IMU |
 | BMP280 / BME280 | SPI1 共用三线；CS=PA3，Mode 0；补偿温度上屏 | **已实现**（`f103-manual-reg`） |
 | JY003 风扇模块 | TIM2_CH2 PWM @ PA1；电机电源独立 | **已实现**（`f103-manual-reg`） |
 
@@ -33,7 +33,7 @@
 - SPI1 / LSM6DS3：[`spi.c`](../../projects/f103-manual-reg/src/periph/spi.c)、[`lsm6ds3.c`](../../projects/f103-manual-reg/src/driver/lsm6ds3.c)（PA8 CS + Mode 3；`main` 不访问 IMU）
 - I2C1 / SH1106：[`i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/driver/sh1106.c)（8 位写地址 `0x78`）
 - BMP280：[`bmp280.c`](../../projects/f103-manual-reg/src/driver/bmp280.c)（PA3 CS + Mode 0，校准补偿 T/P）；JY003：[`tim2.c`](../../projects/f103-manual-reg/src/periph/tim2.c)（PA1 TIM2_CH2，旋钮 raw→占空比）
-- HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（本轮未同步 SPI / I2C）
+- HAL 对照：[`projects/f103-cmsis-hal/src/main.c`](../../projects/f103-cmsis-hal/src/main.c)（SPI/I2C/ADC/TIM 已对齐；LSM6 仅链驱动）
 
 全部当前模块 **3.3 V** 供电。蓝板由 **MicroUSB 独立供电**；ST-Link 只做 SWD，并把 **3.3V / GND** 拉到面包板（方案 A：5V 闲置）——**禁止**把 ST-Link 电源接到蓝板。共地以面包板 GND 轨为汇集点。详解：[供电、共地与 SWD](power-and-common-ground.md)。
 
@@ -195,7 +195,7 @@
 
 ### LSM6DS3
 
-**固件已实现**；硬件尚未接。SPI **Mode 3**。WHO_AM_I 期望 `0x69`。SCK/MOSI/MISO 与 BMP280 并联。CS=PA8。
+**驱动已链入**（两工程 `main` 均不访问）。SPI **Mode 3**。WHO_AM_I 期望 `0x69`。SCK/MOSI/MISO 与 BMP280 并联。CS=PA8。
 
 | 模块丝印 | MCU / 电源 | 说明 |
 |----------|------------|------|
@@ -345,7 +345,7 @@ SPI：BMP280 + LSM6DS3 共用三线、独立 CS；屏幕不占 SPI
 9. **禁止**用 W25Q / TF 当 SPI「学习外设」。
 10. **JY003**：PWM 只接 PA1；电机电源独立；只共地。
 11. **Flash 预算**：动画帧进内部 Flash；完整高帧数动画放不下，限 8–15 帧精简循环。
-12. **与固件**：`f103-manual-reg` 已驱动 SPI1（PA3=BMP280 CS）、I2C1/SH1106、TIM2 PA1 风扇；LSM6 驱动保留、本阶段不访问。
+12. **与固件**：`f103-manual-reg` 与 `f103-cmsis-hal` 均已驱动 SPI1（PA3=BMP280 CS）、I2C1/SH1106、TIM2 PA1 风扇；LSM6 驱动保留、`main` 不访问。
 
 ---
 
@@ -376,5 +376,5 @@ SPI：BMP280 + LSM6DS3 共用三线、独立 CS；屏幕不占 SPI
 | [LSM6DS3 DocID026899](../reference/lsm6ds3/README.md) | SPI 4-wire、Mode 3、供电、WHO_AM_I=`0x69` |
 | [BMP280 BST-BMP280-DS001](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp280-ds001.pdf) | 4 线 SPI Mode 00/11、CSB 选接口、id=`0x58`；SDO 勿接地 |
 | RM0008 Table 45 | TIM2 默认 CH2=PA1 |
-| 本仓库 `f103-manual-reg` 源码 | 已实现 PC13、USART1、ADC1/PA0、SPI1（PA3 BMP280 / PA8 LSM6） |
+| 本仓库 `f103-manual-reg` / `f103-cmsis-hal` 源码 | 已实现 PC13、USART1、ADC1/PA0、SPI1（PA3 BMP280 / PA8 LSM6） |
 | [淘宝商品 797013563341](https://item.taobao.com/item.htm?id=797013563341)（2026-08-28） | 1.3″ SH1106 4 针采购入口 |

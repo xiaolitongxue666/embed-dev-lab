@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# f103-cmsis-hal — STM32F103C8T6 PC13 LED 闪烁（CMSIS + HAL）
+# f103-cmsis-hal — STM32F103C8T6 CMSIS + HAL 对照 demo
 # 构建框架与 f103-manual-reg 一致；链接脚本为 CMSIS STM32F103XB_FLASH.ld
 # 构建: ./scripts/build.sh f103-cmsis-hal
 # 依赖: ./scripts/fetch-f103-cmsis-hal-deps.sh
@@ -18,7 +18,17 @@ set(HAL_SRC   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/hal/Src)
 
 set(F103_HAL_SOURCES
     src/main.c
+    src/gpio.c
     src/usart.c
+    src/spi.c
+    src/adc.c
+    src/tim.c
+    src/i2c.c
+    src/key.c
+    src/driver/bmp280.c
+    src/driver/lsm6ds3.c
+    src/driver/sh1106.c
+    src/driver/sh1106_font.c
     src/system_stm32f1xx.c
     src/stm32f1xx_hal_msp.c
     src/stm32f1xx_it.c
@@ -32,6 +42,13 @@ set(F103_HAL_SOURCES
     ${HAL_SRC}/stm32f1xx_hal_flash.c
     ${HAL_SRC}/stm32f1xx_hal_flash_ex.c
     ${HAL_SRC}/stm32f1xx_hal_uart.c
+    ${HAL_SRC}/stm32f1xx_hal_dma.c
+    ${HAL_SRC}/stm32f1xx_hal_spi.c
+    ${HAL_SRC}/stm32f1xx_hal_i2c.c
+    ${HAL_SRC}/stm32f1xx_hal_adc.c
+    ${HAL_SRC}/stm32f1xx_hal_adc_ex.c
+    ${HAL_SRC}/stm32f1xx_hal_tim.c
+    ${HAL_SRC}/stm32f1xx_hal_tim_ex.c
 )
 
 add_compile_definitions(
@@ -44,6 +61,7 @@ embed_mcu_add_executable(f103-cmsis-hal
     SOURCES ${F103_HAL_SOURCES}
     INCLUDE_DIRS
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/driver
         ${CMSIS_INC}
         ${HAL_INC}
     LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker/STM32F103XB_FLASH.ld

@@ -1,17 +1,22 @@
 /**
  * @file    stm32f1xx_hal_conf.h
- * @brief   HAL 模块裁剪与全局参数（PC13 闪烁最小集）
+ * @brief   HAL 模块裁剪与全局参数
  *
  * @note    本文件由工程维护；third_party/hal/Inc 为 ST 原版头文件。
  *          仅使能本 demo 用到的 HAL 模块，减小代码体积与编译时间。
  *
  * 使能模块与用途：
- *   HAL_GPIO   — PC13 输出、USART1 PA9/PA10
+ *   HAL_GPIO   — PC13/PB12、SPI CS、USART1 PA9/PA10
  *   HAL_RCC    — HSE/PLL 72 MHz 时钟
  *   HAL_PWR    — Backup 域 DBP（PC13 前置条件）
  *   HAL_FLASH  — 时钟配置时 Flash 等待周期
  *   HAL_CORTEX — HAL_Init / 内核相关
  *   HAL_UART   — USART1 调试口（HAL_UART_Transmit，无 printf）
+ *   HAL_DMA    — ADC1 连续转换
+ *   HAL_SPI    — SPI1 主机（BMP280 / LSM6DS3）
+ *   HAL_I2C    — I2C1 主机（SH1106）
+ *   HAL_ADC    — ADC1 PA0 旋钮
+ *   HAL_TIM    — TIM2 CH2 风扇 PWM
  *
  * assert_param：未定义 USE_FULL_ASSERT 时展开为空，避免链接 assert_failed
  */
@@ -34,6 +39,10 @@ extern "C" {
 #define HAL_CORTEX_MODULE_ENABLED
 #define HAL_DMA_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
+#define HAL_SPI_MODULE_ENABLED
+#define HAL_I2C_MODULE_ENABLED
+#define HAL_ADC_MODULE_ENABLED
+#define HAL_TIM_MODULE_ENABLED
 
 /* --- 振荡器频率（与硬件晶振一致；CMake 亦通过 HSE_VALUE=8000000U 传递） --- */
 #define HSE_VALUE    8000000U
@@ -56,6 +65,10 @@ extern "C" {
 #include "stm32f1xx_hal_cortex.h"
 #include "stm32f1xx_hal_dma.h"
 #include "stm32f1xx_hal_uart.h"
+#include "stm32f1xx_hal_spi.h"
+#include "stm32f1xx_hal_i2c.h"
+#include "stm32f1xx_hal_adc.h"
+#include "stm32f1xx_hal_tim.h"
 
 #ifdef __cplusplus
 }

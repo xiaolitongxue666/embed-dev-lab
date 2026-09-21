@@ -32,21 +32,26 @@ require_git_bash_on_windows
 MODULE=""
 ACTION="all"
 
+KNOWN_MODULES=(f103-manual-reg f103-cmsis-hal)
+
 usage() {
   cat <<EOF
 Usage: ./scripts/build.sh <module> [configure|build|flash|flash-openocd|clean|all]
 
-Modules: f103-manual-reg | f103-cmsis-hal
+Modules: f103-manual-reg | f103-cmsis-hal | both
 Notes:
   flash does NOT compile; change code then build first
   build does NOT configure; after clean run without action (all) first
   f103-cmsis-hal: run ./scripts/fetch-f103-cmsis-hal-deps.sh before first configure
+  both runs configure|build|clean|all on both modules in order
+  both flash / both flash-openocd are refused (one board holds one firmware)
 
 Examples:
   ./scripts/build.sh f103-manual-reg
   ./scripts/build.sh f103-manual-reg build
   ./scripts/build.sh f103-manual-reg flash
   ./scripts/build.sh f103-cmsis-hal
+  ./scripts/build.sh both build
   ./scripts/build.sh f103-manual-reg flash-openocd
   ./scripts/build.sh f103-manual-reg clean
 EOF
@@ -59,6 +64,23 @@ fi
 
 MODULE="$1"
 ACTION="${2:-all}"
+
+if [[ "$MODULE" == "both" ]]; then
+  case "$ACTION" in
+    flash | flash-openocd)
+      die "both $ACTION is refused: one board can hold one firmware. Specify f103-manual-reg or f103-cmsis-hal"
+      ;;
+    configure | build | clean | all)
+      for m in "${KNOWN_MODULES[@]}"; do
+        bash "$ROOT/scripts/build.sh" "$m" "$ACTION"
+      done
+      exit 0
+      ;;
+    *)
+      die "Unknown action: $ACTION"
+      ;;
+  esac
+fi
 
 MODULE_DIR="$ROOT/projects/$MODULE"
 BUILD_DIR="$MODULE_DIR/build"

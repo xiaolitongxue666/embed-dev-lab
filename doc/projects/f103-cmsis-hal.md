@@ -1,13 +1,13 @@
 # f103-cmsis-hal 工程
 
-**STM32F103C8T6** 核心板 **PC13 LED 闪烁** demo，使用 **CMSIS + HAL** 的 **CubeIDE 风格对照**实现（`MX_*` / MSP / `hal_conf` / `stm32f1xx_it.c`），**不是** CubeMX 生成工程、也不是占位。功能对齐 [`f103-manual-reg`](f103-manual-reg.md)。
+**STM32F103C8T6** 核心板 **CMSIS + HAL** 对照 demo（`MX_*` / MSP / `hal_conf` / `stm32f1xx_it.c`），**不是** CubeMX 生成工程、也不是占位。对外行为对齐 [`f103-manual-reg`](f103-manual-reg.md)。
 
 ## 模块定位
 
 | 项 | 说明 |
 |----|------|
 | 目标芯片 | STM32F103C8T6（Cortex-M3，Medium-density F103xB） |
-| 实现方式 | 工程内 vendored 最小 **CMSIS-Core/Device** + **STM32F1 HAL**（Src **9** 个 `.c`）；`HAL_GPIO_*` / `HAL_RCC_*` / `HAL_UART_*` |
+| 实现方式 | 工程内 vendored 最小 **CMSIS-Core/Device** + **STM32F1 HAL**（Src **16** 个 `.c`）；`MX_*` + `src/driver` |
 | 构建框架 | 与 `f103-manual-reg` **相同**：`CMakePresets.json` + `embed_mcu_add_executable()` + `./scripts/build.sh` |
 | 链接脚本 | **CMSIS 官方** `linker/STM32F103XB_FLASH.ld`（自 `cmsis-device-f1` 拷贝，C8 64K 裁剪） |
 | 对照工程 | [`f103-manual-reg`](f103-manual-reg.md)（全手写寄存器，不链接 CMSIS/HAL） |
@@ -24,12 +24,13 @@ projects/f103-cmsis-hal/
 │   ├── cmsis/Include/            # 最小 Core+Device 头
 │   └── hal/Inc/ + hal/Src/       # 最小 HAL（v1.1.8）
 └── src/
-    ├── main.c                    # HAL_Init、时钟、PC13 闪烁
-    ├── system_stm32f1xx.c        # CMSIS SystemInit 模板
+    ├── main.c
+    ├── gpio.c / spi.c / i2c.c / adc.c / tim.c / key.c / usart.c
+    ├── driver/                   # bmp280、lsm6ds3（main 不调用）、sh1106
+    ├── system_stm32f1xx.c
     ├── stm32f1xx_hal_conf.h
     ├── stm32f1xx_hal_msp.c
-    ├── stm32f1xx_it.c
-    ├── usart.c / usart.h        # USART1 HAL 初始化 + USART1_WriteStr
+    └── stm32f1xx_it.c
 ```
 
 ## 依赖获取
@@ -44,14 +45,14 @@ projects/f103-cmsis-hal/
 
 ### third_party 是否为完整 CMSIS/HAL？
 
-**不是。** `third_party/` 仅含 PC13 闪烁 demo 所需的最小子集；完整 CMSIS 与 HAL 在 `vendor-pack/`（`cmsis-core`、`cmsis-device-f1`、`stm32f1xx-hal-driver` submodule）。
+**不是。** `third_party/` 仅含本 demo 所需的最小子集；完整 CMSIS 与 HAL 在 `vendor-pack/`（`cmsis-core`、`cmsis-device-f1`、`stm32f1xx-hal-driver` submodule）。
 
 | 组件 | 拷贝范围 | 说明 |
 |------|----------|------|
 | CMSIS | **7 个头文件** → `third_party/cmsis/Include/` | 最小 Core+Device 头 |
 | CMSIS 模板 | `startup/`、`linker/`、`src/system_stm32f1xx.c` | 不在 `third_party/` 内 |
 | HAL Inc | **全部** `hal*.h` / `ll*.h` | 仅 `#include` 依赖；无 `.c` 的不占 Flash |
-| HAL Src | **9 个 .c** | CMake 链入固件 |
+| HAL Src | **16 个 .c** | CMake 链入固件（含 SPI/I2C/ADC/TIM/DMA） |
 
 带注释的完整目录树与逐文件说明见工程 [`README.md`](../../projects/f103-cmsis-hal/README.md)；third_party 细则见 [`third_party/README.md`](../../projects/f103-cmsis-hal/third_party/README.md)。
 
@@ -63,6 +64,7 @@ projects/f103-cmsis-hal/
 ./scripts/build.sh f103-cmsis-hal          # configure + build
 ./scripts/build.sh f103-cmsis-hal build
 ./scripts/build.sh f103-cmsis-hal flash
+./scripts/build.sh both build              # 两工程都编译；both flash 拒绝
 ./scripts/build-flash.sh f103-cmsis-hal
 ```
 
@@ -79,9 +81,12 @@ probe-rs chip：**`STM32F103C8Tx`**
 |------|-----------------|----------------|
 | 系统时钟 | `SystemInit` 内手写 RCC → 进 `main` 前已是 72 MHz | CMSIS `SystemInit` **不配 PLL**；`main` 内 `SystemClock_Config`（HAL） |
 | PC13 Backup 域 | `PWREN` + `DBP` + `GPIOC_CRH` | `HAL_PWR_EnableBkUpAccess` + `HAL_GPIO_Init` |
-| 闪烁 | `PCout` + 忙等 | `HAL_GPIO_WritePin` + 同等忙等 |
-| SysTick | 无应用实现（weak Default_Handler） | `SysTick_Handler` → `HAL_IncTick`（闪烁仍用忙等） |
+| 闪烁 | `PCout` / `PBout` + 忙等 | `HAL_GPIO_WritePin` + 同等忙等 |
+| SysTick | `systick.c` 1 ms | `SysTick_Handler` → `HAL_IncTick`（OLED 时钟用 `HAL_GetTick`） |
 | 串口输出 | `printf` + `syscalls.c` | `USART1_WriteStr` → `HAL_UART_Transmit`（不链 libc I/O） |
+| SPI 传感器 | 寄存器 SPI1 | `HAL_SPI_TransmitReceive`；BMP280 进 main，LSM6 仅链驱动 |
+| I2C OLED | 寄存器 I2C1 + 页 DMA | `HAL_I2C_Master_Transmit` 轮询 |
+| ADC / 风扇 | ADC1 DMA + TIM2 PWM | `HAL_ADC_Start_DMA` + `HAL_TIM_PWM_*` |
 | 链接脚本 | 手写 `STM32F103C8_FLASH.ld` | CMSIS `STM32F103XB_FLASH.ld` |
 | startup | 精简手写 | CMSIS 官方（跳过 `__libc_init_array`） |
 
@@ -89,7 +94,7 @@ probe-rs chip：**`STM32F103C8Tx`**
 
 多数核心板 **灌电流、低电平点亮**。两工程均打印 `LED on` 后置高（灯灭）、`LED off` 后置低（灯亮），与厂商例程一致；字符串指 **GPIO 电平**，不是灯物理亮灭。拓扑与限流见 [gpio-led-source-sink.md](../learn/gpio-led-source-sink.md)。
 
-`HAL_DMA_MODULE_ENABLED` 在 conf 中开启但未链 `hal_dma.c`：当前仅阻塞 UART；启用 DMA 须同步 fetch/CMake。
+ADC 连续采样走 `hal_dma.c`（DMA1 CH1）；USART TX 仍阻塞 `HAL_UART_Transmit`。
 
 ## PC13 与 Backup 域
 

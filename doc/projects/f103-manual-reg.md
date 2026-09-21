@@ -10,7 +10,7 @@
 | 实现方式 | 全手写 `startup` / `system_stm32f1xx.c` / GPIO·USART·SPI·ADC·I2C 寄存器，**不链接** CMSIS submodule 与 HAL |
 | 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉 + EXTI13 双沿；USART1 @ PA9/PA10，1500000 bps，DMA TX/RX + 空闲定界 + `printf` + 整帧回显；ADC1 CH0 @ PA0 连续 + DMA1 CH1，旋钮 raw→TIM2 风扇占空比；SPI1 → BMP280（校准补偿温度/气压，无湿度；失败 OLED `0.00C`）；LSM6DS3 驱动保留、`main` 不访问；I2C1 → SH1106 中央 `HH:MM:SS`、右下温度（写地址 `0x78`） |
 | 标准库 | 工具链 **newlib**（`libc.a`）+ 工程内 [`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 重定向 `_write` |
-| 对照工程 | [`f103-cmsis-hal`](f103-cmsis-hal.md) — 当前阶段 HAL 工程仍以 LED+USART 为主（本轮未同步 SPI / ADC） |
+| 对照工程 | [`f103-cmsis-hal`](f103-cmsis-hal.md) — 同一 demo 的 CMSIS+HAL 实现 |
 | 参照关系 | vendor-pack 三层见 [ST F1 软件仓库归纳 §5](../learn/stm32-cmsis-component-repos.md#5-与-embed-dev-lab-的三层参照)；从零手写见 [从零手写构建指南](../learn/f103-manual-build-from-scratch.md) |
 
 ## 目录结构

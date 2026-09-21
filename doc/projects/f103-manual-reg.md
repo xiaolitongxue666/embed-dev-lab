@@ -8,7 +8,7 @@
 |----|------|
 | 目标芯片 | STM32F103C8T6（Cortex-M3，Medium-density F103xB，64 KB Flash / 20 KB RAM） |
 | 实现方式 | 全手写 `startup` / `system_stm32f1xx.c` / GPIO·USART·SPI·ADC·I2C 寄存器，**不链接** CMSIS submodule 与 HAL |
-| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉 + EXTI13 双沿；USART1 @ PA9/PA10，1500000 bps，DMA TX/RX + 空闲定界 + `printf` + 整帧回显；ADC1 CH0 @ PA0 连续 + DMA1 CH1，旋钮 raw→TIM2 风扇占空比；SPI1 → BMP280（校准补偿温度/气压，无湿度；失败 OLED `0.00C`）；LSM6DS3 驱动保留、`main` 不访问；I2C1 → SH1106 中央 `HH:MM:SS`、右下温度（写地址 `0x78`） |
+| 应用功能 | PC13 / PB12 同步翻转（位带 `PCout` / `PBout`）；PB13 上拉 + EXTI13 双沿；USART1 @ PA9/PA10，1500000 bps，DMA TX/RX + 空闲定界 + `printf` + 整帧回显；ADC1 CH0 @ PA0 连续 + DMA1 CH1，旋钮 raw→TIM2 风扇占空比；SPI1 → BMP280（校准补偿温度/气压，无湿度；失败 OLED `0.00C`）；LSM6DS3 驱动保留、`main` 不访问；I2C1 → SH1106 中央 `00:00:00:00`（时:分:秒:百分秒）、右下温度（写地址 `0x78`）；SysTick 软件定时 flag 驱动 OLED 50ms / LED 1s |
 | 标准库 | 工具链 **newlib**（`libc.a`）+ 工程内 [`syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) 重定向 `_write` |
 | 对照工程 | [`f103-cmsis-hal`](f103-cmsis-hal.md) — 同一 demo 的 CMSIS+HAL 实现 |
 | 参照关系 | vendor-pack 三层见 [ST F1 软件仓库归纳 §5](../learn/stm32-cmsis-component-repos.md#5-与-embed-dev-lab-的三层参照)；从零手写见 [从零手写构建指南](../learn/f103-manual-build-from-scratch.md) |
@@ -21,7 +21,8 @@ projects/f103-manual-reg/
 ├── CMakePresets.json
 ├── src/
 │   ├── app/
-│   │   └── main.c              # 应用：初始化顺序、旋钮→风扇、OLED 时钟
+│   │   ├── main.c              # 应用：初始化顺序、旋钮→风扇、OLED 时钟
+│   │   └── log.c / log.h       # 分级日志：时间 + 级别 + 可选 ANSI
 │   ├── board/
 │   │   ├── gpio.c / gpio.h     # PC13 Backup 域、PB12 LED、PB13 上拉
 │   │   ├── key.c / key.h       # EXTI13 双沿，IRQn 40
@@ -34,7 +35,8 @@ projects/f103-manual-reg/
 │   │   ├── spi.c / spi.h       # SPI1 Mode0/3，DMA1 CH2/CH3
 │   │   ├── tim2.c / tim2.h     # TIM2_CH2 PA1 PWM
 │   │   ├── i2c.c / i2c.h       # I2C1；页 DMA1 CH6
-│   │   ├── systick.c / .h      # SysTick 1 ms
+│   │   ├── systick.c / .h      # SysTick 1 ms + SysTime ms/sec
+│   │   ├── timer_event.c / .h  # 软件定时 flag（OLED 50ms / LED 1s）
 │   │   ├── syscalls.c          # printf → USART1
 │   │   └── system_stm32f1xx.c / .h
 │   └── driver/
@@ -71,7 +73,8 @@ projects/f103-manual-reg/
       10. 延时 ≥20 ms     — 传感器上电
       11. BMP280_ReadID / Init（失败则 OLED 画 0.00C）
       12. I2C1_Probe(0x78) / SH1106_Init
-      13. for(;;) ProcessRx + EXTI 边沿日志 + 旋钮→风扇 + 1 Hz 时钟/温度 + LED/KEY/knob
+      13. TimerEvent_Register（OLED 50ms、LED 1s）
+      14. for(;;) ProcessRx + EXTI 边沿 + 旋钮→风扇 + TakeFlag 画钟/LED/温度
 ```
 
 ```mermaid
@@ -93,6 +96,7 @@ flowchart TD
 | [`startup/startup_stm32f103xb.s`](../../projects/f103-manual-reg/startup/startup_stm32f103xb.s) | 向量表、`Reset_Handler`、`.data`/`.bss`、`bl SystemInit`、`bl main` | [编译流程](../learn/f103-module-build-flow.md)、[中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
 | [`src/periph/system_stm32f1xx.c`](../../projects/f103-manual-reg/src/periph/system_stm32f1xx.c) | `SystemInit()`：HSE×PLL→72 MHz；失败保持 HSI 8 MHz | [裸机 Q11/Q12](../learn/stm32-bare-metal-bootstrap.md#q11systeminit-是怎么调用的)、[RCC/HSE](../reference/stm32f103/md/topics/rcc-clock-hse-pll.md) |
 | [`src/app/main.c`](../../projects/f103-manual-reg/src/app/main.c) | 应用入口：LED、USART1、ADC→风扇、BMP280、SH1106；不访问 LSM6 | [MMIO 与 PC13](../learn/stm32f103-mmio-basics.md)、[Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
+| [`src/app/log.c`](../../projects/f103-manual-reg/src/app/log.c) | `LOG_E/W/I/D`：`[HH:MM:SS][I]` + ANSI，经一次 printf | 下文 § 应用日志 |
 | [`src/board/gpio.c`](../../projects/f103-manual-reg/src/board/gpio.c) | PC13 Backup 域、PB12 LED、PB13 上拉 | [Backup 域 PC13](../reference/stm32f103/md/topics/backup-domain-pc13.md) |
 | [`src/board/key.c`](../../projects/f103-manual-reg/src/board/key.c) | EXTI13 双沿，IRQn 40 | 下文 § 中断与 DMA |
 | [`src/periph/nvic.c`](../../projects/f103-manual-reg/src/periph/nvic.c) | NVIC ISER/IP：USART1=37，DMA1 CH4=14 / CH5=15 / CH6=16，EXTI15_10=40 | [中断向量表与 NVIC](../learn/interrupt-vector-table-and-nvic.md) |
@@ -105,7 +109,8 @@ flowchart TD
 | [`src/driver/lsm6ds3.c`](../../projects/f103-manual-reg/src/driver/lsm6ds3.c) | WHO_AM_I、CTRL、STATUS、连读 OUT 12 字节（`main` 不调用） | [SPI 协议](../reference/lsm6ds3/md/topics/spi-protocol.md)、[寄存器](../reference/lsm6ds3/md/topics/registers-whoami-imu.md) |
 | [`src/periph/i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c) | I2C1 主机写；命令轮询，页 DMA1 CH6 | [I2C1 写帧 / DMA](../reference/stm32f103/md/topics/i2c1-master-polling.md) |
 | [`src/driver/sh1106.c`](../../projects/f103-manual-reg/src/driver/sh1106.c) | 写地址 `0x78`、电荷泵、列偏移 2、中央时钟、右下温度 | [SH1106](../reference/sh1106/README.md) |
-| [`src/periph/systick.c`](../../projects/f103-manual-reg/src/periph/systick.c) | SysTick 1 ms，覆盖 weak Handler | [中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
+| [`src/periph/systick.c`](../../projects/f103-manual-reg/src/periph/systick.c) | SysTick 1 ms、ms/sec、`SysTime_Get`；Handler 调 `TimerEvent_OnTick` | [中断向量表](../learn/interrupt-vector-table-and-nvic.md) |
+| [`src/periph/timer_event.c`](../../projects/f103-manual-reg/src/periph/timer_event.c) | 软件定时槽：ISR 置 flag，主循环 `TakeFlag` | 下文 § I2C1 与 SH1106 |
 | [`src/periph/syscalls.c`](../../projects/f103-manual-reg/src/periph/syscalls.c) | newlib 底层 I/O；`_write`→串口，`_sbrk`→堆 | 下文 § printf 与 newlib syscall |
 | [`src/board/gpioc_bitband.h`](../../projects/f103-manual-reg/src/board/gpioc_bitband.h) | `PCout(n)` 位带写 ODR | [MMIO §5](../learn/stm32f103-mmio-basics.md#5-f103-manual-reg-pc13-点灯完整-mmio-流程) |
 | [`linker/STM32F103C8_FLASH.ld`](../../projects/f103-manual-reg/linker/STM32F103C8_FLASH.ld) | Flash/RAM 布局；`end`/`_ebss` 供 printf 堆 | [linker-vma-lma](../learn/linker-vma-lma.md)、[memory-map](../reference/stm32f103/md/topics/memory-map-medium-density.md) |
@@ -183,7 +188,7 @@ PC13 属 **Backup 域**，须先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再配置 
 | `PCout(13)` 板载 | 灭 | 亮 |
 | `PBout(12)` 外接 | 亮 | 灭 |
 
-主循环：`USART1_ProcessRx`；EXTI 边沿打印 `key irq high/low`；`ADC1_ReadRaw` → `Fan_SetDuty`；每秒刷新 OLED 时钟与温度（BMP280 失败画 `0.00C`）；每隔 200 次循环翻转 LED，并打印 `KEY` / `knob` / `duty`。`PBin(13)` 的 high/low 指 IDR（low=按下）。`main` 不访问 LSM6。
+主循环：`USART1_ProcessRx`；EXTI 边沿 `LOG_I`；`ADC1_ReadRaw` → `Fan_SetDuty`；50ms 刷新 OLED 四段钟（BMP280 失败画 `0.00C`）；1s 翻转 LED 并以 `LOG_D` 打 KEY/knob/clock。`PBin(13)` 的 high/low 指 IDR（low=按下）。`main` 不访问 LSM6。
 
 ## PB13 按键
 
@@ -266,7 +271,7 @@ BMP280（同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）�
 | 引脚 | PB6=SCL，PB7=SDA；复用开漏 `0xF`；模块板载上拉 |
 | 地址 | 8 位写 **`0x78`** 原样进 `DR`，禁止再 `<< 1` |
 | 显示 | 128×64 可视；每页列偏移 `0x02`+`0x10`；电荷泵 `0x8D,0x14` |
-| demo | 中央 HH:MM:SS（8×16×2）；SysTick 1 ms，从 00:00:00 起每秒刷新 |
+| demo | 中央 `00:00:00:00`（8×16，时:分:秒:百分秒）；SysTick 1 ms + 软件定时，50ms 刷新，温度 1s |
 | 实现 | [`i2c.c`](../../projects/f103-manual-reg/src/periph/i2c.c)、[`sh1106.c`](../../projects/f103-manual-reg/src/driver/sh1106.c) |
 | 应用 API | `I2C1_Init` / `I2C1_Probe` / `I2C1_Write` / `I2C1_WriteDma`；`SH1106_Init` / `Clear` / `DrawPixel` / `DrawClock` / `DrawTemp` / `Refresh` |
 | 手册 | [I2C1 轮询 · 地址 / 写帧](../reference/stm32f103/md/topics/i2c1-master-polling.md#主机写一帧) · [从零：页](../reference/sh1106/README.md#从零页和怎么上屏) · [SH1106 显示图像](../reference/sh1106/README.md#显示图像) · [时钟 00:00:00 总线字节](../reference/sh1106/README.md#实际例子画出电子时钟-000000) |
@@ -283,6 +288,24 @@ BMP280（同一组 SCK/MOSI/MISO）：CSB→PA3；SDO→PA6（**勿接地**）�
 | 实现 | [`usart.c`](../../projects/f103-manual-reg/src/periph/usart.c) + [`dma.c`](../../projects/f103-manual-reg/src/periph/dma.c)：`CR3.DMAT/DMAR`；TX=DMA1 CH4，RX=DMA1 CH5 普通模式；只开 `CCR.TCIE`，**关 `HTIE`**；`CR1.IDLEIE` 定界不定长帧；`USART1_ProcessRx` 调整帧 handle（原样回显） |
 | NVIC | USART1 IRQn=37；DMA1 CH4=14、CH5=15 |
 | 手动回显 | Windows：`to-win` 后串口助手 **1500000 8N1**，关本地回显；CH341 COM 用 `serial-ch341-read.sh --list` 认。Agent：`./scripts/serial-ch341-read.sh --send PING --seconds 3`。停发后线空闲即切一帧回显，会夹在 LED/KEY 行之间。先开串口再 `probe-rs reset` 才能抓到 `WHO_AM_I` 启动行 |
+
+## 应用日志
+
+[`log.c`](../../projects/f103-manual-reg/src/app/log.c) 把 `main` 的串口输出收成带时间和级别的行，底层仍走 `printf` → `_write` → USART1。禁止在 ISR 里打日志。
+
+```text
+[00:00:12][I] BMP280 init ok
+```
+
+| 项 | 说明 |
+|----|------|
+| 时间 | `SysTime_Get`，只到秒：`[HH:MM:SS]` |
+| 级别 | `E` 红 / `W` 黄 / `I` 绿 / `D` 青 |
+| 宏 | `LOG_E` / `LOG_W` / `LOG_I` / `LOG_D`，自动补 `\n` |
+| `LOG_COMPILE_LEVEL` | 默认 `LOG_DEBUG`（1s 周期行仍可见）；改为 `LOG_INFO` 后只留启动与按键 irq |
+| `LOG_COLOR` | 默认 `1`；`0` 则无 ANSI。SecureCRT 须开 ANSI Color |
+
+启动 / 初始化成功 / 按键 irq → INFO；ID 不符、init 失败、OLED NACK → ERROR；1s LED/旋钮/温度/clock 合成 **一行** DEBUG。`log_write` 先 `vsnprintf` 再一次 `printf`，减少 USART DMA 空等。
 
 ## printf 与 newlib syscall
 

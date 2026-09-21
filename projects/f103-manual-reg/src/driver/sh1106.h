@@ -52,10 +52,11 @@ void SH1106_Refresh(void);
 void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set);
 
 /**
- * @brief  在缓冲中央画 HH:MM:SS（8×16 点阵 ×2 → 16×32）
+ * @brief  在缓冲中央画 00:00:00:00（8×16，时:分:秒:百分秒）
  * @note   不 Refresh；时基在 main / SysTick，本函数不管计时
  */
-void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int second);
+void SH1106_DrawClock(unsigned int hour, unsigned int minute,
+                      unsigned int second, unsigned int centi);
 
 /**
  * @brief  右下角画补偿温度（8×16，y=48），单位 0.01℃

@@ -4,11 +4,11 @@
  *
  * 初始化含 Key_ExtiInit、TIM2_PWM_Init。主循环不访问 LSM6。
  * BMP280 失败时 OLED 画 0.00C。
+ * 周期任务走 SysTick 软件定时 flag，不忙等。
+ * 串口走 LOG_*（时间 + 级别），不用裸 printf。
  *
  * @see     doc/projects/f103-manual-reg.md
  */
-
-#include <stdio.h>
 
 #include "adc.h"
 #include "bmp280.h"
@@ -16,10 +16,12 @@
 #include "gpioc_bitband.h"
 #include "i2c.h"
 #include "key.h"
+#include "log.h"
 #include "sh1106.h"
 #include "spi.h"
 #include "systick.h"
 #include "tim2.h"
+#include "timer_event.h"
 #include "usart.h"
 
 static void delay(volatile unsigned int count)
@@ -52,19 +54,20 @@ int main(void)
 {
     unsigned char bmp_id;
     unsigned char bmp_ok;
-    unsigned int led_phase;
     unsigned int knob_raw;
     unsigned int knob_mv;
     unsigned int fan_duty;
     unsigned char oled_ok;
-    unsigned int last_sec;
-    unsigned int elapsed_sec;
+    SysTime_t now;
     unsigned int clock_h;
     unsigned int clock_m;
     unsigned int clock_s;
-    int temp_centi;
-    unsigned int temp_abs;
+    unsigned int clock_cs;
+    int temp_centi_cached;
     unsigned int press_pa;
+    unsigned int temp_abs;
+    const char *led_str;
+    const char *key_str;
 
     GPIOC_Init();
     GPIOB_Init();
@@ -75,8 +78,8 @@ int main(void)
     TIM2_PWM_Init();
     SysTick_Init();
 
-    printf("Stm32 manual reg BMP280 + JY003 fan + SH1106 I2C demo start\n");
-    printf("LSM6DS3 deferred (driver linked, main unused)\n");
+    LOG_I("Stm32 manual reg BMP280 + JY003 fan + SH1106 I2C demo start");
+    LOG_I("LSM6DS3 deferred (driver linked, main unused)");
 
     SPI1_Init();
     I2C1_Init();
@@ -84,41 +87,45 @@ int main(void)
     delay_boot_20ms();
 
     bmp_id = BMP280_ReadID();
-    printf("BMP280 ID=0x%02X (expect 0x%02X / BME 0x%02X)\n",
-           (unsigned int)bmp_id,
-           (unsigned int)BMP280_ID_VALUE,
-           (unsigned int)BME280_ID_VALUE);
+    LOG_I("BMP280 ID=0x%02X (expect 0x%02X / BME 0x%02X)",
+          (unsigned int)bmp_id,
+          (unsigned int)BMP280_ID_VALUE,
+          (unsigned int)BME280_ID_VALUE);
     if ((bmp_id != BMP280_ID_VALUE) && (bmp_id != BME280_ID_VALUE)) {
-        printf("BMP280 ID mismatch; check CSB/SDO/Mode0/3V3/GND\n");
+        LOG_E("BMP280 ID mismatch; check CSB/SDO/Mode0/3V3/GND");
     }
 
     bmp_ok = BMP280_Init();
     if (bmp_ok != 0U) {
-        printf("BMP280 init: calib + normal, osrs_t x2 / osrs_p x16\n");
+        LOG_I("BMP280 init: calib + normal, osrs_t x2 / osrs_p x16");
     } else {
-        printf("BMP280 init failed\n");
+        LOG_E("BMP280 init failed");
     }
 
     oled_ok = 0U;
+    temp_centi_cached = 0;
     if (I2C1_Probe(SH1106_ADDR_WR) != 0U) {
-        printf("SH1106 ACK addr=0x78\n");
+        LOG_I("SH1106 ACK addr=0x78");
         SH1106_Init();
         SysTick_SetMs(0U);
         oled_ok = 1U;
     } else {
-        printf("SH1106 NACK; check PB6/PB7/3V3/GND\n");
+        LOG_E("SH1106 NACK; check PB6/PB7/3V3/GND");
     }
 
-    led_phase = 0U;
-    last_sec = 0xFFFFFFFFU;
+    (void)TimerEvent_Register((unsigned char)TIMER_EVT_OLED_CLOCK, 50U,
+                              (unsigned char)TIMER_MODE_PERIODIC);
+    (void)TimerEvent_Register((unsigned char)TIMER_EVT_LED_LOG, 1000U,
+                              (unsigned char)TIMER_MODE_PERIODIC);
+
     for (;;) {
         USART1_ProcessRx();
 
         if (Key_TakeEdge() != 0U) {
             if (PBin(KEY_PIN) != 0U) {
-                printf("PB13 KEY irq high\n");
+                LOG_I("PB13 KEY irq high");
             } else {
-                printf("PB13 KEY irq low\n");
+                LOG_I("PB13 KEY irq low");
             }
         }
 
@@ -126,60 +133,49 @@ int main(void)
         fan_duty = knob_to_fan_duty(knob_raw);
         Fan_SetDuty(fan_duty);
 
-        elapsed_sec = SysTick_GetMs() / 1000U;
-        if ((oled_ok != 0U) && (elapsed_sec != last_sec)) {
-            last_sec = elapsed_sec;
-            clock_h = (elapsed_sec / 3600U) % 24U;
-            clock_m = (elapsed_sec / 60U) % 60U;
-            clock_s = elapsed_sec % 60U;
-            SH1106_Clear();
-            SH1106_DrawClock(clock_h, clock_m, clock_s);
-            if (bmp_ok != 0U) {
-                temp_centi = BMP280_ReadTemp();
-                press_pa = BMP280_ReadPressure();
-                SH1106_DrawTemp(temp_centi);
-                temp_abs = (temp_centi < 0) ? (unsigned int)(-temp_centi)
-                                            : (unsigned int)temp_centi;
-                printf("temp %s%u.%02u C  press %u Pa\n",
-                       (temp_centi < 0) ? "-" : "",
-                       temp_abs / 100U, temp_abs % 100U, press_pa);
-            } else {
-                SH1106_DrawTemp(0);
+        if (TimerEvent_TakeFlag((unsigned char)TIMER_EVT_OLED_CLOCK) != 0U) {
+            if (oled_ok != 0U) {
+                SysTime_Get(&now);
+                clock_h = (now.sec / 3600U) % 100U;
+                clock_m = (now.sec / 60U) % 60U;
+                clock_s = now.sec % 60U;
+                clock_cs = now.ms / 10U;
+                SH1106_Clear();
+                SH1106_DrawClock(clock_h, clock_m, clock_s, clock_cs);
+                SH1106_DrawTemp(temp_centi_cached);
+                SH1106_Refresh();
             }
-            SH1106_Refresh();
-            printf("clock %02u:%02u:%02u\n", clock_h, clock_m, clock_s);
         }
 
-        led_phase++;
-        if (led_phase >= 200U) {
-            led_phase = 0U;
+        if (TimerEvent_TakeFlag((unsigned char)TIMER_EVT_LED_LOG) != 0U) {
+            SysTime_Get(&now);
+            clock_h = (now.sec / 3600U) % 100U;
+            clock_m = (now.sec / 60U) % 60U;
+            clock_s = now.sec % 60U;
+            clock_cs = now.ms / 10U;
+
             PCout(BOARD_LED_PIN) ^= 1U;
             PBout(EXT_LED_PIN) ^= 1U;
-            if (PCout(BOARD_LED_PIN) != 0U) {
-                printf("PC13 LED on\n");
-                printf("PB12 LED on\n");
-            } else {
-                printf("PC13 LED off\n");
-                printf("PB12 LED off\n");
-            }
-            if (PBin(KEY_PIN) != 0U) {
-                printf("PB13 KEY high\n");
-            } else {
-                printf("PB13 KEY low\n");
-            }
+            led_str = (PCout(BOARD_LED_PIN) != 0U) ? "on" : "off";
+            key_str = (PBin(KEY_PIN) != 0U) ? "high" : "low";
             knob_mv = (knob_raw * ADC1_VDDA_MV) / ADC1_FULL_SCALE;
-            printf("knob raw=%u mv=%u duty=%u\n", knob_raw, knob_mv, fan_duty);
             if (bmp_ok != 0U) {
-                temp_centi = BMP280_ReadTemp();
+                temp_centi_cached = BMP280_ReadTemp();
                 press_pa = BMP280_ReadPressure();
-                temp_abs = (temp_centi < 0) ? (unsigned int)(-temp_centi)
-                                            : (unsigned int)temp_centi;
-                printf("temp %s%u.%02u C  press %u Pa\n",
-                       (temp_centi < 0) ? "-" : "",
-                       temp_abs / 100U, temp_abs % 100U, press_pa);
+                temp_abs = (temp_centi_cached < 0)
+                               ? (unsigned int)(-temp_centi_cached)
+                               : (unsigned int)temp_centi_cached;
+                LOG_D("LED %s  KEY %s  knob raw=%u mv=%u duty=%u  clock %02u:%02u:%02u:%02u  temp %s%u.%02u C press %u Pa",
+                      led_str, key_str, knob_raw, knob_mv, fan_duty,
+                      clock_h, clock_m, clock_s, clock_cs,
+                      (temp_centi_cached < 0) ? "-" : "",
+                      temp_abs / 100U, temp_abs % 100U, press_pa);
+            } else {
+                temp_centi_cached = 0;
+                LOG_D("LED %s  KEY %s  knob raw=%u mv=%u duty=%u  clock %02u:%02u:%02u:%02u",
+                      led_str, key_str, knob_raw, knob_mv, fan_duty,
+                      clock_h, clock_m, clock_s, clock_cs);
             }
         }
-
-        delay(0x7FFFU);
     }
 }

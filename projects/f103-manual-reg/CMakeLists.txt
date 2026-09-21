@@ -15,6 +15,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/mcu-config.cmake)
 
 set(F103_SOURCES
     src/app/main.c
+    src/app/log.c
     src/board/gpio.c
     src/board/key.c
     src/periph/nvic.c
@@ -25,6 +26,7 @@ set(F103_SOURCES
     src/periph/tim2.c
     src/periph/i2c.c
     src/periph/systick.c
+    src/periph/timer_event.c
     src/periph/syscalls.c
     src/periph/system_stm32f1xx.c
     src/driver/bmp280.c

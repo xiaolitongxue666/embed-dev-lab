@@ -100,10 +100,9 @@ void SH1106_DrawPixel(unsigned int x, unsigned int y, unsigned char set)
     }
 }
 
-#define SH1106_CLOCK_SCALE    2U
-#define SH1106_CLOCK_GLYPH_W  (SH1106_FONT_WIDTH * SH1106_CLOCK_SCALE)
-#define SH1106_CLOCK_GLYPH_H  (SH1106_FONT_HEIGHT * SH1106_CLOCK_SCALE)
-#define SH1106_CLOCK_CHARS    8U
+#define SH1106_CLOCK_GLYPH_W  SH1106_FONT_WIDTH
+#define SH1106_CLOCK_GLYPH_H  SH1106_FONT_HEIGHT
+#define SH1106_CLOCK_CHARS    11U
 #define SH1106_TEMP_Y         48U
 #define SH1106_TEMP_MAX_CHARS 8U
 
@@ -125,53 +124,28 @@ static void sh1106_draw_char(unsigned int x0, unsigned int y0, unsigned char ch)
     }
 }
 
-static void sh1106_draw_char_2x(unsigned int x0, unsigned int y0, unsigned char ch)
-{
-    const unsigned char *glyph;
-    unsigned int row;
-    unsigned int col;
-    unsigned int dx;
-    unsigned int dy;
-    unsigned char bits;
-
-    glyph = SH1106_Font8x16(ch);
-    for (row = 0U; row < SH1106_FONT_HEIGHT; row++) {
-        bits = glyph[row];
-        for (col = 0U; col < SH1106_FONT_WIDTH; col++) {
-            if ((bits & (unsigned char)(0x80U >> col)) != 0U) {
-                for (dy = 0U; dy < SH1106_CLOCK_SCALE; dy++) {
-                    for (dx = 0U; dx < SH1106_CLOCK_SCALE; dx++) {
-                        SH1106_DrawPixel(x0 + (col * SH1106_CLOCK_SCALE) + dx,
-                                         y0 + (row * SH1106_CLOCK_SCALE) + dy,
-                                         1U);
-                    }
-                }
-            }
-        }
-    }
-}
-
 /**
- * @brief  只改 RAM：把 HH:MM:SS 画到缓冲中央。不上 I2C，须再 Refresh。
+ * @brief  只改 RAM：把 00:00:00:00 画到缓冲中央。不上 I2C，须再 Refresh。
  *
- * 字库 8×16，放大 2 倍 → 每字 16×32。8 字刚好铺满 128 列：
- *   x = (128 - 8*16) / 2 = 0
- *   y = (64 - 32) / 2 = 16  → 占 page 2–5（y=16..47）
- * 每个字库像素变成 2×2，由 sh1106_draw_char_2x → DrawPixel。
+ * 字库 8×16，11 字 = 88 列：
+ *   x = (128 - 11*8) / 2 = 20
+ *   y = (64 - 16) / 2 = 24
  * 本函数不管计时；时基在 main / SysTick。
  */
-void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int second)
+void SH1106_DrawClock(unsigned int hour, unsigned int minute,
+                      unsigned int second, unsigned int centi)
 {
     unsigned char text[SH1106_CLOCK_CHARS];
     unsigned int i;
     unsigned int x;
     unsigned int y;
 
-    hour %= 24U;
+    hour %= 100U;
     minute %= 60U;
     second %= 60U;
+    centi %= 100U;
 
-    /* 8 个 ASCII：十位时、个位时、冒号、分、分、冒号、秒、秒 */
+    /* 11 个 ASCII：时:分:秒:百分秒 */
     text[0] = (unsigned char)('0' + (hour / 10U));
     text[1] = (unsigned char)('0' + (hour % 10U));
     text[2] = (unsigned char)':';
@@ -180,14 +154,15 @@ void SH1106_DrawClock(unsigned int hour, unsigned int minute, unsigned int secon
     text[5] = (unsigned char)':';
     text[6] = (unsigned char)('0' + (second / 10U));
     text[7] = (unsigned char)('0' + (second % 10U));
+    text[8] = (unsigned char)':';
+    text[9] = (unsigned char)('0' + (centi / 10U));
+    text[10] = (unsigned char)('0' + (centi % 10U));
 
-    /* 水平 / 垂直居中；当前常量下 x=0、y=16 */
     x = (SH1106_WIDTH - (SH1106_CLOCK_CHARS * SH1106_CLOCK_GLYPH_W)) / 2U;
     y = (SH1106_HEIGHT - SH1106_CLOCK_GLYPH_H) / 2U;
 
-    /* 从左到右每个字占 16 列，同一 y */
     for (i = 0U; i < SH1106_CLOCK_CHARS; i++) {
-        sh1106_draw_char_2x(x + (i * SH1106_CLOCK_GLYPH_W), y, text[i]);
+        sh1106_draw_char(x + (i * SH1106_CLOCK_GLYPH_W), y, text[i]);
     }
 }
 

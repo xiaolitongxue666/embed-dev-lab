@@ -40,8 +40,11 @@ __pycache__/
 *.tmp
 logs/
 graphify-out/
+.claude-mem/
 temp_args.json
 ERROR.md
+%SystemDrive%/
+%USERPROFILE%/
 # 通用日志（含 vendor-pack/STLink/.../Error.log）
 *.log
 

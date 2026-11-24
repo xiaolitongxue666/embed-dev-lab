@@ -8,6 +8,9 @@
 
 SPI_HandleTypeDef hspi1;
 
+/* 单字节交换上限。等不到 TXE/RXNE 就返回 0xFF，避免 BMP280 缺席时停住后面的 OLED 刷新。 */
+#define SPI1_BYTE_TIMEOUT_MS 10U
+
 void MX_SPI1_Init(void)
 {
     hspi1.Instance = SPI1;
@@ -31,7 +34,7 @@ uint8_t SPI1_TransferByte(uint8_t tx)
 {
     uint8_t rx = 0xFFU;
 
-    if (HAL_SPI_TransmitReceive(&hspi1, &tx, &rx, 1U, HAL_MAX_DELAY) != HAL_OK) {
+    if (HAL_SPI_TransmitReceive(&hspi1, &tx, &rx, 1U, SPI1_BYTE_TIMEOUT_MS) != HAL_OK) {
         return 0xFFU;
     }
     return rx;

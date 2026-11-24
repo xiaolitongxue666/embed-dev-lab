@@ -17,6 +17,8 @@
 
 #define LOG_BODY_MAX 160
 #define LOG_LINE_MAX 200
+/* 一行发不完就放弃。日志和 50 ms 刷屏在同一个主循环里，不能无限等 TX。 */
+#define LOG_UART_TIMEOUT_MS 20U
 
 #if LOG_COLOR
 #define LOG_ANSI_RESET "\033[0m"
@@ -97,5 +99,5 @@ void log_write(unsigned int level, const char *fmt, ...)
     if (n >= LOG_LINE_MAX) {
         n = LOG_LINE_MAX - 1;
     }
-    (void)HAL_UART_Transmit(&huart1, (uint8_t *)line, (uint16_t)n, HAL_MAX_DELAY);
+    (void)HAL_UART_Transmit(&huart1, (uint8_t *)line, (uint16_t)n, LOG_UART_TIMEOUT_MS);
 }

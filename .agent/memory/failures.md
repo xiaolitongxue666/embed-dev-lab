@@ -12,6 +12,7 @@
 | SPI 读到 `0x00` | MISO 被拉死或 CS 没有选中该器件。`TransferByte` 超时返回 `0xFF` |
 | BMP280 片选无效 | PA4 孔是坏的。CSB 接 PA3。SDO 接 PA6，不要接 GND |
 | 这块台架经常没有 BMP280 温度 | 初始化失败时 OLED 画 `0.00C` |
+| OLED 时间停住 | 面板单独供电，MCU 没写成功就留着旧显存。cmsis-hal 的 SPI 与日志若用 `HAL_MAX_DELAY`，主循环进不了 50 ms 刷屏。现为 `spi.c` 每字节 10 ms、`log.c` 每行 20 ms，到时返回 |
 | OLED 刷新过频 | 整屏刷新约 20 ms 以上，不要每 10 ms 刷新 |
 
 未经用户确认，不要用全片擦除来「修」烧录失败。

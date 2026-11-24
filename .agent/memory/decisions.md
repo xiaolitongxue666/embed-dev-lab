@@ -11,7 +11,8 @@
 - SH1106：`DrawClock(h,m,s,centi)` 在 8×16 画 `00:00:00:00`（11 个字形，x=20，y=24）。两倍宽的 `HH:MM:SS` 放不进 128 列。温度仍在 y=48。刷新 50 ms（`TIMER_EVT_OLED_CLOCK`）。温度缓存，BMP280 在 1 s 槽读取。`Init` 之后：manual-reg `SetMs(0)`；cmsis-hal `SysTime_Reset()`（不动 `uwTick`）。
 - manual-reg SysTick：保持 `HCLK / 71999`，不要用 `HCLK/8` 且 `LOAD=9000`，也不要用 CMSIS 配这条时基。ISR：`s_systick_ms++`（`GetMs`），`s_sys_ms++` / `sec++`，然后 `TimerEvent_OnTick()`。`SysTime_Get` 在 **sec** 上重试（不是 ms），避免撕裂。关中断用 `mrs PRIMASK` + `cpsid`，再按原值恢复。
 - `timer_event`：4 个槽。`period_ms==0` 跳过。`TakeFlag` 读清。OLED 50 ms 周期；LED/日志 1000 ms 周期。`main` 里没有 `delay(0x7FFF)` / `led_phase`。manual-reg：外设层 + `cpsid`。cmsis-hal：扁平 `src/` + CMSIS `__disable_irq`；`SysTick_Handler` 先 `HAL_IncTick` 再 `OnTick`。
-- `LOG_*`：只显示到秒。E 红 / W 黄 / I 绿 / D 青。`LOG_COMPILE_LEVEL` 默认 DEBUG。`LOG_COLOR=1`。一行一次 `vsnprintf`、一次发送。1 s 的 DEBUG 是一行（LED/KEY/旋钮/时钟，温度可有可无）。不要在 ISR 里打日志。SecureCRT 需要 ANSI Color。manual-reg 一次 `printf`。cmsis-hal 一次 `HAL_UART_Transmit`（无 syscalls）。
+- `LOG_*`：只显示到秒。E 红 / W 黄 / I 绿 / D 青。`LOG_COMPILE_LEVEL` 默认 DEBUG。`LOG_COLOR=1`。一行一次 `vsnprintf`、一次发送。1 s 的 DEBUG 是一行（LED/KEY/旋钮/时钟，温度可有可无）。不要在 ISR 里打日志。SecureCRT 需要 ANSI Color。manual-reg 一次 `printf`。cmsis-hal 一次 `HAL_UART_Transmit`（无 syscalls），发送超时 20 ms。
+- cmsis-hal `SPI1_TransferByte` 每字节超时 10 ms，失败返回 `0xFF`。引脚、Mode0/Mode3 与片选不变。BMP280 缺席时不得挡住 50 ms OLED 刷新。
 - cmsis-hal：先 `fetch-cmsis.sh`，再 `fetch-f103-cmsis-hal-deps.sh`。HAL Src 16 个 `.c`。工程内有 `src/log.c` 与 `src/timer_event.c`。`src/`、`startup/`、`linker/` 注释中文，CLI 英文。时钟在 `main` 的 `SystemClock_Config`。
 - 未经确认不做全片擦除。
 - 供电：蓝板 MicroUSB 给 MCU。ST-Link 3.3V 到面包板（方案 A，5V 闲置）。地用星型汇集。见 [`../rules/hardware.md`](../rules/hardware.md)。

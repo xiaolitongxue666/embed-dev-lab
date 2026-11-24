@@ -18,6 +18,8 @@ alwaysApply: true
 
 新增或变更 demo 行为时，两条路线应同步对齐，除非用户明确只改其一。
 
+`f103-manual-rtos` 是手写调度学习工程，不参与这两条的同步。`both` 不编译它。规则：`f103-manual-rtos.mdc`。
+
 ## 其它约束
 
 - Windows 脚本须在 **Git Bash** 运行

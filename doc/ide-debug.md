@@ -130,6 +130,10 @@ preLaunchTask "Build F103"
 
 ---
 
+## 命令行停核
+
+不走 F5 时用 `probe-rs gdb`。外设和 SCB 在默认策略下读不到，命令和读完必须 `probe-rs reset` 的原因见 [probe-rs.md](probe-rs.md) 的「停核读寄存器」。`-batch` 里不要写 gdb `while`：它会留下交互提示，ST-Link 一直被占用，下一次下载报 USB error 5。
+
 ## 常见问题
 
 | 问题 | 处理 |
@@ -138,6 +142,7 @@ preLaunchTask "Build F103"
 | F5 提示找不到 probe-rs | User PATH 添加 cargo/WinGet 路径；重启 Cursor |
 | 调试前 build 失败 | 终端单独运行 `./scripts/build.sh <module>`；cmsis-hal 缺 deps 时先 `fetch-f103-cmsis-hal-deps.sh` |
 | 烧录后无断点停住 | 确认 `haltAfterReset: true`；检查 SWD |
+| gdb 读 USART / SCB 报 Cannot access memory | `set mem inaccessible-by-default off`。`probe-rs read` 不能读这些地址 |
 | OpenOCD 报找不到 hex | 须先 `build` 生成 `.hex`（objcopy POST_BUILD）；probe-rs 路径用 `.elf` |
 | Git Bash 路径错误 | 工作区已设 profile 名；User settings 中配置实际 bash 路径 |
 | `Unsupported option '-mcpu='` 或 pointer-to-int（usart DMA 地址） | clangd 按 x86_64 解析。先 `./scripts/build.sh f103-manual-reg` 同步 `compile_commands.json`，再 `./scripts/setup-clangd.sh`，命令面板 **Clangd: Restart language server**。勿改 DMA `CMAR` 的 `unsigned int` 强转 |

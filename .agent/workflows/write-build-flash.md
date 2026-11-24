@@ -16,8 +16,8 @@ board-power → firmware-build → firmware-flash → serial-console
 | 结果 | 回到 |
 |------|------|
 | 编译失败 | firmware-build。不要烧录 |
-| `JtagGetIdcode`，或探针列表为空 | board-power（未供电或 ST-Link）。探针列表为空时按烧写 Skill 查 WinUSB |
-| 串口乱码或没有输出 | serial-console（波特、宿主、占用、共地） |
+| `JtagGetIdcode`，或探针列表为空 | board-power（未供电或 ST-Link）。列表为空时先按烧写 Skill 区分描述符失败和 WinUSB |
+| 串口乱码或没有输出 | serial-console。`bytes=0` 且 SWD 上 USART 已报 TC 时，不要改波特，也不要改接线文档 |
 | 烧进去仍是旧行为 | firmware-build：`flash` 不会编译 |
 
 通过条件见 [`.agent/evaluators/firmware.md`](../evaluators/firmware.md)。

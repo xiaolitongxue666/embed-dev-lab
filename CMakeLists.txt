@@ -9,3 +9,4 @@ project(embed-dev-lab C ASM)
 
 add_subdirectory(projects/f103-manual-reg)
 add_subdirectory(projects/f103-cmsis-hal)
+add_subdirectory(projects/f103-manual-rtos)

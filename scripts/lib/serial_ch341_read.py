@@ -143,7 +143,9 @@ def main() -> int:
     if len(buf) == 0:
         print(
             "INFO: bytes=0 means the CH341 saw no UART edges. "
-            "Check RX<-PA9 and GND. A wrong baud usually shows garbage, not zero bytes.",
+            "A wrong baud usually shows garbage, not zero bytes. "
+            "If SWD shows USART BRR matching the firmware, CR1 TE|UE, and SR TC, "
+            "do not change the baud and do not change the manual-reg pinout.",
             file=sys.stderr,
         )
     return 0

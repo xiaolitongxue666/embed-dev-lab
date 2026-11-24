@@ -72,7 +72,7 @@ flowchart TB
 | 层级 | 路径 | 职责 |
 |------|------|------|
 | 入口 | [`README.md`](README.md)、[`doc/`](doc/) | 项目地图与人类文档 |
-| 应用 | [`projects/`](projects/)（源码）、[`doc/projects/`](doc/projects/)（说明） | 固件小工程（`f103-manual-reg`、`f103-cmsis-hal`） |
+| 应用 | [`projects/`](projects/)（源码）、[`doc/projects/`](doc/projects/)（说明） | 固件小工程（`f103-manual-reg`、`f103-cmsis-hal`、`f103-manual-rtos`） |
 | 构建 | [`cmake/`](cmake/)、[`scripts/build.sh`](scripts/build.sh) | 工具链、MCU 抽象、编译烧录 |
 | 环境 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) 等 | 安装工具、PATH、校验 |
 | Agent | [`.agent/`](.agent/)、[`.cursor/`](.cursor/)、[`AGENTS.md`](AGENTS.md) | 共用规则与操作 Skill、Cursor 规则与 MCP、无 MCP Agent 入口 |
@@ -93,7 +93,8 @@ embed-dev-lab/
 │   ├── projects/                   # 应用层固件说明（与 projects/<name>/ 对应）
 │   │   ├── README.md
 │   │   ├── f103-manual-reg.md
-│   │   └── f103-cmsis-hal.md
+│   │   ├── f103-cmsis-hal.md
+│   │   └── f103-manual-rtos.md
 │   ├── modules-f103-blink.md       # 重定向 stub → projects/f103-manual-reg.md
 │   ├── learn/                      # 学习笔记（CMSIS、GPIO、串口/SWD、NVIC 等）
 │   └── reference/stm32f103/        # ST 官方 PDF + 精选 MD
@@ -125,11 +126,12 @@ embed-dev-lab/
 │   │   ├── src/
 │   │   ├── startup/
 │   │   └── linker/
-│   └── f103-cmsis-hal/             # CubeIDE 风格对照（CMSIS+HAL 最小子集）
-│       ├── src/
-│       ├── startup/
-│       ├── linker/
-│       └── third_party/
+│   ├── f103-cmsis-hal/             # CubeIDE 风格对照（CMSIS+HAL 最小子集）
+│   │   ├── src/
+│   │   ├── startup/
+│   │   ├── linker/
+│   │   └── third_party/
+│   └── f103-manual-rtos/           # 手写 SysTick + PendSV，外设同 manual-reg
 ├── .agent/                         # 多 Agent 共用规则、记忆、操作 Skill
 │   ├── rules/
 │   ├── memory/

@@ -4,7 +4,7 @@
 
 - [project.md](.agent/memory/project.md) — 背景、Git Bash、文档与代理
 - [decisions.md](.agent/memory/decisions.md) — 已定的构建、双路线、定时、日志与时钟
-- [progress.md](.agent/memory/progress.md) — 台架进度（含 2026-09-21）
+- [progress.md](.agent/memory/progress.md) — 台架进度（含 2026-11-24 的 rtos 停核与 COM9 `bytes=0`）
 - [failures.md](.agent/memory/failures.md) — 问题与处理
 - [discoveries.md](.agent/memory/discoveries.md) — 引脚、时序与器件事实
 

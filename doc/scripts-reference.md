@@ -164,7 +164,7 @@ EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 
 WSL 侧仍用 picocom（见下节），不要用本脚本。
 
-`INFO: bytes=0` 表示这段时间 CH341 没有收到 UART 边沿（查 RX←PA9 与 GND）。波特不一致时通常是乱码，不是 0 字节。抓启动日志用 `--reset`：脚本会先清空打开前的缓冲，复位放在清空之后。
+`INFO: bytes=0` 表示这段时间 CH341 没有收到 UART 边沿。波特不一致时通常是乱码，不是 0 字节。抓启动日志用 `--reset`：脚本会先清空打开前的缓冲，复位放在清空之后。若 SWD 上 USART 的 BRR 与固件一致、CR1 已开 TE/UE、SR 含 TC，不要改波特，也不要改 manual-reg 的接线。
 
 #### WSL 下用 picocom 读串口
 

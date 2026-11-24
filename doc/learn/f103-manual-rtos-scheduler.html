@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>f103-manual-rtos · 手写调度器</title>
+<style>
+* { box-sizing: border-box; }
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1c2128; --border:#30363d;
+  --text:#c9d1d9; --dim:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#f0883e;
+  --red:#f85149; --purple:#bc8cff; --yellow:#e3b341; --cyan:#79c0ff;
+}
+html,body {
+  margin:0; padding:0; height:100%;
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:13px; overflow:hidden;
+}
+.mono,code,pre { font-family:"JetBrains Mono","Consolas","Monaco",monospace; }
+
+.app { display:flex; flex-direction:column; height:100vh; padding:8px; gap:8px; }
+
+.header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 16px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:6px; flex-shrink:0; gap:12px; flex-wrap:wrap;
+}
+.title { font-size:15px; font-weight:600; color:var(--blue); }
+.status { display:flex; gap:16px; font-size:12px; color:var(--dim); flex-wrap:wrap; }
+.status b { color:var(--green); font-weight:600; }
+.status b.dimmed { color:var(--dim); font-weight:600; }
+
+.main {
+  flex:1; display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(280px,380px);
+  gap:8px; min-height:0;
+}
+
+.panel {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:6px; display:flex; flex-direction:column; overflow:hidden;
+}
+.panel-header {
+  padding:6px 12px; background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  font-size:11px; font-weight:600; color:var(--dim);
+  text-transform:uppercase; letter-spacing:.5px; flex-shrink:0;
+}
+
+.code-panel { min-height:0; }
+.code {
+  flex:1; margin:0; padding:12px 16px; overflow:auto;
+  font-size:13px; line-height:1.75; color:var(--text);
+}
+.code-line {
+  display:flex; padding:0 8px; border-radius:3px;
+  white-space:pre; transition:background .3s, color .3s;
+  border-left:2px solid transparent; padding-left:6px;
+}
+.code-line.active {
+  background:rgba(88,166,255,.15);
+  border-left-color:var(--blue); color:#fff;
+}
+.code-ln { color:var(--dim); user-select:none; min-width:24px;
+  text-align:right; margin-right:12px; font-size:11px; }
+
+.desc {
+  padding:10px 16px; background:rgba(88,166,255,.08);
+  border-top:1px solid var(--border); font-size:13px;
+  color:var(--cyan); min-height:52px; display:flex; align-items:center;
+  flex-shrink:0; line-height:1.5;
+}
+
+.right-col {
+  display:flex; flex-direction:column; gap:8px; min-height:0;
+}
+.flow-panel { flex:0 1 auto; max-height:58%; }
+.reg-panel { flex:1 1 auto; min-height:120px; }
+
+.flowchart {
+  flex:1; overflow-y:auto;
+  padding:10px 12px;
+  display:flex; flex-direction:column;
+  gap:0;
+}
+.fc-state {
+  position:relative;
+  padding:8px 10px;
+  border:1.5px solid var(--border);
+  border-radius:6px;
+  background:var(--bg3);
+  transition:all .4s;
+}
+.fc-state[data-state="ready"]  { border-left:3px solid var(--blue); }
+.fc-state[data-state="running"]{ border-left:3px solid var(--green); }
+.fc-state[data-state="delayed"]{ border-left:3px solid var(--orange); }
+
+.fc-label {
+  font-size:10px; font-weight:700;
+  color:var(--dim); text-transform:uppercase;
+  letter-spacing:.5px; margin-bottom:6px;
+  display:flex; align-items:center; gap:6px;
+}
+.fc-count {
+  display:inline-block; min-width:18px; padding:0 5px;
+  border-radius:8px; background:rgba(88,166,255,.15);
+  color:var(--blue); font-size:10px; text-align:center;
+  font-family:monospace;
+}
+.fc-state[data-state="running"] .fc-count { background:rgba(63,185,80,.15); color:var(--green); }
+.fc-state[data-state="delayed"] .fc-count { background:rgba(240,136,62,.15); color:var(--orange); }
+
+.fc-tasks {
+  display:flex; flex-wrap:wrap; gap:4px;
+  min-height:22px;
+}
+.fc-empty { color:var(--dim); font-size:10px; opacity:.5; }
+
+.fc-task {
+  padding:2px 8px; border-radius:4px;
+  font-size:11px; font-family:monospace;
+  transition:all .4s;
+  display:inline-flex; align-items:center; gap:4px;
+}
+.fc-task small { opacity:.6; font-size:9px; }
+.fc-task.ready {
+  background:rgba(88,166,255,.12);
+  border:1px solid rgba(88,166,255,.35);
+  color:var(--blue);
+}
+.fc-task.running {
+  background:rgba(63,185,80,.18);
+  border:1px solid var(--green);
+  color:var(--green);
+  box-shadow:0 0 8px rgba(63,185,80,.3);
+}
+.fc-task.delayed {
+  background:rgba(240,136,62,.15);
+  border:1px solid rgba(240,136,62,.5);
+  color:var(--orange);
+  opacity:.8;
+}
+
+@keyframes fc-pop {
+  0% { transform:scale(.5); opacity:0; }
+  60% { transform:scale(1.15); }
+  100% { transform:scale(1); opacity:1; }
+}
+.fc-task.pop { animation:fc-pop .55s cubic-bezier(.34,1.56,.64,1); }
+
+.fc-arrow {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; padding:3px 0;
+  font-size:10px; color:var(--dim);
+  font-family:monospace;
+  transition:color .3s;
+}
+.fc-arrow svg { width:14px; height:14px; }
+.fc-arrow svg path { stroke:currentColor; }
+
+@keyframes arrow-flow {
+  0%,100% { transform:translateY(-1px); }
+  50%     { transform:translateY(2px); }
+}
+.fc-arrow.active { color:var(--yellow); font-weight:600; }
+.fc-arrow.active svg { animation:arrow-flow .7s ease-in-out infinite; }
+
+.fc-loop {
+  display:flex; align-items:center; gap:8px;
+  padding:4px 0;
+  color:var(--dim); font-size:10px;
+  font-family:monospace; transition:color .3s;
+}
+.fc-loop-line {
+  flex:1; height:1px;
+  background:repeating-linear-gradient(90deg,currentColor 0 4px,transparent 4px 8px);
+  opacity:.5;
+}
+.fc-loop.active { color:var(--yellow); font-weight:600; }
+.fc-loop.active .fc-loop-line { opacity:1; }
+
+.regs-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:4px;
+  padding:8px; overflow-y:auto; flex:1; align-content:start;
+}
+.reg {
+  display:flex; justify-content:space-between; padding:4px 8px;
+  background:var(--bg3); border-radius:4px;
+  border:1px solid transparent; font-family:"JetBrains Mono",monospace;
+  font-size:11px; transition:all .3s;
+}
+.reg-name { color:var(--dim); font-weight:600; }
+.reg-val { color:var(--blue); }
+.reg.special .reg-val { color:var(--orange); }
+.reg.psp .reg-val { color:var(--purple); }
+
+@keyframes reg-flash {
+  0% { background:rgba(227,179,65,.5); border-color:var(--yellow); }
+  100% { background:var(--bg3); border-color:transparent; }
+}
+.reg.flash { animation:reg-flash .9s ease-out; }
+
+.tasks-row {
+  display:flex; gap:8px; overflow-x:auto;
+  height:250px; flex-shrink:0; padding:0;
+}
+.task-card {
+  flex:1 0 200px; max-width:280px;
+  background:var(--bg2); border:2px solid var(--border);
+  border-radius:6px; padding:8px 10px; display:flex; flex-direction:column;
+  gap:4px; transition:all .4s cubic-bezier(.4,0,.2,1);
+}
+.task-card.running {
+  border-color:var(--green);
+  box-shadow:0 0 16px rgba(63,185,80,.35);
+  transform:translateY(-2px);
+}
+.task-card.delayed { opacity:.55; }
+.task-head { display:flex; justify-content:space-between; align-items:center; }
+.task-name { font-weight:600; font-size:14px; display:flex; align-items:center; }
+.run-dot {
+  width:8px; height:8px; border-radius:50%; background:var(--green);
+  margin-right:6px; box-shadow:0 0 6px var(--green); flex-shrink:0;
+}
+.task-prio {
+  font-size:11px; padding:2px 6px; border-radius:3px;
+  background:rgba(88,166,255,.2); color:var(--blue);
+}
+.task-meta {
+  display:flex; justify-content:space-between;
+  font-family:monospace; font-size:10px; color:var(--dim);
+}
+.stack {
+  display:flex; flex-direction:column; gap:1px;
+  font-family:"JetBrains Mono",monospace; font-size:10px;
+  flex:1; overflow-y:auto;
+}
+.stack-slot {
+  display:flex; justify-content:space-between; padding:1px 6px;
+  border-radius:2px; background:var(--bg3); transition:all .3s;
+}
+.stack-slot.empty { color:var(--dim); opacity:.35; }
+.stack-slot.sp {
+  background:rgba(188,140,255,.25);
+  border-left:3px solid var(--purple);
+  color:var(--purple); padding-left:4px;
+}
+@keyframes slot-flash {
+  0% { background:rgba(227,179,65,.6); }
+  100% { background:var(--bg3); }
+}
+.stack-slot.new { animation:slot-flash .7s ease-out; }
+.stack-note { font-size:10px; color:var(--dim); font-family:monospace; }
+
+.bottom-row {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  height:140px; flex-shrink:0;
+}
+#lists-content, #log-content { padding:8px; overflow-y:auto; flex:1; }
+#log-content { font-family:monospace; font-size:11px; line-height:1.6; }
+
+.ready-list { display:flex; align-items:center; margin-bottom:6px;
+  gap:4px; flex-wrap:wrap; }
+.ready-list-label {
+  font-family:monospace; font-size:11px;
+  color:var(--dim); min-width:52px;
+}
+.ready-node {
+  display:inline-block; padding:3px 10px; border-radius:4px;
+  background:var(--bg3); border:1px solid var(--border);
+  font-family:monospace; font-size:11px; color:var(--text);
+}
+.ready-node.head { border-color:var(--blue); }
+.ready-node.running {
+  background:rgba(63,185,80,.2); border-color:var(--green);
+  color:var(--green);
+}
+.ready-node + .ready-node::before {
+  content:'→'; color:var(--dim); margin:0 4px 0 -8px;
+}
+.ready-back { color:var(--dim); font-family:monospace; font-size:10px; }
+.log-entry {
+  color:var(--dim); padding:2px 0;
+  border-bottom:1px dotted rgba(48,54,61,.5);
+}
+.log-entry:last-child { color:var(--text); }
+
+.controls {
+  display:flex; align-items:center; gap:12px;
+  padding:8px 16px; background:var(--bg2);
+  border:1px solid var(--border); border-radius:6px;
+  flex-shrink:0;
+}
+button {
+  background:var(--bg3); border:1px solid var(--border);
+  color:var(--text); padding:6px 14px; border-radius:4px;
+  cursor:pointer; font-size:12px; transition:all .2s;
+}
+button:hover:not(:disabled) { background:var(--border); border-color:var(--blue); }
+button.primary {
+  background:rgba(88,166,255,.2); border-color:var(--blue); color:var(--blue);
+}
+button:disabled { opacity:.4; cursor:not-allowed; }
+.controls input[type="range"] { width:100px; vertical-align:middle; }
+.controls label { font-size:12px; color:var(--dim); }
+#step-counter { margin-left:auto; color:var(--dim);
+  font-family:monospace; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="title">f103-manual-rtos · 手写调度器</div>
+    <div class="status">
+      <span>Tick: <b id="hdr-tick">0</b></span>
+      <span>模式: <b id="hdr-mode">-</b></span>
+      <span>当前: <b id="hdr-current">-</b></span>
+      <span>os_running: <b id="hdr-running">0</b></span>
+      <span>bitmap: <b id="hdr-bitmap">0x00000000</b></span>
+      <span>PendSV: <b id="hdr-pendsv" class="dimmed">空闲</b></span>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="panel code-panel">
+      <div class="panel-header"><span id="code-title">准备就绪</span></div>
+      <pre class="code" id="code-content"></pre>
+      <div class="desc" id="code-desc">单步或自动播放。任务、时间片和 PendSV 与 os.c / port.c 一致。</div>
+    </section>
+
+    <div class="right-col">
+      <section class="panel flow-panel">
+        <div class="panel-header">任务状态流转</div>
+        <div class="flowchart">
+          <div class="fc-state" data-state="ready">
+            <div class="fc-label">READY · 就绪 <span class="fc-count" id="fc-ready-count">0</span></div>
+            <div class="fc-tasks" id="fc-ready"></div>
+          </div>
+          <div class="fc-arrow" id="arrow-dispatch">
+            <svg viewBox="0 0 12 12"><path d="M6 0 L6 8 M2 5 L6 9 L10 5"
+              fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>被调度</span>
+          </div>
+          <div class="fc-state" data-state="running">
+            <div class="fc-label">RUNNING · 运行 <span class="fc-count" id="fc-running-count">0</span></div>
+            <div class="fc-tasks" id="fc-running"></div>
+          </div>
+          <div class="fc-loop" id="arrow-slice">
+            <span class="fc-loop-line"></span>
+            <span>↺ 时间片到 · 同级轮转</span>
+            <span class="fc-loop-line"></span>
+          </div>
+          <div class="fc-arrow" id="arrow-delay">
+            <svg viewBox="0 0 12 12"><path d="M6 0 L6 8 M2 5 L6 9 L10 5"
+              fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>os_delay()</span>
+          </div>
+          <div class="fc-state" data-state="delayed">
+            <div class="fc-label">DELAYED · 延时 <span class="fc-count" id="fc-delayed-count">0</span></div>
+            <div class="fc-tasks" id="fc-delayed"></div>
+          </div>
+          <div class="fc-loop" id="arrow-wake">
+            <span class="fc-loop-line"></span>
+            <span>↑ 延时到 · 回到就绪</span>
+            <span class="fc-loop-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel reg-panel">
+        <div class="panel-header">CPU 寄存器</div>
+        <div class="regs-grid" id="regs-grid"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="tasks-row" id="tasks-row"></section>
+
+  <div class="bottom-row">
+    <section class="panel">
+      <div class="panel-header">就绪链表 · 延时链表</div>
+      <div id="lists-content"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-header">事件日志</div>
+      <div id="log-content"></div>
+    </section>
+  </div>
+
+  <footer class="controls">
+    <button id="btn-reset" type="button">重置</button>
+    <button id="btn-step" type="button">单步</button>
+    <button id="btn-auto" class="primary" type="button">▶ 自动播放</button>
+    <label>速度: <input type="range" id="speed" min="1" max="10" value="5"></label>
+    <span id="step-counter">0 / 0</span>
+  </footer>
+</div>
+
+<script>
+'use strict';
+
+const OS_TIME_SLICE = 1;
+const MSP_TOP = 0x20005000;
+const STACK_LABELS = ['R4','R5','R6','R7','R8','R9','R10','R11',
+                      'R0','R1','R2','R3','R12','LR','PC','xPSR'];
+
+/** 演示用地址，方便对照 PC / PSP。栈帧基址是 R4 所在的低地址。 */
+const SYM = {
+  idle: 0x08001210,
+  key: 0x08001340,
+  usart: 0x08001480,
+  fan: 0x08001590,
+  display: 0x080016C0,
+  status: 0x08001840,
+  svc: 0x08000C40,
+  pendsv: 0x08000B80,
+  systick: 0x08000A90,
+  blRet: 0x08000BB2
+};
+
+const STACK_BASE = {
+  idle: 0x20001200,
+  key: 0x20001800,
+  usart: 0x20001E00,
+  fan: 0x20002400,
+  display: 0x20002A00,
+  status: 0x20003000
+};
+
+const CODE_BLOCKS = {
+  os_init: {
+    title: 'os_init() — 清空链表并创建 idle',
+    lines: [
+      'void os_init(void) {',
+      '    unsigned int i;',
+      '    for (i = 0U; i < OS_MAX_PRIORITIES; i++) {',
+      '        ready_list[i] = 0;',
+      '    }',
+      '    ready_bitmap = 0U;',
+      '    delay_list = 0;',
+      '    current_tcb = 0;',
+      '    os_running = 0U;',
+      '    task_count = 0U;',
+      '    (void)task_create(idle_task, 0U);',
+      '}'
+    ]
+  },
+  task_create: {
+    title: 'task_create() — 伪造一份异常栈帧，插到就绪链表尾',
+    lines: [
+      'tcb_t *task_create(os_task_fn entry, unsigned int priority) {',
+      '    /* 栈向下长。高地址先放硬件帧，再放 R11..R4，sp 指着 R4 */',
+      '    stk = base + OS_TASK_STACK_WORDS;',
+      '    *(--stk) = 0x01000000U;          /* xPSR，Thumb 位必须为 1 */',
+      '    *(--stk) = (unsigned int)entry;  /* PC */',
+      '    *(--stk) = 0xFFFFFFFD;           /* 任务 LR，不是 EXC_RETURN */',
+      '    *(--stk) = 0U;                   /* R12 */',
+      '    *(--stk) = 0U;                   /* R3 */',
+      '    *(--stk) = 0U;                   /* R2 */',
+      '    *(--stk) = 0U;                   /* R1 */',
+      '    *(--stk) = 0U;                   /* R0 */',
+      '    for (i = 0U; i < 8U; i++)',
+      '        *(--stk) = 0U;               /* R11 .. R4 */',
+      '    task->sp = stk;',
+      '    task->priority = priority;',
+      '    task->ticks_remain = OS_TIME_SLICE_TICKS;  /* 1 */',
+      '    task->delay_ticks = 0U;',
+      '    ready_add(task);                 /* 插到该优先级链表尾 */',
+      '    return task;',
+      '}'
+    ]
+  },
+  os_start: {
+    title: 'os_start() — 选最高优先级，SVC 启动',
+    lines: [
+      'void os_start(void) {',
+      '    if (ready_bitmap == 0U)',
+      '        return;',
+      '    current_tcb = ready_list[highest_priority()];',
+      '    SCB_SHPR3[2] = 0xF0;        /* PendSV，实现的高 4 位 = 15 */',
+      '    SCB_SHPR3[3] = 0xF0;        /* SysTick */',
+      '    __asm volatile("svc #0");   /* SVC 保持复位优先级 */',
+      '}'
+    ]
+  },
+  svc: {
+    title: 'SVC_Handler — 装好 PSP 之后才允许 SysTick 挂 PendSV',
+    lines: [
+      'SVC_Handler:',
+      '    ldr     r0, =current_tcb',
+      '    ldr     r1, [r0]',
+      '    ldr     r0, [r1]            ; current->sp',
+      '    ldmia   r0!, {r4-r11}',
+      '    msr     psp, r0',
+      '    ldr     r2, =os_running',
+      '    movs    r3, #1',
+      '    str     r3, [r2]            ; PSP 装好之后才置 1',
+      '    orr     lr, lr, #0x04       ; 0xFFFFFFF9 → 0xFFFFFFFD',
+      '    bx      lr'
+    ]
+  },
+  systick: {
+    title: 'SysTick_Handler — 只拍板，不换栈',
+    lines: [
+      'void SysTick_Handler(void) {',
+      '    SysTime_OnTick();',
+      '    if (os_running == 0U)',
+      '        return;',
+      '    delay_list_on_tick();',
+      '    if ((current_tcb != 0) && (current_tcb->ticks_remain > 0U))',
+      '        current_tcb->ticks_remain--;',
+      '    hp = highest_priority();',
+      '    if (hp > current_tcb->priority) {',
+      '        pendsv_request();          /* 更高优先级 */',
+      '        return;',
+      '    }',
+      '    if (current_tcb->ticks_remain == 0U) {',
+      '        if ((current_tcb->next != current_tcb) &&',
+      '            (current_tcb->priority == hp))',
+      '            pendsv_request();      /* 同级还有别人 */',
+      '        else',
+      '            current_tcb->ticks_remain = OS_TIME_SLICE_TICKS;',
+      '    }',
+      '}'
+    ]
+  },
+  pendsv: {
+    title: 'PendSV_Handler — 保存 R4–R11，BL 前把 LR 压进 MSP',
+    lines: [
+      'PendSV_Handler:',
+      '    mrs     r0, psp',
+      '    cbz     r0, 1f',
+      '    stmdb   r0!, {r4-r11}       ; 低地址 = R4',
+      '    ldr     r1, =current_tcb',
+      '    ldr     r2, [r1]',
+      '    str     r0, [r2]            ; current->sp',
+      '1:  push    {lr}                ; 留下 EXC_RETURN',
+      '    bl      schedule_next',
+      '    pop     {lr}',
+      '    ldr     r1, =current_tcb',
+      '    str     r0, [r1]            ; current_tcb = next',
+      '    ldr     r0, [r0]            ; next->sp',
+      '    ldmia   r0!, {r4-r11}',
+      '    msr     psp, r0',
+      '    orr     lr, lr, #0x04',
+      '    bx      lr'
+    ]
+  },
+  schedule: {
+    title: 'schedule_next() — 抢占不旋转，同级时间片用尽才拨链表头',
+    lines: [
+      'tcb_t *schedule_next(void) {',
+      '    prio = highest_priority();       /* CLZ(ready_bitmap) */',
+      '    if ((current_tcb == 0) || (current_tcb->delay_ticks > 0U))',
+      '        return ready_list[prio];',
+      '    if (prio > current_tcb->priority) {',
+      '        if (current_tcb->ticks_remain == 0U)',
+      '            current_tcb->ticks_remain = OS_TIME_SLICE_TICKS;',
+      '        return ready_list[prio];     /* 不旋转被抢占者 */',
+      '    }',
+      '    if ((current_tcb->ticks_remain == 0U) &&',
+      '        (current_tcb->priority == prio)) {',
+      '        current_tcb->ticks_remain = OS_TIME_SLICE_TICKS;',
+      '        if (current_tcb->next != current_tcb) {',
+      '            chosen = current_tcb->next;',
+      '            ready_list[prio] = chosen;',
+      '            chosen->ticks_remain = OS_TIME_SLICE_TICKS;',
+      '            return chosen;',
+      '        }',
+      '    }',
+      '    return ready_list[prio];',
+      '}'
+    ]
+  },
+  os_delay: {
+    title: 'os_delay() — 离开就绪链表，插到延时链表头',
+    lines: [
+      'void os_delay(unsigned int ticks) {',
+      '    if ((ticks == 0U) || (os_running == 0U) || (current_tcb == 0))',
+      '        return;',
+      '    primask = os_enter_critical();',
+      '    current_tcb->delay_ticks = ticks;',
+      '    ready_remove(current_tcb);',
+      '    current_tcb->delay_next = delay_list;',
+      '    delay_list = current_tcb;   /* 插到延时链表头 */',
+      '    pendsv_request();',
+      '    os_exit_critical(primask);',
+      '}'
+    ]
+  },
+  task_key: {
+    title: 'task_key() — P4，每 5 ms',
+    lines: [
+      'static void task_key(void) {',
+      '    while (1) {',
+      '        if (Key_TakeEdge() != 0U) {',
+      '            LOG_I("PB13 KEY irq high/low");',
+      '        }',
+      '        os_delay(TASK_KEY_MS);   /* 5 */',
+      '    }',
+      '}'
+    ]
+  },
+  task_usart: {
+    title: 'task_usart() — P4，每 1 ms',
+    lines: [
+      'static void task_usart(void) {',
+      '    while (1) {',
+      '        USART1_ProcessRx();',
+      '        os_delay(TASK_USART_MS);   /* 1 */',
+      '    }',
+      '}'
+    ]
+  },
+  task_fan: {
+    title: 'task_fan() — P3，每 1 ms',
+    lines: [
+      'static void task_fan(void) {',
+      '    while (1) {',
+      '        knob_raw = ADC1_ReadRaw();',
+      '        Fan_SetDuty(knob_to_fan_duty(knob_raw));',
+      '        os_delay(TASK_FAN_MS);',
+      '    }',
+      '}'
+    ]
+  }
+};
+
+let S = null;
+let prevRegs = {};
+let prevStacks = {};
+let prevTaskStates = {};
+let currentStepIdx = -1;
+let isPlaying = false;
+let autoTimer = null;
+
+function delayFromSlider(value) {
+  return Math.round(1800 - (value - 1) * 180);
+}
+let stepDelay = delayFromSlider(5);
+
+function initState() {
+  S = {
+    tasks: {},
+    readyLists: [[], [], [], [], [], [], [], []],
+    delayList: [],
+    readyBitmap: 0,
+    current: null,
+    scheduled: null,
+    savedExc: 0,
+    osRunning: 0,
+    pendsv: 0,
+    regs: {
+      R0: 0, R1: 0, R2: 0, R3: 0, R4: 0, R5: 0, R6: 0, R7: 0,
+      R8: 0, R9: 0, R10: 0, R11: 0, R12: 0,
+      SP: MSP_TOP, LR: 0, PC: 0, xPSR: 0,
+      PSP: 0, MSP: MSP_TOP, PRIMASK: 0
+    },
+    ticks: 0,
+    cpuMode: 'Thread/MSP',
+    currentLine: null,
+    desc: '',
+    flowHighlight: null,
+    log: []
+  };
+  prevRegs = Object.assign({}, S.regs);
+  prevStacks = {};
+  prevTaskStates = {};
+  currentStepIdx = -1;
+}
+
+function pspOf(name) {
+  return (STACK_BASE[name] + S.tasks[name].sp * 4) >>> 0;
+}
+
+function syncPsp() {
+  if (S.current) {
+    S.regs.PSP = pspOf(S.current);
+  }
+}
+
+function doCreateTask(name, priority, entry, period) {
+  const task = {
+    name: name,
+    priority: priority,
+    entry: entry,
+    period: period,
+    stack: new Array(16).fill(0),
+    sp: 16,
+    ticks_remain: OS_TIME_SLICE,
+    delay_ticks: 0
+  };
+  const frame = [
+    0x01000000, entry, 0xFFFFFFFD, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+  ];
+  frame.forEach(function (word) {
+    task.sp--;
+    task.stack[task.sp] = word >>> 0;
+  });
+  S.tasks[name] = task;
+  readyAdd(name);
+}
+
+function readyAdd(name) {
+  const task = S.tasks[name];
+  S.readyLists[task.priority].push(name);
+  S.readyBitmap |= (1 << task.priority);
+}
+
+function readyRemove(name) {
+  const task = S.tasks[name];
+  const list = S.readyLists[task.priority];
+  const index = list.indexOf(name);
+  if (index >= 0) {
+    list.splice(index, 1);
+  }
+  if (list.length === 0) {
+    S.readyBitmap &= ~(1 << task.priority);
+  }
+}
+
+function highestPrio() {
+  for (let prio = 7; prio >= 0; prio--) {
+    if (S.readyLists[prio].length > 0) {
+      return prio;
+    }
+  }
+  return 0;
+}
+
+function delayWalk() {
+  const woken = [];
+  const stay = [];
+  S.delayList.forEach(function (name) {
+    const task = S.tasks[name];
+    if (task.delay_ticks > 0) {
+      task.delay_ticks--;
+    }
+    if (task.delay_ticks === 0) {
+      task.ticks_remain = OS_TIME_SLICE;
+      readyAdd(name);
+      woken.push(name);
+    } else {
+      stay.push(name);
+    }
+  });
+  S.delayList = stay;
+  return woken;
+}
+
+function decSlice() {
+  const task = S.tasks[S.current];
+  if (task && task.ticks_remain > 0) {
+    task.ticks_remain--;
+  }
+}
+
+function decideSwitch() {
+  const task = S.tasks[S.current];
+  if (S.readyBitmap === 0 || !task) {
+    return 'none';
+  }
+  const hp = highestPrio();
+  if (hp > task.priority) {
+    S.pendsv = 1;
+    return 'preempt';
+  }
+  if (task.ticks_remain === 0) {
+    const list = S.readyLists[task.priority];
+    if (list.length > 1 && task.priority === hp) {
+      S.pendsv = 1;
+      return 'slice';
+    }
+    task.ticks_remain = OS_TIME_SLICE;
+    return 'reload';
+  }
+  return 'keep';
+}
+
+function scheduleNext() {
+  if (S.readyBitmap === 0) {
+    return { name: S.current, reason: 'empty' };
+  }
+  const prio = highestPrio();
+  const task = S.current ? S.tasks[S.current] : null;
+  if (!task || task.delay_ticks > 0) {
+    return { name: S.readyLists[prio][0], reason: 'asleep' };
+  }
+  if (prio > task.priority) {
+    if (task.ticks_remain === 0) {
+      task.ticks_remain = OS_TIME_SLICE;
+    }
+    return { name: S.readyLists[prio][0], reason: 'preempt' };
+  }
+  if (task.ticks_remain === 0 && task.priority === prio) {
+    task.ticks_remain = OS_TIME_SLICE;
+    const list = S.readyLists[prio];
+    if (list.length > 1) {
+      const index = list.indexOf(S.current);
+      const nextIndex = (index + 1) % list.length;
+      const chosen = list[nextIndex];
+      S.readyLists[prio] = list.slice(nextIndex).concat(list.slice(0, nextIndex));
+      S.tasks[chosen].ticks_remain = OS_TIME_SLICE;
+      return { name: chosen, reason: 'rotate' };
+    }
+    return { name: S.current, reason: 'alone' };
+  }
+  return { name: S.readyLists[prio][0], reason: 'stay' };
+}
+
+function hardwarePush() {
+  const task = S.tasks[S.current];
+  task.stack[8] = S.regs.R0 >>> 0;
+  task.stack[9] = S.regs.R1 >>> 0;
+  task.stack[10] = S.regs.R2 >>> 0;
+  task.stack[11] = S.regs.R3 >>> 0;
+  task.stack[12] = S.regs.R12 >>> 0;
+  task.stack[13] = S.regs.LR >>> 0;
+  task.stack[14] = S.regs.PC >>> 0;
+  task.stack[15] = S.regs.xPSR >>> 0;
+  task.sp = 8;
+  syncPsp();
+  S.cpuMode = 'Handler/MSP';
+  S.regs.SP = S.regs.MSP;
+  S.regs.LR = 0xFFFFFFFD;
+}
+
+function hardwarePop() {
+  const task = S.tasks[S.current];
+  S.regs.R0 = task.stack[8];
+  S.regs.R1 = task.stack[9];
+  S.regs.R2 = task.stack[10];
+  S.regs.R3 = task.stack[11];
+  S.regs.R12 = task.stack[12];
+  S.regs.LR = task.stack[13];
+  S.regs.PC = task.stack[14];
+  S.regs.xPSR = task.stack[15];
+  task.sp = 16;
+  syncPsp();
+  S.cpuMode = 'Thread/PSP';
+  S.regs.SP = S.regs.PSP;
+}
+
+function softwareSave() {
+  const task = S.tasks[S.current];
+  for (let reg = 7; reg >= 0; reg--) {
+    task.sp--;
+    task.stack[task.sp] = S.regs['R' + (4 + reg)] >>> 0;
+  }
+  S.regs.R0 = pspOf(S.current);
+}
+
+function softwareRestore() {
+  const task = S.tasks[S.current];
+  for (let reg = 0; reg < 8; reg++) {
+    S.regs['R' + (4 + reg)] = task.stack[task.sp + reg];
+  }
+  task.sp += 8;
+  S.regs.R0 = pspOf(S.current);
+}
+
+function pushLr() {
+  S.savedExc = S.regs.LR >>> 0;
+  S.regs.MSP = (S.regs.MSP - 4) >>> 0;
+  S.regs.LR = SYM.blRet;
+}
+
+function finishSwitch(name) {
+  S.regs.LR = S.savedExc;
+  S.regs.MSP = (S.regs.MSP + 4) >>> 0;
+  S.current = name;
+  S.regs.R0 = pspOf(name);
+  softwareRestore();
+  syncPsp();
+  S.regs.LR = (S.savedExc | 0x04) >>> 0;
+  hardwarePop();
+  S.pendsv = 0;
+}
+
+function beginTick() {
+  S.ticks++;
+  hardwarePush();
+  S.regs.PC = SYM.systick;
+}
+
+function enterPendSv() {
+  S.pendsv = 0;
+  S.cpuMode = 'Handler/MSP';
+  S.regs.PC = SYM.pendsv;
+  S.regs.SP = S.regs.MSP;
+}
+
+function taskVisualState(name) {
+  const task = S.tasks[name];
+  if (task.delay_ticks > 0) {
+    return 'delayed';
+  }
+  if (S.current === name) {
+    return 'running';
+  }
+  return 'ready';
+}
+
+function fmtHex(value) {
+  const word = (value === undefined || value === null) ? 0 : value;
+  return '0x' + (word >>> 0).toString(16).padStart(8, '0');
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function render() {
+  renderHeader();
+  renderCode();
+  renderFlowchart();
+  renderRegs();
+  renderTasks();
+  renderLists();
+  renderLog();
+  renderStepCounter();
+}
+
+function renderHeader() {
+  document.getElementById('hdr-tick').textContent = String(S.ticks);
+  document.getElementById('hdr-mode').textContent = S.cpuMode;
+  document.getElementById('hdr-current').textContent = S.current || '-';
+  document.getElementById('hdr-running').textContent = String(S.osRunning);
+  document.getElementById('hdr-bitmap').textContent = fmtHex(S.readyBitmap);
+  const pend = document.getElementById('hdr-pendsv');
+  pend.textContent = S.pendsv ? '挂起' : '空闲';
+  pend.className = S.pendsv ? '' : 'dimmed';
+}
+
+function renderCode() {
+  const titleEl = document.getElementById('code-title');
+  const contentEl = document.getElementById('code-content');
+  const descEl = document.getElementById('code-desc');
+  const line = S.currentLine;
+  if (!line) {
+    titleEl.textContent = '准备就绪';
+    contentEl.innerHTML = '';
+    descEl.textContent = '单步或自动播放。任务、时间片和 PendSV 与 os.c / port.c 一致。';
+    return;
+  }
+  const block = CODE_BLOCKS[line.block];
+  if (!block) {
+    return;
+  }
+  titleEl.textContent = block.title;
+  const activeLines = Array.isArray(line.line) ? line.line : [line.line];
+  contentEl.innerHTML = block.lines.map(function (text, index) {
+    const active = activeLines.indexOf(index) >= 0;
+    return '<div class="code-line' + (active ? ' active' : '') + '">' +
+      '<span class="code-ln">' + (index + 1) + '</span>' +
+      '<span>' + (escapeHtml(text) || '&nbsp;') + '</span></div>';
+  }).join('');
+  descEl.textContent = S.desc || '';
+  if (contentEl.querySelector) {
+    const active = contentEl.querySelector('.code-line.active');
+    if (active && active.scrollIntoView) {
+      active.scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
+
+function renderFlowchart() {
+  const groups = { ready: [], running: [], delayed: [] };
+  Object.keys(S.tasks).forEach(function (name) {
+    const state = taskVisualState(name);
+    groups[state].push({ name: name, priority: S.tasks[name].priority });
+  });
+  Object.keys(groups).forEach(function (key) {
+    groups[key].sort(function (a, b) {
+      return b.priority - a.priority || a.name.localeCompare(b.name);
+    });
+  });
+
+  const nextStates = {};
+  ['ready', 'running', 'delayed'].forEach(function (state) {
+    const box = document.getElementById('fc-' + state);
+    const countEl = document.getElementById('fc-' + state + '-count');
+    countEl.textContent = String(groups[state].length);
+    if (groups[state].length === 0) {
+      box.innerHTML = '<span class="fc-empty">（空）</span>';
+    } else {
+      box.innerHTML = groups[state].map(function (item) {
+        const changed = prevTaskStates[item.name] !== state;
+        nextStates[item.name] = state;
+        return '<span class="fc-task ' + state + (changed ? ' pop' : '') + '">' +
+          item.name + '<small>P' + item.priority + '</small></span>';
+      }).join('');
+    }
+    groups[state].forEach(function (item) {
+      nextStates[item.name] = state;
+    });
+  });
+  prevTaskStates = nextStates;
+
+  document.querySelectorAll('.fc-arrow, .fc-loop').forEach(function (el) {
+    el.classList.remove('active');
+  });
+  if (S.flowHighlight) {
+    const arrow = document.getElementById('arrow-' + S.flowHighlight);
+    if (arrow) {
+      arrow.classList.add('active');
+    }
+  }
+}
+
+function renderRegs() {
+  const order = ['R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11',
+                 'R12','SP','LR','PC','PSP','MSP','xPSR','PRIMASK'];
+  document.getElementById('regs-grid').innerHTML = order.map(function (name) {
+    const value = S.regs[name] || 0;
+    const changed = prevRegs[name] !== undefined && prevRegs[name] !== value;
+    const special = ['SP','LR','PC','xPSR'].indexOf(name) >= 0 ? ' special' : '';
+    const psp = name === 'PSP' ? ' psp' : '';
+    return '<div class="reg' + special + psp + (changed ? ' flash' : '') + '">' +
+      '<span class="reg-name">' + name + '</span>' +
+      '<span class="reg-val">' + fmtHex(value) + '</span></div>';
+  }).join('');
+  prevRegs = Object.assign({}, S.regs);
+}
+
+function renderTasks() {
+  const row = document.getElementById('tasks-row');
+  const names = Object.keys(S.tasks).sort(function (a, b) {
+    return S.tasks[b].priority - S.tasks[a].priority || a.localeCompare(b);
+  });
+  if (names.length === 0) {
+    row.innerHTML = '<div style="color:var(--dim);padding:20px;">尚无任务</div>';
+    return;
+  }
+  row.innerHTML = names.map(function (name) {
+    const task = S.tasks[name];
+    const running = taskVisualState(name) === 'running';
+    const delayed = task.delay_ticks > 0;
+    const cls = 'task-card' + (running ? ' running' : '') + (delayed ? ' delayed' : '');
+    const prev = prevStacks[name] || [];
+    let slots = '';
+    for (let index = 15; index >= 0; index--) {
+      const used = index >= task.sp;
+      const atSp = index === task.sp;
+      const changed = prev[index] !== undefined && prev[index] !== task.stack[index];
+      const slotCls = 'stack-slot' +
+        (used ? '' : ' empty') +
+        (atSp ? ' sp' : '') +
+        (changed && used ? ' new' : '');
+      const value = used ? fmtHex(task.stack[index]) : '·';
+      slots += '<div class="' + slotCls + '"><span>' + STACK_LABELS[index] +
+        '</span><span>' + value + '</span></div>';
+    }
+    prevStacks[name] = task.stack.slice();
+    const where = task.sp === 16 ? '现场在 CPU' : '现场在栈';
+    return '<div class="' + cls + '">' +
+      '<div class="task-head"><span class="task-name">' +
+      (running ? '<i class="run-dot"></i>' : '') + name + '</span>' +
+      '<span class="task-prio">P' + task.priority + ' · ' + task.period + '</span></div>' +
+      '<div class="task-meta"><span>sp=' + task.sp + '/16  ' + where + '</span>' +
+      '<span>ticks=' + task.ticks_remain + ' delay=' + task.delay_ticks + '</span></div>' +
+      '<div class="stack">' + slots + '</div>' +
+      '<div class="stack-note">其下 368 字为 0xA5A5A5A5 · 帧基址 ' +
+      fmtHex(STACK_BASE[name]) + '</div></div>';
+  }).join('');
+}
+
+function renderLists() {
+  const box = document.getElementById('lists-content');
+  let html = '';
+  let any = false;
+  for (let prio = 7; prio >= 0; prio--) {
+    const list = S.readyLists[prio];
+    if (list.length === 0) {
+      continue;
+    }
+    any = true;
+    html += '<div class="ready-list"><span class="ready-list-label">P' + prio + ' 头</span>';
+    html += list.map(function (name, index) {
+      const running = S.current === name && S.tasks[name].delay_ticks === 0;
+      const head = index === 0 ? ' head' : '';
+      const run = running ? ' running' : '';
+      return '<span class="ready-node' + head + run + '">' + name + '</span>';
+    }).join('');
+    html += '<span class="ready-back">↺</span></div>';
+  }
+  if (!any) {
+    html = '<div style="color:var(--dim);">就绪：（空）</div>';
+  }
+  if (S.delayList.length === 0) {
+    html += '<div class="ready-list"><span class="ready-list-label">延时</span>' +
+      '<span class="ready-back">（空）</span></div>';
+  } else {
+    html += '<div class="ready-list"><span class="ready-list-label">延时头</span>' +
+      S.delayList.map(function (name) {
+        return '<span class="ready-node">' + name + '·' + S.tasks[name].delay_ticks + '</span>';
+      }).join('') + '</div>';
+  }
+  box.innerHTML = html;
+}
+
+function renderLog() {
+  const box = document.getElementById('log-content');
+  box.innerHTML = S.log.map(function (entry) {
+    return '<div class="log-entry">' + escapeHtml(entry) + '</div>';
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function renderStepCounter() {
+  document.getElementById('step-counter').textContent =
+    Math.max(0, currentStepIdx + 1) + ' / ' + SCRIPT.length;
+}
+
+function pace(step) {
+  const base = step.delay || 900;
+  return Math.max(80, Math.round(base * stepDelay / delayFromSlider(5)));
+}
+
+const SCRIPT = [
+  {
+    block: 'os_init', line: [2, 3, 4, 5, 6, 7, 8, 9], delay: 800,
+    desc: '清空 8 条就绪链表、就绪位图、延时链表、current_tcb 和 os_running。优先级 0–7，数值越大越优先。',
+    action: function () {
+      S.log.push('[init] ready_bitmap=0，delay_list 空，os_running=0');
+    }
+  },
+  {
+    block: 'os_init', line: [10], delay: 1000,
+    desc: 'os_init 创建 idle，优先级 0。用户任务都在延时里时，CPU 还有这条 wfi 可跑。',
+    action: function () {
+      doCreateTask('idle', 0, SYM.idle, 'wfi');
+      S.log.push('[create] idle P0 就绪');
+    }
+  },
+  {
+    block: 'task_create', line: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], delay: 1700,
+    desc: '创建 key（P4，5 ms）。高地址放 xPSR（Thumb 位=1）、PC、任务 LR 0xFFFFFFFD，再放 R11..R4。sp 指着 R4。卡片只画这 16 个字，下面 368 个字是 0xA5A5A5A5。',
+    action: function () {
+      doCreateTask('key', 4, SYM.key, '5 ms');
+      S.log.push('[create] key P4 就绪，P4 链表头是 key');
+    }
+  },
+  {
+    block: 'task_create', line: [14, 17], delay: 1100,
+    desc: '创建 usart（P4，1 ms）。ready_add 插到链表尾，P4 头仍是 key。同级两个任务靠 1 拍时间片轮转。',
+    action: function () {
+      doCreateTask('usart', 4, SYM.usart, '1 ms');
+      S.log.push('[create] usart P4 在 key 之后。bitmap=' + fmtHex(S.readyBitmap));
+    }
+  },
+  {
+    block: 'task_create', line: [14, 17], delay: 900,
+    desc: '创建 fan（P3，1 ms）。P4 还在时，调度不会选到这一级。',
+    action: function () {
+      doCreateTask('fan', 3, SYM.fan, '1 ms');
+      S.log.push('[create] fan P3 就绪');
+    }
+  },
+  {
+    block: 'task_create', line: [14, 17], delay: 800,
+    desc: '创建 display（P2，50 ms）。它停在自己的就绪链表上，更高优先级让出之前不会运行。',
+    action: function () {
+      doCreateTask('display', 2, SYM.display, '50 ms');
+      S.log.push('[create] display P2 就绪');
+    }
+  },
+  {
+    block: 'task_create', line: [14, 17], delay: 800,
+    desc: '创建 status（P1，1000 ms）。main 里的顺序就是 key、usart、fan、display、status。',
+    action: function () {
+      doCreateTask('status', 1, SYM.status, '1 s');
+      S.log.push('[create] status P1 就绪。bitmap=' + fmtHex(S.readyBitmap));
+    }
+  },
+  {
+    block: 'os_start', line: [3], delay: 1100,
+    desc: 'highest_priority 用 CLZ 查 ready_bitmap，得到 4。current_tcb 取 P4 链表头 key。',
+    action: function () {
+      const prio = highestPrio();
+      S.current = S.readyLists[prio][0];
+      S.flowHighlight = 'dispatch';
+      S.log.push('[start] highest=' + prio + '，current_tcb=' + S.current);
+    }
+  },
+  {
+    block: 'os_start', line: [4, 5], delay: 1000,
+    desc: 'PendSV 和 SysTick 的 SHPR 字节写成 0xF0，也就是实现的优先级 15。SVC 保持复位优先级，高于这两条。',
+    action: function () {
+      S.log.push('[start] SCB_SHPR3[2]=0xF0 PendSV，[3]=0xF0 SysTick');
+    }
+  },
+  {
+    block: 'os_start', line: [6], delay: 900,
+    desc: 'svc #0。main 跑在 MSP 上，进入 SVC 时 LR 是 0xFFFFFFF9，返回线程时仍会用 MSP，除非把它改成用 PSP。',
+    action: function () {
+      S.cpuMode = 'Handler/MSP';
+      S.regs.LR = 0xFFFFFFF9;
+      S.regs.PC = SYM.svc;
+      S.regs.SP = S.regs.MSP;
+      S.log.push('[svc] SVC #0，LR=' + fmtHex(S.regs.LR));
+    }
+  },
+  {
+    block: 'svc', line: [1, 2, 3], delay: 900,
+    desc: '读 current->sp。sp 是 TCB 的第一项，此时指着 key 栈帧里的 R4。',
+    action: function () {
+      S.regs.R0 = pspOf(S.current);
+      S.log.push('[svc] R0 = key->sp = ' + fmtHex(S.regs.R0));
+    }
+  },
+  {
+    block: 'svc', line: [4], delay: 1200,
+    desc: 'LDMIA 从低地址取出 R4，依次到 R11。新建任务这 8 个字都是 0，sp 前进 8，停在硬件帧的 R0。',
+    action: function () {
+      softwareRestore();
+      S.log.push('[svc] 恢复 R4~R11，R0=' + fmtHex(S.regs.R0));
+    }
+  },
+  {
+    block: 'svc', line: [5], delay: 900,
+    desc: 'MSR PSP, R0。任务栈改由 PSP 指向，MSP 仍是中断栈。os_running 这时还是 0。',
+    action: function () {
+      syncPsp();
+      S.log.push('[svc] PSP=' + fmtHex(S.regs.PSP) + '，os_running 仍为 0');
+    }
+  },
+  {
+    block: 'svc', line: [6, 7, 8, 9], delay: 1200,
+    desc: 'PSP 装好之后把 os_running 写成 1。ORR LR, #0x04 把 0xFFFFFFF9 改成 0xFFFFFFFD，异常返回改用 PSP。在此之前 SysTick 只加毫秒。',
+    action: function () {
+      S.osRunning = 1;
+      S.regs.LR = (S.regs.LR | 0x04) >>> 0;
+      S.log.push('[svc] os_running=1，LR=' + fmtHex(S.regs.LR));
+    }
+  },
+  {
+    block: 'svc', line: [10], delay: 1300,
+    desc: 'BX LR。硬件从 PSP 弹出 R0–R3、R12、LR、PC、xPSR，CPU 进入 Thread/PSP，PC 落到 key 的入口。',
+    action: function () {
+      hardwarePop();
+      S.flowHighlight = 'dispatch';
+      S.log.push('[svc] 进入 key，PC=' + fmtHex(S.regs.PC));
+    }
+  },
+  {
+    block: 'task_key', line: [1, 2, 3], delay: 1200,
+    desc: 'key 开始跑自己的循环。它看到的 R4–R11 就是刚才从栈上恢复的那一组，这里写成一组能认出来的值。',
+    action: function () {
+      S.regs.R0 = 0x10;
+      S.regs.R4 = 0x1000;
+      S.regs.R5 = 0x2000;
+      S.regs.R6 = 0x3000;
+      S.regs.PC = (SYM.key + 0x12) >>> 0;
+      S.log.push('[run] key  R4=0x1000 R5=0x2000 R6=0x3000');
+    }
+  },
+  {
+    block: 'systick', line: [0, 1, 4], delay: 1100,
+    desc: '时间片到。硬件把 R0–R3、R12、LR、PC、xPSR 压进 key 的 PSP，CPU 改走 Handler/MSP。os_running 已经是 1，于是去走延时链表。这一拍链表是空的。',
+    action: function () {
+      beginTick();
+      delayWalk();
+      S.log.push('[tick] #' + S.ticks + ' 硬件帧压入 key，PSP=' + fmtHex(S.regs.PSP));
+    }
+  },
+  {
+    block: 'systick', line: [5, 6], delay: 900,
+    desc: 'key 的时间片从 1 减到 0。换人要等后面的判断，这一步还不碰 PendSV。',
+    action: function () {
+      decSlice();
+      S.log.push('[tick] key.ticks_remain → ' + S.tasks.key.ticks_remain);
+    }
+  },
+  {
+    block: 'systick', line: [12, 13, 14, 15], delay: 1200,
+    desc: '最高就绪优先级仍是 4，和 key 相同。P4 上还有 usart，next 不是自己，于是只把 PENDSVSET 置位。SysTick 返回前不换栈。',
+    action: function () {
+      decideSwitch();
+      S.log.push('[tick] 同级还有 usart，挂起 PendSV，current 仍是 key');
+    }
+  },
+  {
+    block: 'pendsv', line: [1, 2], delay: 1000,
+    desc: 'PendSV 入口清掉挂起位。MRS 取到的 PSP 指着硬件帧的 R0。PSP 不是 0，cbz 不跳走。',
+    action: function () {
+      enterPendSv();
+      S.regs.R0 = S.regs.PSP;
+      S.log.push('[pendsv] R0 = PSP = ' + fmtHex(S.regs.R0));
+    }
+  },
+  {
+    block: 'pendsv', line: [3, 4, 5, 6], delay: 1400,
+    desc: 'STMDB {R4-R11} 先减后写，最低地址是 R4。key 的 0x1000、0x2000、0x3000 落在栈底三个字，随后 current->sp 记下这个地址。',
+    action: function () {
+      softwareSave();
+      S.log.push('[pendsv] key 栈底 R4=' + fmtHex(S.tasks.key.stack[0]) +
+        ' R5=' + fmtHex(S.tasks.key.stack[1]) +
+        '，sp=' + fmtHex(pspOf('key')));
+    }
+  },
+  {
+    block: 'pendsv', line: [7], delay: 1100,
+    desc: 'BL schedule_next 会改写 LR。调用前把 EXC_RETURN 压进 MSP，任务现场仍留在 PSP。',
+    action: function () {
+      pushLr();
+      S.log.push('[pendsv] push {lr}，MSP=' + fmtHex(S.regs.MSP) +
+        ' 保存 ' + fmtHex(S.savedExc));
+    }
+  },
+  {
+    block: 'schedule', line: [9, 10, 11, 12, 13, 14, 15, 16], delay: 1500,
+    desc: '时间片已经是 0，优先级相同，next 不是自己。key 和 usart 都重装成 1 拍，P4 链表头拨到 usart。',
+    action: function () {
+      const picked = scheduleNext();
+      S.scheduled = picked.name;
+      S.flowHighlight = 'slice';
+      S.log.push('[sched] 同级轮转，P4 头=' +
+        S.readyLists[4].join('→') + '，选中 ' + picked.name);
+    }
+  },
+  {
+    block: 'pendsv', line: [9, 10, 11, 12, 13], delay: 1300,
+    desc: 'pop {lr} 把 EXC_RETURN 取回。current_tcb 改成 usart，再从它的栈帧弹出 R4–R11。新建帧里这 8 个字是 0。',
+    action: function () {
+      S.regs.LR = S.savedExc;
+      S.regs.MSP = (S.regs.MSP + 4) >>> 0;
+      S.current = S.scheduled;
+      S.regs.R0 = pspOf(S.current);
+      softwareRestore();
+      S.flowHighlight = 'slice';
+      S.log.push('[pendsv] current=usart，R4=' + fmtHex(S.regs.R4) +
+        '，MSP 回到 ' + fmtHex(S.regs.MSP));
+    }
+  },
+  {
+    block: 'pendsv', line: [14, 15, 16], delay: 1300,
+    desc: 'MSR PSP 指向 usart 的硬件帧，ORR 确认返回时用 PSP，BX LR 让硬件弹出剩下 8 个字。usart 从自己的入口接着跑。',
+    action: function () {
+      syncPsp();
+      S.regs.LR = (S.savedExc | 0x04) >>> 0;
+      hardwarePop();
+      S.flowHighlight = 'slice';
+      S.log.push('[pendsv] 进入 usart，PC=' + fmtHex(S.regs.PC));
+    }
+  },
+  {
+    block: 'task_usart', line: [1, 2], delay: 1100,
+    desc: 'usart 处理一帧接收。R4–R6 写成另一组值，后面切走再切回来时要对得上。',
+    action: function () {
+      S.regs.R0 = 0x20;
+      S.regs.R4 = 0x4000;
+      S.regs.R5 = 0x5000;
+      S.regs.R6 = 0x6000;
+      S.regs.PC = (SYM.usart + 0x10) >>> 0;
+      S.log.push('[run] usart  R4=0x4000 R5=0x5000 R6=0x6000');
+    }
+  },
+  {
+    block: 'os_delay', line: [3, 4, 5, 6, 7, 8, 9], delay: 1600,
+    desc: 'task_usart 调用 os_delay。临界区里摘下 P4、插到延时链表头，并挂起 PendSV。源码的 TASK_USART_MS 是 1；这次演示写成 2 拍，好把「fan 单独重装时间片」和「usart 醒来抢占」分成两拍。',
+    action: function () {
+      S.tasks.usart.delay_ticks = 2;
+      readyRemove('usart');
+      S.delayList.unshift('usart');
+      S.pendsv = 1;
+      S.flowHighlight = 'delay';
+      S.log.push('[delay] usart delay_ticks=2，P4 剩下 ' +
+        (S.readyLists[4].join('→') || '（空）'));
+    }
+  },
+  {
+    block: 'pendsv', line: [1, 3, 4, 5, 6], delay: 1300,
+    desc: 'PendSV 从线程抢进来。硬件先把 usart 的 R0–R3、R12、LR、PC、xPSR 压进 PSP，STMDB 再把 R4–R11 放到更低的地址。0x4000 在栈底。',
+    action: function () {
+      enterPendSv();
+      hardwarePush();
+      softwareSave();
+      S.log.push('[pendsv] usart 栈底 R4=' + fmtHex(S.tasks.usart.stack[0]));
+    }
+  },
+  {
+    block: 'schedule', line: [1, 2, 3], delay: 1300,
+    desc: 'current 的 delay_ticks 大于 0，schedule_next 直接取最高就绪链表的头。P4 上只剩 key，不做轮转。',
+    action: function () {
+      pushLr();
+      const picked = scheduleNext();
+      S.scheduled = picked.name;
+      S.flowHighlight = 'dispatch';
+      S.log.push('[sched] 当前在延时链表，选中 ' + picked.name +
+        '，P4 头=' + S.readyLists[4].join('→'));
+    }
+  },
+  {
+    block: 'pendsv', line: [9, 10, 11, 12, 13, 14, 15, 16], delay: 1400,
+    desc: '切回 key。R4 回到离开时的 0x1000，PC 回到上次 SysTick 压进去的地址。',
+    action: function () {
+      finishSwitch(S.scheduled);
+      S.flowHighlight = 'dispatch';
+      S.log.push('[pendsv] 回到 key，R4=' + fmtHex(S.regs.R4) +
+        ' PC=' + fmtHex(S.regs.PC));
+    }
+  },
+  {
+    block: 'task_key', line: [1, 2], delay: 900,
+    desc: 'key 接着跑。寄存器是自己栈上的那一份，usart 的 0x4000 留在 usart 的栈里。',
+    action: function () {
+      S.log.push('[run] key 继续，R4=' + fmtHex(S.regs.R4));
+    }
+  },
+  {
+    block: 'os_delay', line: [3, 4, 5, 6, 7, 8, 9], delay: 1500,
+    desc: 'key 调用 os_delay。源码是 5 ms；这次演示用 4 拍，让它在 usart 单独重装过时间片之后的下一拍醒来。P4 变空，key 插到延时链表头，排在 usart 前面。',
+    action: function () {
+      S.tasks.key.delay_ticks = 4;
+      readyRemove('key');
+      S.delayList.unshift('key');
+      S.pendsv = 1;
+      S.flowHighlight = 'delay';
+      S.log.push('[delay] key delay_ticks=4，bitmap=' + fmtHex(S.readyBitmap));
+    }
+  },
+  {
+    block: 'schedule', line: [1, 2, 3], delay: 1400,
+    desc: 'key 已经不在就绪链表上。最高就绪优先级变成 3，链表头是 fan。display、status、idle 都还在各自的链表里，这一拍选不中它们。',
+    action: function () {
+      enterPendSv();
+      hardwarePush();
+      softwareSave();
+      pushLr();
+      const picked = scheduleNext();
+      S.scheduled = picked.name;
+      S.log.push('[sched] 最高就绪 P' + S.tasks[picked.name].priority +
+        ' 头=' + picked.name + '。display/status/idle 仍就绪');
+    }
+  },
+  {
+    block: 'pendsv', line: [9, 10, 11, 12, 13, 14, 15, 16], delay: 1300,
+    desc: '第一次进入 fan。伪造栈帧里的 R4–R11 是 0，PC 是 fan 的入口。',
+    action: function () {
+      finishSwitch(S.scheduled);
+      S.flowHighlight = 'dispatch';
+      S.log.push('[pendsv] 进入 fan，PC=' + fmtHex(S.regs.PC));
+    }
+  },
+  {
+    block: 'task_fan', line: [1, 2, 3], delay: 1100,
+    desc: 'fan 读旋钮并写占空比。P3 这一级目前只有它自己。',
+    action: function () {
+      S.regs.R0 = 0x30;
+      S.regs.R4 = 0xA000;
+      S.regs.PC = (SYM.fan + 0x14) >>> 0;
+      S.log.push('[run] fan  R4=0xA000');
+    }
+  },
+  {
+    block: 'systick', line: [4, 5, 6, 16, 17], delay: 1600,
+    desc: '这一拍延时链表：key 4→3，usart 2→1，都还没到 0。fan 的时间片减到 0，同级没有别人，重装成 1，PendSV 保持空闲，然后返回 fan。',
+    action: function () {
+      beginTick();
+      delayWalk();
+      decSlice();
+      decideSwitch();
+      hardwarePop();
+      S.regs.PC = (SYM.fan + 0x14) >>> 0;
+      S.log.push('[tick] #' + S.ticks + ' 重装时间片，key·' +
+        S.tasks.key.delay_ticks + ' usart·' + S.tasks.usart.delay_ticks +
+        '，fan.ticks=' + S.tasks.fan.ticks_remain);
+    }
+  },
+  {
+    block: 'systick', line: [4, 8, 9, 10], delay: 1600,
+    desc: '再一拍：usart 减到 0，ready_add 把它放回空的 P4，时间片重装为 1。最高就绪优先级 4 高于 fan 的 3，挂起 PendSV。key 还剩 2 拍。',
+    action: function () {
+      beginTick();
+      const woken = delayWalk();
+      decSlice();
+      decideSwitch();
+      S.flowHighlight = 'wake';
+      S.log.push('[wake] #' + S.ticks + ' ' + woken.join(',') + ' → P4 头=' +
+        S.readyLists[4].join('→') + '，挂起 PendSV，key 还剩 ' +
+        S.tasks.key.delay_ticks);
+    }
+  },
+  {
+    block: 'schedule', line: [4, 5, 6, 7], delay: 1500,
+    desc: '抢占分支：fan 的时间片刚好是 0，只重装，不把 P3 的链表头拨走。返回值是 P4 的头 usart。',
+    action: function () {
+      enterPendSv();
+      softwareSave();
+      pushLr();
+      const picked = scheduleNext();
+      S.scheduled = picked.name;
+      S.flowHighlight = 'dispatch';
+      S.log.push('[sched] 抢占，fan.ticks=' + S.tasks.fan.ticks_remain +
+        '，P3 头仍是 ' + S.readyLists[3].join('→') +
+        '，选中 ' + picked.name);
+    }
+  },
+  {
+    block: 'pendsv', line: [9, 10, 11, 12, 13, 14, 15, 16], delay: 1400,
+    desc: '回到 usart。R4 是它调用 os_delay 之前写下的 0x4000。fan 回到 P3 就绪链表，现场留在自己的栈上。',
+    action: function () {
+      finishSwitch(S.scheduled);
+      S.flowHighlight = 'dispatch';
+      S.log.push('[pendsv] 回到 usart，R4=' + fmtHex(S.regs.R4));
+    }
+  },
+  {
+    block: 'systick', line: [16, 17], delay: 1500,
+    desc: 'P4 上只有 usart。时间片用尽后重装为 1，PendSV 保持空闲。key 这一拍从 2 减到 1，还在延时链表里。',
+    action: function () {
+      beginTick();
+      delayWalk();
+      decSlice();
+      decideSwitch();
+      hardwarePop();
+      S.regs.PC = (SYM.usart + 0x10) >>> 0;
+      S.log.push('[tick] #' + S.ticks + ' 重装时间片，key 还剩 ' +
+        S.tasks.key.delay_ticks + '，usart.ticks=' + S.tasks.usart.ticks_remain);
+    }
+  },
+  {
+    block: 'systick', line: [4], delay: 1500,
+    desc: '延时链表先走。key 减到 0，插到 P4 尾，链表是 usart → key。usart 的 ticks_remain 还是 1：同级有任务回到就绪，本身不会挂起 PendSV。',
+    action: function () {
+      beginTick();
+      const woken = delayWalk();
+      S.flowHighlight = 'wake';
+      S.log.push('[wake] #' + S.ticks + ' ' + woken.join(',') + ' → P4 ' +
+        S.readyLists[4].join('→') +
+        '，usart.ticks 仍是 ' + S.tasks.usart.ticks_remain);
+    }
+  },
+  {
+    block: 'systick', line: [5, 6, 12, 13, 14, 15], delay: 1400,
+    desc: '同一拍继续往下。usart 的时间片减到 0，同级还有 key，这才挂起 PendSV。',
+    action: function () {
+      decSlice();
+      decideSwitch();
+      S.log.push('[tick] 同一拍挂起 PendSV，usart.ticks=' +
+        S.tasks.usart.ticks_remain);
+    }
+  },
+  {
+    block: 'schedule', line: [9, 10, 11, 12, 13, 14, 15, 16], delay: 1500,
+    desc: '同级轮转：P4 链表头从 usart 拨到 key。两边的时间片都重装为 1。',
+    action: function () {
+      enterPendSv();
+      softwareSave();
+      pushLr();
+      const picked = scheduleNext();
+      S.scheduled = picked.name;
+      S.flowHighlight = 'slice';
+      S.log.push('[sched] 轮转，P4 头=' + S.readyLists[4].join('→') +
+        '，选中 ' + picked.name);
+    }
+  },
+  {
+    block: 'pendsv', line: [9, 10, 11, 12, 13, 14, 15, 16], delay: 1400,
+    desc: '切到 key。R4 仍是它上次让出 CPU 时留在栈上的 0x1000。usart、fan、display、status、idle 都在就绪链表上，下一次拍板再决定谁跑。',
+    action: function () {
+      finishSwitch(S.scheduled);
+      S.flowHighlight = 'slice';
+      S.log.push('[pendsv] 进入 key，R4=' + fmtHex(S.regs.R4) +
+        '，P4=' + S.readyLists[4].join('→'));
+    }
+  }
+];
+
+function runStep(index) {
+  if (index >= SCRIPT.length) {
+    if (isPlaying) {
+      autoTimer = setTimeout(function () {
+        reset({ keepPlaying: true });
+        runStep(0);
+      }, 1500);
+    }
+    return;
+  }
+  currentStepIdx = index;
+  const step = SCRIPT[index];
+  S.currentLine = { block: step.block, line: step.line };
+  S.desc = step.desc;
+  S.flowHighlight = null;
+  if (step.action) {
+    step.action();
+  }
+  render();
+  if (isPlaying) {
+    autoTimer = setTimeout(function () {
+      runStep(index + 1);
+    }, pace(step));
+  }
+}
+
+function stepOnce() {
+  if (isPlaying) {
+    return;
+  }
+  const next = currentStepIdx + 1;
+  if (next >= SCRIPT.length) {
+    reset();
+    return;
+  }
+  runStep(next);
+}
+
+function autoPlay() {
+  if (isPlaying) {
+    isPlaying = false;
+    clearTimeout(autoTimer);
+    document.getElementById('btn-auto').textContent = '▶ 自动播放';
+    return;
+  }
+  isPlaying = true;
+  document.getElementById('btn-auto').textContent = '暂停';
+  if (currentStepIdx >= SCRIPT.length - 1) {
+    reset({ keepPlaying: true });
+  }
+  runStep(currentStepIdx + 1);
+}
+
+function reset(opts) {
+  clearTimeout(autoTimer);
+  if (!opts || !opts.keepPlaying) {
+    isPlaying = false;
+    const button = document.getElementById('btn-auto');
+    if (button) {
+      button.textContent = '▶ 自动播放';
+    }
+  }
+  initState();
+  render();
+}
+
+document.getElementById('btn-reset').addEventListener('click', function () { reset(); });
+document.getElementById('btn-step').addEventListener('click', stepOnce);
+document.getElementById('btn-auto').addEventListener('click', autoPlay);
+document.getElementById('speed').addEventListener('input', function (event) {
+  stepDelay = delayFromSlider(parseInt(event.target.value, 10));
+});
+
+initState();
+render();
+
+if (typeof globalThis !== 'undefined' && globalThis.__RTOS_TEST__) {
+  globalThis.__rtosDemo = {
+    reset: reset,
+    runStep: runStep,
+    getState: function () { return S; },
+    SCRIPT: SCRIPT,
+    CODE_BLOCKS: CODE_BLOCKS
+  };
+}
+</script>
+</body>
+</html>

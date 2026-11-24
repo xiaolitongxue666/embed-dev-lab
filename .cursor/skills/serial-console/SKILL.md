@@ -75,7 +75,7 @@ picocom -b 1500000 /dev/ttyUSB0
 |------|------|
 | 无 COM / 无 tty | `status`，再 `to-win` 或 `to-wsl` |
 | 乱码 | 对照工程 `usart.c` 或 HAL 初始化里的波特，然后 `--baud` 或 picocom `-b`。不要猜。乱码说明线上有边沿 |
-| `INFO: bytes=0` | 口能打开但没有边沿。查 RX←PA9、GND、宿主是否就是这一侧。不要先改波特 |
+| `INFO: bytes=0` | 口能打开但没有边沿。不要先改波特。要看启动行加 `--reset`。若 SWD 上 USART 的 BRR 与固件一致、CR1 已 TE/UE、SR 含 TC，不要改波特，也不要改 manual-reg 的接线。停核步骤在 [`doc/probe-rs.md`](../../../doc/probe-rs.md)。2026-11-24 的 COM9 在 TC 已置位时仍是 0 |
 | 打不开口 | 已有程序占用。关掉 GUI 或换宿主。不要两端一起占 |
 | WSL Permission denied | 用户加入 `dialout`，或本次用 sudo |
 | 有 LED 无日志 | 波特、RX←PA9、GND、宿主是否切到你正在读的那一侧 |

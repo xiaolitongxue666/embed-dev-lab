@@ -143,10 +143,10 @@ picocom -b 1500000 /dev/ttyUSB0          # 默认 demo；固件改波特则改 -
 |------|------|
 | `build-flash` / `build` 报无 build 目录 | 先 `./scripts/build.sh <module>`（configure） |
 | cmsis-hal 缺头文件 | `./scripts/fetch-f103-cmsis-hal-deps.sh` |
-| `probe-rs list` 空 | Windows：`stlink-winusb-windows.sh --install` |
+| `probe-rs list` 空 | 先看是不是 `VID_0000&PID_0002` 描述符失败：`pnputil /restart-device` 那个实例，不要对它装 WinUSB。已经是 `0483:3748` 仍打不开再跑 `stlink-winusb-windows.sh --check-only` |
 | LED 不闪 | PWR+DBP；先 build 再 flash；板载 RESET |
 | 有 LED 无串口 | 波特率 1500000、RX←PA9、GND；CH341 宿主见 `serial-ch341-switch.sh status` |
-| 串口脚本 `bytes=0` | 不是波特问题（波特不对通常是乱码）。查 RX←PA9 与 GND。启动行用 `serial-ch341-read.sh --reset` |
+| 串口脚本 `bytes=0` | 不是波特问题（波特不对通常是乱码）。启动行用 `serial-ch341-read.sh --reset`。若 SWD 上 USART 的 BRR 与固件一致、CR1 已 TE/UE、SR 含 TC，不要改波特，也不要改 manual-reg 的接线 |
 | `Failed to open probe` / USB error 5 | 不要在 `flash` 进行时再跑 `probe-rs reset` 或第二次下载 |
 | CH341 在 WSL 看不见 / Windows 无 COM | `./scripts/serial-ch341-switch.sh to-wsl` 或 `to-win`（需管理员 + usbipd-win） |
 | picocom 打不开 / 乱码 | 确认 `/dev/ttyUSB0`、`-b 1500000`；dialout 组；见 scripts-reference § picocom |

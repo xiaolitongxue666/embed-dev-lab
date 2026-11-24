@@ -13,12 +13,14 @@
 
 新增或变更 demo 行为时，两条路线应同步对齐，除非用户明确只改其一。实现约束见 [`f103-manual-reg.md`](f103-manual-reg.md)、[`f103-cmsis-hal.md`](f103-cmsis-hal.md)。
 
+`f103-manual-rtos` 是手写 SysTick + PendSV 的学习工程，外设行为对照 manual-reg，不参与上面的同步。`./scripts/build.sh both` 不编译它。约束见 [`f103-manual-rtos.md`](f103-manual-rtos.md)。
+
 ## 构建与烧录
 
 - Windows 脚本须在 Git Bash 运行
 - probe-rs chip：`STM32F103C8Tx`；烧录：`--binary-format elf`（勿用 `--format`）
 - `flash` 不自动 compile / configure；改代码先 `build`；`clean` 后先 `./scripts/build.sh <module>`
-- `./scripts/build.sh both build` 可回归两工程；`both flash` 拒绝
+- `./scripts/build.sh both build` 可回归 manual-reg 与 cmsis-hal；不含 `f103-manual-rtos`。`both flash` 拒绝
 - cmsis-hal 依赖：`./scripts/fetch-cmsis.sh` 然后 `./scripts/fetch-f103-cmsis-hal-deps.sh`
 - 操作步骤： [`.agent/skills/firmware-build/SKILL.md`](../skills/firmware-build/SKILL.md)、[`.agent/skills/firmware-flash/SKILL.md`](../skills/firmware-flash/SKILL.md)
 - 人类流程说明：[`doc/workflow-write-build-flash.md`](../../doc/workflow-write-build-flash.md)

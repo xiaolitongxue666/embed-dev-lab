@@ -27,8 +27,8 @@ ST-Link 3.3V 大约 150 mA，5V 大约 300 mA。超了就给外设单独供电�
 | 现象 | 含义 |
 |------|------|
 | `JtagGetIdcodeError` | MCU 没电，或 SWD 没接上 |
-| `probe-rs list` 为空 | ST-Link 的 USB 不在（驱动或线），不是串口问题 |
-| 串口完全没波形，烧录却成功 | 串口与 SWD 是分开的。查 CH341 和共地，见串口 Skill |
+| `probe-rs list` 为空 | 先按烧写 Skill 区分：`VID_0000&PID_0002` 描述符失败要重启该设备，不要对它装 WinUSB。已经是 `0483:3748` 仍打不开才查驱动或线。这不是串口问题 |
+| 串口 `bytes=0`，烧录却成功 | 串口与 SWD 是分开的。先按串口 Skill 看 USART 是否已经 TC。TC 已置位就不要改接线 |
 
 文档与注释里不要出现这些说法：核心板 USB 给外设供电、ST-Link 3.3V 悬空、ST-Link 3.3V 接到蓝板、ST-Link GND 经蓝板再串到面包板。
 

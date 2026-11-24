@@ -19,6 +19,8 @@ description: STM32F103 embed-dev-lab 开发规范 — 选择编译、烧写、�
 ## 硬约束
 
 - 双路线：`f103-manual-reg`（手写寄存器）与 `f103-cmsis-hal`（CMSIS+HAL，Cube 风格，非 CubeMX 生成）。对外行为对齐，除非用户明确只改一边。规则：[`.agent/rules/architecture.md`](../../rules/architecture.md)
+- `f103-manual-rtos`：手写 SysTick + PendSV，外设同 manual-reg。不参与双路线同步，`both` 不编译它。任务栈保持 384 字。规则：[`.agent/rules/f103-manual-rtos.md`](../../rules/f103-manual-rtos.md)
+- `bytes=0` 时先按 serial-console 对照 USART 寄存器，不要改接线。`probe-rs list` 为空时先按 firmware-flash 区分描述符失败和 WinUSB
 - Windows 脚本在 Git Bash 运行
 - `./scripts/build.sh <module> flash` 不编译。改代码后先 build
 - 禁止未经用户确认的全片 Flash 擦除或 mass erase
@@ -32,6 +34,7 @@ description: STM32F103 embed-dev-lab 开发规范 — 选择编译、烧写、�
 |------|------|------|------|
 | `f103-manual-reg` | `LOG_*` → `printf` + `syscalls.c` → DMA TX；RX 为 DMA + IDLE | `SystemInit` 里升到 72 MHz | `projects/f103-manual-reg/build/f103-manual-reg.elf` |
 | `f103-cmsis-hal` | `LOG_*` → 一次 `HAL_UART_Transmit`（不要加 printf/syscalls） | `main` 里 `SystemClock_Config` | `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf` |
+| `f103-manual-rtos` | 同 manual-reg，多任务发送加 `USART1_Lock` | `SystemInit` 72 MHz；SysTick 由 `os.c` 独占 | `projects/f103-manual-rtos/build/f103-manual-rtos.elf` |
 
 PC13 属于 Backup 域。manual-reg 先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`。cmsis-hal 先 `HAL_PWR_EnableBkUpAccess()`。多数核心板 PC13 低电平点亮。
 

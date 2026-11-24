@@ -177,12 +177,32 @@ probe-rs chip info --chip STM32F103C8Tx
 
 | 现象 | 可能原因 | 处理 |
 |------|----------|------|
-| `No debug probes were found` | WinUSB 未绑定 / USB 未枚举 | WinUSB 安装；换 USB 线/口；`stlink-winusb-windows.sh --check-only` |
-| 设备管理器无 `VID_0483` | USB 线/Hub/供电 | 直连主板 USB 2.0；对照拔插 ST-Link |
+| `No debug probes were found` | WinUSB 未绑定 / USB 未枚举 | 先看是不是描述符失败（下一行）。已经是 `0483:3748` 仍打不开时，再 `stlink-winusb-windows.sh --check-only` |
+| 同一 USB 口变成 `VID_0000&PID_0002`，状态为错误，文案是设备描述符请求失败 | 枚举没完成，还不是 ST-Link | `pnputil /restart-device "<该实例 ID>"`。不要对 `0000:0002` 装 WinUSB。起来之后 `probe-rs list` 应为 `STLink V2 -- 0483:3748`。2026-11-24 这一口重启后恢复 |
+| 设备管理器无 `VID_0483` | USB 线/Hub/供电，或仍停在上一行的失败节点 | 直连主板 USB 2.0；对照拔插 ST-Link |
+| `Failed to open probe` / USB error 5 | 另一个 probe-rs 或 gdb 还占着 ST-Link | 结束 `probe-rs.exe` 与 `arm-none-eabi-gdb.exe` 后再下载。`gdb -batch` 里的 `while` 会掉进交互提示并一直占着探针 |
 | `unexpected argument '--format'` | CLI 版本过新 | 改用 `--binary-format elf` |
 | 烧录成功 LED 不闪 | 未 build 最新 elf / 未 reset / SWD 或供电 | `build && flash`；按 RESET；查 SWD 与 3.3V |
 | 程序完全不运行 | PC13 未开 DBP | 见 [f103-manual-reg 模块](projects/f103-manual-reg.md) Backup 域说明 |
 | IDE 找不到 probe-rs | PATH 未进 Cursor | `./scripts/setup-path.sh` 后重启 Cursor |
+
+## 停核读寄存器
+
+`probe-rs read` 只接受 RAM 地址。USART、RCC、SCB 用 gdb，并且先关掉「默认不可访问」：
+
+```bash
+probe-rs gdb --chip STM32F103C8Tx --non-interactive projects/<module>/build/<module>.elf \
+  --gdb arm-none-eabi-gdb -- -batch \
+  -ex "set pagination off" \
+  -ex "set mem inaccessible-by-default off" \
+  -ex "info registers pc lr xpsr psp msp" \
+  -ex "x/1wx 0xE000ED28" \
+  -ex "x/1wx 0xE000ED2C" \
+  -ex "detach"
+probe-rs reset --chip STM32F103C8Tx
+```
+
+`0xE000ED28` 是 CFSR，`0xE000ED2C` 是 HFSR。没加 `set mem inaccessible-by-default off` 时，这两处和 `0x40013800`（USART1）会报 `Cannot access memory`。Handler 的 LR 为 `0xFFFFFFFD` 时，异常帧在 PSP：从 PSP 起 8 个字是 R0、R1、R2、R3、R12、LR、PC、xPSR。`probe-rs read -o` 写出的是 Intel HEX，不是原始二进制。看完执行 `probe-rs reset`，detach 可能把核留在暂停。
 
 ---
 

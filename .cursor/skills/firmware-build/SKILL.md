@@ -7,7 +7,7 @@ description: 在 embed-dev-lab 编译 STM32F103 固件时使用。包括 build.s
 
 Windows 在 Git Bash 中执行。CLI 输出为英文。本 Skill 不烧录。烧录见 [firmware-flash](../firmware-flash/SKILL.md)。
 
-`<module>` 为 `f103-manual-reg`、`f103-cmsis-hal` 或 `both`。
+`<module>` 为 `f103-manual-reg`、`f103-cmsis-hal`、`f103-manual-rtos` 或 `both`。`both` 只含前两个对齐 demo。
 
 ## 先确认动作
 
@@ -38,12 +38,21 @@ Windows 在 Git Bash 中执行。CLI 输出为英文。本 Skill 不烧录。烧
 ./scripts/build.sh both build
 ```
 
-`both` 对 `configure`、`build`、`clean`、`all` 会按顺序跑两个工程。不要用 `both flash`（烧写 Skill 会拒绝）。
+`both` 对 `configure`、`build`、`clean`、`all` 会按顺序跑 manual-reg 和 cmsis-hal。不要用 `both flash`（烧写 Skill 会拒绝）。`f103-manual-rtos` 不在 `both` 里。
+
+## 手写调度工程
+
+```bash
+./scripts/build.sh f103-manual-rtos
+```
+
+不链接 CMSIS/HAL。改两条 demo 的行为时不要默认改它。
 
 ## 产物
 
 - `projects/f103-manual-reg/build/f103-manual-reg.elf`
 - `projects/f103-cmsis-hal/build/f103-cmsis-hal.elf`
+- `projects/f103-manual-rtos/build/f103-manual-rtos.elf`
 
 编译失败就停。不要进入烧写。gcc/ninja 的英文报错原样保留。
 

@@ -32,18 +32,20 @@ require_git_bash_on_windows
 MODULE=""
 ACTION="all"
 
+# both 只回归这两条对齐 demo。f103-manual-rtos 必须点名，不要加进这个数组。
 KNOWN_MODULES=(f103-manual-reg f103-cmsis-hal)
 
 usage() {
   cat <<EOF
 Usage: ./scripts/build.sh <module> [configure|build|flash|flash-openocd|clean|all]
 
-Modules: f103-manual-reg | f103-cmsis-hal | both
+Modules: f103-manual-reg | f103-cmsis-hal | f103-manual-rtos | both
 Notes:
   flash does NOT compile; change code then build first
   build does NOT configure; after clean run without action (all) first
   f103-cmsis-hal: run ./scripts/fetch-f103-cmsis-hal-deps.sh before first configure
-  both runs configure|build|clean|all on both modules in order
+  both runs configure|build|clean|all on f103-manual-reg and f103-cmsis-hal only
+  f103-manual-rtos is not part of both; pass that name explicitly
   both flash / both flash-openocd are refused (one board holds one firmware)
 
 Examples:
@@ -51,6 +53,7 @@ Examples:
   ./scripts/build.sh f103-manual-reg build
   ./scripts/build.sh f103-manual-reg flash
   ./scripts/build.sh f103-cmsis-hal
+  ./scripts/build.sh f103-manual-rtos
   ./scripts/build.sh both build
   ./scripts/build.sh f103-manual-reg flash-openocd
   ./scripts/build.sh f103-manual-reg clean
@@ -68,7 +71,7 @@ ACTION="${2:-all}"
 if [[ "$MODULE" == "both" ]]; then
   case "$ACTION" in
     flash | flash-openocd)
-      die "both $ACTION is refused: one board can hold one firmware. Specify f103-manual-reg or f103-cmsis-hal"
+      die "both $ACTION is refused: one board can hold one firmware. Specify f103-manual-reg, f103-cmsis-hal, or f103-manual-rtos"
       ;;
     configure | build | clean | all)
       for m in "${KNOWN_MODULES[@]}"; do

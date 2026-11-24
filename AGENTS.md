@@ -19,6 +19,8 @@
 
 新增/变更 demo 行为时两条路线应同步对齐（除非用户明确只改其一）。
 
+**f103-manual-rtos**（学习用，不参与上面的对齐，`both` 不编译它）：外设寄存器复制自 manual-reg；SysTick 1 ms 由 `os.c` 的 `SysTick_Handler` 独占（启动前只加毫秒）；PendSV / SVC 在 `port.c`；任务为按键 5 ms、串口回显 1 ms、风扇 1 ms、OLED 50 ms、LED/BMP280 日志 1 s；idle 优先级 0 只 `wfi`。不链接 CMSIS/HAL，不把 TIM2 改成时基。文档：`doc/projects/f103-manual-rtos.md`，原理：`doc/learn/manual-rtos-context-switch.md`。构建：`./scripts/build.sh f103-manual-rtos`。
+
 - 构建：`./scripts/build.sh <module> build` 或 `./scripts/build.sh both build`；烧录：`flash`（**不**自动 compile / configure；`both flash` 拒绝；改代码后须先 build；`clean` 后须先 `build.sh <module>` 再 flash）
 - cmsis-hal 依赖：`./scripts/fetch-f103-cmsis-hal-deps.sh`（须先 `fetch-cmsis.sh`）
 - probe-rs chip：`STM32F103C8Tx`；CLI 使用 `--binary-format elf`

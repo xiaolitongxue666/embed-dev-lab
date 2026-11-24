@@ -6,6 +6,7 @@
 |------|------|------|------|
 | `f103-manual-reg` | STM32F103C8T6 | [f103-manual-reg.md](f103-manual-reg.md) | [`projects/f103-manual-reg/`](../../projects/f103-manual-reg/) — LED/KEY/USART/ADC/风扇/SPI BMP280/I2C SH1106 |
 | `f103-cmsis-hal` | STM32F103C8T6 | [f103-cmsis-hal.md](f103-cmsis-hal.md) | [`projects/f103-cmsis-hal/`](../../projects/f103-cmsis-hal/) — 同上行为，HAL 路径；`LOG_*` 无 printf |
+| `f103-manual-rtos` | STM32F103C8T6 | [f103-manual-rtos.md](f103-manual-rtos.md) | [`projects/f103-manual-rtos/`](../../projects/f103-manual-rtos/) — 同一套外设，手写 SysTick + PendSV。不参与两条路线的行为对齐，`both` 不编译它 |
 
 ## 与 `projects/` 的关系
 
@@ -26,6 +27,7 @@ doc/projects/<name>.md    # 工程说明、硬件要点、排错（本目录）
 | CMSIS 与手写边界 | [cmsis-overview.md](../learn/cmsis-overview.md) |
 | 裸机 printf / nosys / HAL 串口 | [newlib-nosys-stdio-retarget.md](../learn/newlib-nosys-stdio-retarget.md) |
 | vendor-pack 三层参照 | [stm32-cmsis-component-repos.md](../learn/stm32-cmsis-component-repos.md) §5 |
+| 手写调度与上下文切换 | [manual-rtos-context-switch.md](../learn/manual-rtos-context-switch.md) |
 
 ## 新增工程 checklist
 

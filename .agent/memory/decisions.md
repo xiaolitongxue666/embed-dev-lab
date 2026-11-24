@@ -14,5 +14,6 @@
 - `LOG_*`：只显示到秒。E 红 / W 黄 / I 绿 / D 青。`LOG_COMPILE_LEVEL` 默认 DEBUG。`LOG_COLOR=1`。一行一次 `vsnprintf`、一次发送。1 s 的 DEBUG 是一行（LED/KEY/旋钮/时钟，温度可有可无）。不要在 ISR 里打日志。SecureCRT 需要 ANSI Color。manual-reg 一次 `printf`。cmsis-hal 一次 `HAL_UART_Transmit`（无 syscalls），发送超时 20 ms。
 - cmsis-hal `SPI1_TransferByte` 每字节超时 10 ms，失败返回 `0xFF`。引脚、Mode0/Mode3 与片选不变。BMP280 缺席时不得挡住 50 ms OLED 刷新。
 - cmsis-hal：先 `fetch-cmsis.sh`，再 `fetch-f103-cmsis-hal-deps.sh`。HAL Src 16 个 `.c`。工程内有 `src/log.c` 与 `src/timer_event.c`。`src/`、`startup/`、`linker/` 注释中文，CLI 英文。时钟在 `main` 的 `SystemClock_Config`。
+- `f103-manual-rtos` 不参与双路线同步，`both` 不编译它。任务栈 `OS_TASK_STACK_WORDS` 为 384。256 字装不下状态任务的 `printf`。
 - 未经确认不做全片擦除。
 - 供电：蓝板 MicroUSB 给 MCU。ST-Link 3.3V 到面包板（方案 A，5V 闲置）。地用星型汇集。见 [`../rules/hardware.md`](../rules/hardware.md)。

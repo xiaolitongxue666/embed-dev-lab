@@ -1,0 +1,20 @@
+---
+description: f103-manual-rtos — 手写 SysTick + PendSV，禁止 CMSIS/HAL，不参与双路线同步
+globs: projects/f103-manual-rtos/**
+alwaysApply: false
+---
+
+# f103-manual-rtos
+
+共用正文：`.agent/rules/f103-manual-rtos.md`
+
+手写调度学习工程。外设与 `f103-manual-reg` 相同，**不**参与两条 demo 路线的行为同步。`both` 不编译本工程。
+
+- **不** `#include` / 链接官方 CMSIS Device 头或 HAL
+- `SysTick_Handler` 只在 `src/os/os.c`；`PendSV_Handler` / `SVC_Handler` 只在 `src/os/port.c`。startup 的 WEAK 保持不动
+- **不要**把 TIM2 改成时基。PA1 是风扇 PWM
+- 任务等待用 `os_delay`。中断里不调用 `os_delay` / `task_create`
+- 串口 `LOG_*` → printf → DMA TX。多任务发送用 `USART1_Lock`，等 DMA 时中断保持打开
+- `OS_TASK_STACK_WORDS` 保持 384。256 字栈上的 `printf` 会写穿进下一个任务，HardFault 的 CFSR 为 INVPC。不要改回 256
+- `main` 先 `NVIC_SetPriorityGroup4`，再写外设 NVIC 优先级
+- 构建：`./scripts/build.sh f103-manual-rtos`；文档：`doc/projects/f103-manual-rtos.md`

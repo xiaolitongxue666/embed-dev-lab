@@ -31,6 +31,7 @@ Examples:
   ./scripts/build-flash.sh
   ./scripts/build-flash.sh f103-manual-reg
   ./scripts/build-flash.sh f103-cmsis-hal
+  ./scripts/build-flash.sh f103-manual-rtos
 EOF
 }
 
@@ -51,7 +52,7 @@ case "${1:-}" in
   "")
     ;;
   both)
-    die "both is refused: one board can hold one firmware. Specify f103-manual-reg or f103-cmsis-hal"
+    die "both is refused: one board can hold one firmware. Specify f103-manual-reg, f103-cmsis-hal, or f103-manual-rtos"
     ;;
   *)
     MODULE="$1"

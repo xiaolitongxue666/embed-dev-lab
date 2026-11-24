@@ -8,12 +8,14 @@
 |------|------|------|------|
 | [`f103-manual-reg/`](f103-manual-reg/) | STM32F103C8T6 | 全手写寄存器；`app`/`board`/`periph`/`driver`；USART DMA+IDLE + ADC DMA + TIM2 风扇 + SPI BMP280 + I2C SH1106 | [doc/projects/f103-manual-reg.md](../doc/projects/f103-manual-reg.md) |
 | [`f103-cmsis-hal/`](f103-cmsis-hal/) | STM32F103C8T6 | CMSIS+HAL 对照；行为对齐 manual-reg；`LOG_*` + 四段钟，无 printf | [doc/projects/f103-cmsis-hal.md](../doc/projects/f103-cmsis-hal.md) |
+| [`f103-manual-rtos/`](f103-manual-rtos/) | STM32F103C8T6 | 手写 SysTick + PendSV。外设与 manual-reg 相同，主循环拆成任务。不参与两条路线对齐 | [doc/projects/f103-manual-rtos.md](../doc/projects/f103-manual-rtos.md) |
 
 ## 构建
 
 ```bash
 ./scripts/build.sh <project> build    # 编译
-./scripts/build.sh both build         # 两工程都编译；both flash 拒绝
+./scripts/build.sh both build         # 只编译 manual-reg 与 cmsis-hal；不含 f103-manual-rtos
+./scripts/build.sh f103-manual-rtos build
 ./scripts/build.sh <project> flash    # 烧录（须先 build）
 ./scripts/build-flash.sh <project>     # 一键 build + flash
 ```

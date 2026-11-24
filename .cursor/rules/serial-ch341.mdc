@@ -5,6 +5,8 @@ alwaysApply: true
 
 # CH341 串口：宿主切换与读日志
 
+共用正文：`.agent/rules/serial.md`
+
 ## 硬件与可变参数
 
 | 项 | 说明 |

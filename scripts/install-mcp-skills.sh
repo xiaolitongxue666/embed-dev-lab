@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# 安装 embedded-debugger MCP + 项目 Skill embed-dev-lab
+# 安装 embedded-debugger MCP + .agent/skills 下的项目 Skill
 # cargo 构建至 .tools/；合并 .cursor/mcp.json；可选 --global
 # 用法: ./scripts/install-mcp-skills.sh [--verify-only] [--global]
 # -----------------------------------------------------------------------------
@@ -26,7 +26,8 @@ TOOL_CACHE="$ROOT/.tools/embedded-debugger-mcp"
 TOOL_SRC="$TOOL_CACHE/src"
 WRAPPER="$ROOT/scripts/lib/run-embedded-debugger-mcp.sh"
 SKILL_ID="embed-dev-lab"
-SKILL_SRC="$ROOT/skills/$SKILL_ID"
+SKILLS_ROOT="$ROOT/.agent/skills"
+SKILL_SRC="$SKILLS_ROOT/$SKILL_ID"
 
 APPLY_GLOBAL=false
 VERIFY_ONLY=false
@@ -38,7 +39,7 @@ usage() {
   cat <<EOF
 Usage: ./scripts/install-mcp-skills.sh [options]
 
-Install embedded-debugger-mcp (probe-rs) and embed-dev-lab project Skill.
+Install embedded-debugger-mcp (probe-rs) and project skills under .agent/skills.
 
 Options:
   --global          Also merge MCP/Skill into global agent configs
@@ -210,25 +211,38 @@ install_global_mcps() {
 
 link_skill_dir() {
   local dest="$1"
-  local src="$SKILL_SRC"
+  local src="$2"
   mkdir -p "$(dirname "$dest")"
   rm -rf "$dest"
-  ln -sfn "$(cd "$src/.." && pwd)/$SKILL_ID" "$dest" 2>/dev/null || {
+  ln -sfn "$(cd "$src" && pwd)" "$dest" 2>/dev/null || {
     mkdir -p "$dest"
     cp -R "$src/." "$dest/"
   }
 }
 
+each_project_skill() {
+  local src
+  [[ -d "$SKILLS_ROOT" ]] || die "Missing skills root: $SKILLS_ROOT"
+  for src in "$SKILLS_ROOT"/*; do
+    [[ -d "$src" && -f "$src/SKILL.md" ]] || continue
+    printf '%s\n' "$src"
+  done
+}
+
 install_project_skill() {
-  local dest="$ROOT/.cursor/skills/$SKILL_ID"
+  local src dest
   [[ -f "$SKILL_SRC/SKILL.md" ]] || die "Missing skill: $SKILL_SRC/SKILL.md"
-  log_info "Registering project skill: $dest"
-  link_skill_dir "$dest"
+  while IFS= read -r src; do
+    [[ -n "$src" ]] || continue
+    dest="$ROOT/.cursor/skills/$(basename "$src")"
+    log_info "Registering project skill: $dest"
+    link_skill_dir "$dest" "$src"
+  done < <(each_project_skill)
 }
 
 install_global_skills() {
   local agents=()
-  local agent_id dest skills_root home
+  local agent_id dest skills_root home src
 
   home="$(embed_user_home)"
 
@@ -243,9 +257,12 @@ install_global_skills() {
   for agent_id in "${agents[@]}"; do
     agent_supports_skills "$agent_id" || continue
     skills_root="$(agent_skills_dir "$agent_id" global)" || continue
-    dest="$skills_root/$SKILL_ID"
-    log_info "Registering global skill for $agent_id: $dest"
-    link_skill_dir "$dest"
+    while IFS= read -r src; do
+      [[ -n "$src" ]] || continue
+      dest="$skills_root/$(basename "$src")"
+      log_info "Registering global skill for $agent_id: $dest"
+      link_skill_dir "$dest" "$src"
+    done < <(each_project_skill)
   done
 }
 
@@ -286,6 +303,7 @@ verify_installation() {
   local bin="$ROOT/.cursor/mcp.json"
   local skill="$ROOT/.cursor/skills/$SKILL_ID/SKILL.md"
   local fail=0
+  local skill_id extra_skill
 
   bin_path="$(mcp_binary_path)"
   if [[ -f "$bin_path" ]]; then
@@ -308,6 +326,16 @@ verify_installation() {
     log_fail "Missing project skill: $skill"
     fail=1
   fi
+
+  for skill_id in firmware-build firmware-flash serial-console board-power; do
+    extra_skill="$ROOT/.cursor/skills/$skill_id/SKILL.md"
+    if [[ -f "$extra_skill" ]]; then
+      log_ok "Project skill: $extra_skill"
+    else
+      log_fail "Missing project skill: $extra_skill"
+      fail=1
+    fi
+  done
 
   [[ -x "$WRAPPER" ]] || chmod +x "$WRAPPER" 2>/dev/null || true
   [[ $fail -eq 0 ]] || die "Verification failed"

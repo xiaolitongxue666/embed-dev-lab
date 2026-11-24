@@ -35,18 +35,19 @@ ST-Link WinUSB 见 [probe-rs.md](probe-rs.md)。
 |------|------|
 | `.tools/embedded-debugger-mcp/` | cargo 构建缓存（gitignore） |
 | `.cursor/mcp.json` | 项目级 MCP（`embedded-debugger` server） |
-| `.cursor/skills/embed-dev-lab/` | Cursor 项目 Skill 链接 |
-| `skills/embed-dev-lab/SKILL.md` | Skill 源文件（可提交） |
-| `AGENTS.md` | Codex 无 MCP 时追加 Skill 摘要（首次安装） |
+| `.agent/skills/` | 操作 Skill 源：`embed-dev-lab`、`firmware-build`、`firmware-flash`、`serial-console`、`board-power` |
+| `.cursor/skills/` | Cursor 项目 Skill（`install-mcp-skills.sh` 从 `.agent/skills/` 注册） |
+| `skills/embed-dev-lab/SKILL.md` | 旧路径兼容入口 |
+| `AGENTS.md` | 各 Agent 通用入口（须含 `embed-dev-lab Skill`） |
 
 ## 各 Agent 支持
 
 | Agent | MCP | Skill |
 |-------|-----|-------|
-| **Cursor** | 项目 `.cursor/mcp.json`；`--global` → `~/.cursor/mcp.json` | `.cursor/skills/` |
-| **Claude Code** | `--global` → `~/.claude/settings.json` | `~/.claude/skills/` |
+| **Cursor** | 项目 `.cursor/mcp.json`；`--global` → `~/.cursor/mcp.json` | `.cursor/skills/`（源：`.agent/skills/`） |
+| **Claude Code** | `--global` → `~/.claude/settings.json` | `~/.claude/skills/`；仓库内读 `CLAUDE.md` → `AGENTS.md` |
 | **CodeWhale** | `--global` → `~/.codewhale/mcp.json` | `~/.codewhale/skills/` |
-| **Codex** | **不支持 MCP**（跳过） | 读 `AGENTS.md` + `skills/embed-dev-lab/SKILL.md` |
+| **Codex** | **不支持 MCP**（跳过） | 读 `AGENTS.md` + `.agent/skills/` |
 
 全局 MCP 配置若已有其他 server，安装脚本 **合并而非覆盖**（`mcp-merge.py` 仅新增 `embedded-debugger` 键）。
 

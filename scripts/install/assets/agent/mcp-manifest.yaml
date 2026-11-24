@@ -21,5 +21,18 @@ servers:
 
 skills:
   - id: embed-dev-lab
-    source: skills/embed-dev-lab
+    source: .agent/skills/embed-dev-lab
+    primary: true
+    platforms: [cursor, claude-code, codewhale]
+  - id: firmware-build
+    source: .agent/skills/firmware-build
+    platforms: [cursor, claude-code, codewhale]
+  - id: firmware-flash
+    source: .agent/skills/firmware-flash
+    platforms: [cursor, claude-code, codewhale]
+  - id: serial-console
+    source: .agent/skills/serial-console
+    platforms: [cursor, claude-code, codewhale]
+  - id: board-power
+    source: .agent/skills/board-power
     platforms: [cursor, claude-code, codewhale]

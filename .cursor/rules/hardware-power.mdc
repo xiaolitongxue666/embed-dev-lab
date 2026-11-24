@@ -5,6 +5,8 @@ alwaysApply: true
 
 # 供电、共地与 SWD
 
+共用正文：`.agent/rules/hardware.md`
+
 ## 硬约束
 
 | 项 | 规范 |

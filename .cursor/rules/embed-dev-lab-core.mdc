@@ -5,6 +5,8 @@ alwaysApply: true
 
 # embed-dev-lab 核心规则
 
+共用正文：`.agent/rules/architecture.md`
+
 ## 双路线（功能一致，实现路径不同）
 
 同一目标芯片（STM32F103）下并列两套工程，**对外具体功能应对齐**（LED、串口日志等行为一致），仅实现路径不同：

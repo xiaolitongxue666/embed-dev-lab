@@ -53,8 +53,8 @@ flowchart TB
     Path[setup-path.sh]
   end
   subgraph agent [Agent 层]
-    CursorMcp[.cursor/mcp.json]
-    Skills[skills/embed-dev-lab]
+    AgentRoot[".agent/"]
+    CursorDir[".cursor/"]
     AgentsMd[AGENTS.md]
   end
   subgraph ref [参考层 doc]
@@ -66,7 +66,7 @@ flowchart TB
   DocProjects --> ProjectsDir
   Bootstrap --> Install --> BuildSh --> F103
   Cmake --> BuildSh
-  CursorMcp --> Skills
+  CursorDir --> AgentRoot --> AgentsMd
 ```
 
 | 层级 | 路径 | 职责 |
@@ -75,7 +75,7 @@ flowchart TB
 | 应用 | [`projects/`](projects/)（源码）、[`doc/projects/`](doc/projects/)（说明） | 固件小工程（`f103-manual-reg`、`f103-cmsis-hal`） |
 | 构建 | [`cmake/`](cmake/)、[`scripts/build.sh`](scripts/build.sh) | 工具链、MCU 抽象、编译烧录 |
 | 环境 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) 等 | 安装工具、PATH、校验 |
-| Agent | [`.cursor/`](.cursor/)、[`skills/`](skills/)、[`AGENTS.md`](AGENTS.md) | MCP、Skill、无 MCP Agent 摘要 |
+| Agent | [`.agent/`](.agent/)、[`.cursor/`](.cursor/)、[`AGENTS.md`](AGENTS.md) | 共用规则与操作 Skill、Cursor 规则与 MCP、无 MCP Agent 入口 |
 | 参考 | [`doc/reference/stm32f103/`](doc/reference/stm32f103/) | ST 官方 Datasheet / RM + 精选 MD |
 
 ### 1.2 目录树
@@ -130,14 +130,20 @@ embed-dev-lab/
 │       ├── startup/
 │       ├── linker/
 │       └── third_party/
+├── .agent/                         # 多 Agent 共用规则、记忆、操作 Skill
+│   ├── rules/
+│   ├── memory/
+│   ├── skills/                     # 编译、烧写、串口、上电
+│   └── workflows/
 ├── skills/
-│   └── embed-dev-lab/SKILL.md      # 项目 Skill 源文件（可提交）
+│   └── embed-dev-lab/SKILL.md      # 兼容入口（正文在 .agent/skills）
 ├── .cursor/
 │   ├── mcp.json                    # embedded-debugger MCP 配置
-│   ├── rules/                      # Cursor 项目规则
-│   └── skills/embed-dev-lab/       # Cursor Skill 注册（与 skills/ 同步）
+│   ├── rules/                      # Cursor 项目规则（指向 .agent/rules）
+│   └── skills/                     # 从 .agent/skills 注册的操作 Skill
 ├── .vscode/                        # launch.json / tasks.json / extensions.json
-├── AGENTS.md                       # Codex 等无 MCP Agent 的 Skill 摘要
+├── AGENTS.md                       # 各 Agent 通用入口
+├── CLAUDE.md                       # Claude Code：指向 AGENTS.md
 ├── .gitmodules                     # cmsis-core / cmsis-device-f1 / stm32f1xx-hal-driver submodule
 ├── vendor-pack/                    # ST-Link 驱动、CMSIS + HAL submodules、CubeF1 fetch
 │   ├── cmsis-core/                 # CMSIS-Core submodule cm3 / v5.6.0_cm3
@@ -148,7 +154,7 @@ embed-dev-lab/
 │   ├── stm32f1xx-hal-driver.embed-dev-lab.md
 │   └── STM32CubeF1/                # F1 全包（fetch，可选）
 ├── .tools/                         # MCP cargo 构建缓存（gitignore）
-├── PROJECT_MEMORY.md               # 维护速查（Agent / 维护者）
+├── PROJECT_MEMORY.md               # 记忆索引 → .agent/memory
 └── README.md
 ```
 
@@ -389,9 +395,10 @@ probe-rs list
 
 | 项 | 内容 |
 |----|------|
-| 源文件 | [`skills/embed-dev-lab/SKILL.md`](skills/embed-dev-lab/SKILL.md) |
-| Cursor 注册 | [`.cursor/skills/embed-dev-lab/`](.cursor/skills/embed-dev-lab/) |
-| Codex 等无 MCP | 读 [`AGENTS.md`](AGENTS.md) 摘要 |
+| 源文件 | [`.agent/skills/`](.agent/skills/)（`embed-dev-lab`、`firmware-build`、`firmware-flash`、`serial-console`、`board-power`） |
+| 兼容入口 | [`skills/embed-dev-lab/SKILL.md`](skills/embed-dev-lab/SKILL.md) |
+| Cursor 注册 | [`.cursor/skills/`](.cursor/skills/) |
+| Codex 等无 MCP | 读 [`AGENTS.md`](AGENTS.md)，再按其中的 Skill 路径操作 |
 | 约束 | 禁止未经确认全片擦除；PC13 Backup 域须 DBP；寄存器对照 RM0008 |
 
 ---

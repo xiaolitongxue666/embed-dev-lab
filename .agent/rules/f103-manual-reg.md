@@ -1,0 +1,14 @@
+# f103-manual-reg
+
+共用正文。Cursor 在 `projects/f103-manual-reg/**` 注入同一约束：[`.cursor/rules/f103-manual-reg.mdc`](../../.cursor/rules/f103-manual-reg.mdc)。
+
+与 `f103-cmsis-hal` 为同一芯片上的并列路线：本工程用手写寄存器实现功能；对照工程用官方 CMSIS+HAL（Cube 风格）。对外具体功能应一致。
+
+- 不 `#include` / 链接官方 CMSIS Device 头或 HAL
+- 串口：`printf` → `syscalls.c` `_write` → `USART1_Write`（DMA1 CH4）；RX 为 DMA1 CH5 + `IDLE` 定界，`USART1_ProcessRx` 调整帧 handle；USART DMA 关 HTIE、只开 TCIE；勿改成仅 HAL 路径
+- ADC1：PA0 = ADC12_IN0（旋钮 SIG）；连续转换 + DMA1 CH1 循环，`ADC1_ReadRaw` 读最近值（不再单次 SWSTART 空等）；B12/B13 侧无 ADC；本轮不对齐 cmsis-hal
+- TIM2：PA1=CH2 PWM 24 kHz（PSC=2、ARR=999），旋钮 raw→`Fan_SetDuty` 驱动 JY003
+- PC13：先 `RCC_APB1ENR.PWREN` + `PWR_CR.DBP`，再写 `GPIOC_CRH`
+- 时钟在 `SystemInit`（`system_stm32f1xx.c`）升至 72 MHz，进 `main` 前完成
+- SysTick：1 ms 时基（`systick.c` 覆盖 weak `SysTick_Handler`），供 OLED 时钟
+- 构建：`./scripts/build.sh f103-manual-reg build`；文档：[`doc/projects/f103-manual-reg.md`](../../doc/projects/f103-manual-reg.md)

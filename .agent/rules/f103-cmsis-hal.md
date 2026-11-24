@@ -1,0 +1,13 @@
+# f103-cmsis-hal
+
+共用正文。Cursor 在 `projects/f103-cmsis-hal/**` 注入同一约束：[`.cursor/rules/f103-cmsis-hal.mdc`](../../.cursor/rules/f103-cmsis-hal.mdc)。
+
+与 `f103-manual-reg` 为同一芯片上的并列路线：本工程用 ST 官方 CMSIS + HAL，按 STM32Cube / CubeIDE 生成工程的分层与风格手写对照；对照工程为手写寄存器。对外具体功能应一致。本工程非 CubeMX 一键生成、非占位 stub。
+
+- 保持 Cube 分层：`MX_*`、`stm32f1xx_hal_msp.c`、`stm32f1xx_it.c`、`stm32f1xx_hal_conf.h`
+- 串口：`USART1_WriteStr` → `HAL_UART_Transmit`；不要为本 demo 加 `printf` / `syscalls.c`
+- PC13：`__HAL_RCC_PWR_CLK_ENABLE` + `HAL_PWR_EnableBkUpAccess` 后再 `HAL_GPIO_Init`
+- 时钟在 `main` 的 `SystemClock_Config`（CMSIS `SystemInit` 不配 PLL）
+- `third_party/**` 只经 `fetch-f103-cmsis-hal-deps.sh` 更新；HAL Src 16 个 `.c`；vendor 正文英文
+- 改 HAL 模块须同步：`fetch` 的 `HAL_SRC_FILES`、`CMakeLists.txt`、`stm32f1xx_hal_conf.h`
+- 文档：[`doc/projects/f103-cmsis-hal.md`](../../doc/projects/f103-cmsis-hal.md)

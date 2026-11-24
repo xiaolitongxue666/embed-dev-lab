@@ -1,0 +1,30 @@
+# 供电、共地与 SWD
+
+共用正文。Cursor 注入同一约束：[`.cursor/rules/hardware-power.mdc`](../../.cursor/rules/hardware-power.mdc)。操作步骤：[`.agent/skills/board-power/SKILL.md`](../skills/board-power/SKILL.md)。
+
+## 硬约束
+
+| 项 | 规范 |
+|----|------|
+| 蓝板供电 | MicroUSB 独立供电 MCU |
+| ST-Link | 只做 SWD；3.3V → 面包板外设轨（方案 A：5V 闲置；标 5V 的件才接 5V 轨） |
+| 禁止 | ST-Link 3.3V/5V 接到蓝板任何电源脚（勿并联两套电源） |
+| SWD 线 | SWDIO→PA13，SWCLK→PA14；蓝板 SWD GND ← 面包板 GND 轨（NRST 可选） |
+| 共地 | 面包板 GND 轨为汇集点：ST-Link GND、CH341 GND、蓝板 SWD GND、外设 GND 均接该轨；禁止地线串联 |
+| GPIO | 不作电源；传感器用面包板 3.3V/5V 轨 |
+| 本仓库模块 | 走面包板 3.3V 轨（勿 VIN/5V）；5V 轨仅给明确标 5V 的件 |
+| PA13/PA14 | 仅 SWD，禁止当 GPIO/串口 |
+
+## 负载
+
+- ST-Link 3.3V ≈150 mA；5V ≈300 mA。超载则外设改独立电源，只并 GND。
+
+## 文档与注释
+
+- 接线、排错文档与注释须符合上述拓扑
+- 不要写「核心板 USB 给外设供电」「ST-Link 3.3V 悬空」「ST-Link 3.3V→蓝板」
+- 不要写「ST-Link GND→蓝板→面包板」串联地
+- CH341 GND 直接进面包板轨，不用 CH341 给 MCU 或外设供电
+- 烧录前确认蓝板 MicroUSB 已供电
+
+详解：[`doc/hardware/power-and-common-ground.md`](../../doc/hardware/power-and-common-ground.md)

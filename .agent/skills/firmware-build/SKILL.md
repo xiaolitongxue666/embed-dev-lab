@@ -54,5 +54,6 @@ Windows 在 Git Bash 中执行。CLI 输出为英文。本 Skill 不烧录。烧
 | `build` 或 `build-flash` 报没有 build 目录 | `./scripts/build.sh <module>` |
 | cmsis-hal 缺头文件 | 按上面的 fetch 顺序重做，再 `./scripts/build.sh f103-cmsis-hal` |
 | 刚执行过 `clean` | 不要只跑 `build`。先 `./scripts/build.sh <module>` |
+| cmsis-hal 链接出 `_close` / `_write` 等 `not implemented and will always fail` | newlib nosys 的警告。退出码仍为 0 时编译通过，不要当成失败 |
 
 环境与脚本说明：[`doc/workflow-write-build-flash.md`](../../../doc/workflow-write-build-flash.md)、[`doc/scripts-reference.md`](../../../doc/scripts-reference.md)。

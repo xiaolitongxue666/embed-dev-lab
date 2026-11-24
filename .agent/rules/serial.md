@@ -61,5 +61,6 @@ picocom -b <波特率与固件一致> /dev/ttyUSB0
 | 乱码 | 波特与固件不一致；查源码后 `--baud` |
 | 打不开口 | SecureCRT 等已占用；关掉或换宿主 |
 | Permission denied (WSL) | `dialout` 或 sudo |
+| `bytes=0`（口能打开） | 不是波特问题。查 RX←PA9 与 GND。要看启动行：`./scripts/serial-ch341-read.sh --reset` |
 
 详解：[`doc/scripts-reference.md`](../../doc/scripts-reference.md)。流程：[`doc/workflow-write-build-flash.md`](../../doc/workflow-write-build-flash.md)。

@@ -7,11 +7,14 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 import time
 
 CH341_VID = 0x1A86
 CH341_PID = 0x5523
+# Same chip as scripts/build.sh. --reset runs only after the port is open and the buffer is cleared.
+PROBE_CHIP = "STM32F103C8Tx"
 
 
 def find_ch341_port() -> str | None:
@@ -53,6 +56,11 @@ def main() -> int:
         help="write after open: text, or hex:50494E47 for hex bytes",
     )
     parser.add_argument("--list", action="store_true", help="list COM ports and exit")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="after the port is open, probe-rs reset so boot logs are inside the capture",
+    )
     args = parser.parse_args()
 
     try:
@@ -101,7 +109,21 @@ def main() -> int:
     buf = bytearray()
     try:
         time.sleep(0.05)
+        # Drop bytes that arrived before this capture. Boot lines are kept only if reset happens after this.
         ser.reset_input_buffer()
+        if args.reset:
+            print(f"INFO: probe-rs reset --chip {PROBE_CHIP}", flush=True)
+            reset = subprocess.run(
+                ["probe-rs", "reset", "--chip", PROBE_CHIP],
+                check=False,
+            )
+            if reset.returncode != 0:
+                print(
+                    f"ERROR: probe-rs reset failed ({reset.returncode}). "
+                    "Do not run reset while another probe-rs download is using the ST-Link.",
+                    file=sys.stderr,
+                )
+                return reset.returncode
         if send_payload:
             ser.write(send_payload)
             ser.flush()
@@ -118,6 +140,12 @@ def main() -> int:
     has_crlf = b"\r\n" in buf
     print(file=sys.stderr)
     print(f"INFO: bytes={len(buf)} has_CRLF={has_crlf}", file=sys.stderr)
+    if len(buf) == 0:
+        print(
+            "INFO: bytes=0 means the CH341 saw no UART edges. "
+            "Check RX<-PA9 and GND. A wrong baud usually shows garbage, not zero bytes.",
+            file=sys.stderr,
+        )
     return 0
 
 

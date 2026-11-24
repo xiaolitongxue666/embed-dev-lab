@@ -147,6 +147,7 @@ flowchart TB
 ./scripts/serial-ch341-read.sh --baud 115200 --seconds 8
 ./scripts/serial-ch341-read.sh --port COM5 --no-switch # 强制口（须先 --list 确认）
 ./scripts/serial-ch341-read.sh --send PING --seconds 3 # 写出后再读（测回显）
+./scripts/serial-ch341-read.sh --reset --seconds 8    # 打开口并清空缓冲后 probe-rs reset，接住启动行
 ./scripts/serial-ch341-read.sh --list
 EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 ```
@@ -157,10 +158,13 @@ EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 | `--port` / `EMBED_SERIAL_PORT` | 强制 COMx；默认自动检测 `1a86:5523` |
 | `--seconds` | 抓取时长（默认 5） |
 | `--send` | 打开后先写再读；文本，或 `hex:50494E47` |
+| `--reset` | 打开 COM 并清空缓冲之后 `probe-rs reset --chip STM32F103C8Tx`。不要与正在进行的 `flash` 并行 |
 | `--no-switch` | 不调用 `to-win` |
 | `--list` | 列出 COM 并标记 CH341 |
 
 WSL 侧仍用 picocom（见下节），不要用本脚本。
+
+`INFO: bytes=0` 表示这段时间 CH341 没有收到 UART 边沿（查 RX←PA9 与 GND）。波特不一致时通常是乱码，不是 0 字节。抓启动日志用 `--reset`：脚本会先清空打开前的缓冲，复位放在清空之后。
 
 #### WSL 下用 picocom 读串口
 

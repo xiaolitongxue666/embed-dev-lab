@@ -9,7 +9,7 @@ board-power → firmware-build → firmware-flash → serial-console
 1. [board-power](../skills/board-power/SKILL.md)：蓝板 MicroUSB 已供电，SWD 与共地符合规则。
 2. [firmware-build](../skills/firmware-build/SKILL.md)：改过的那条路线先编译。demo 行为两边都改时，再 `./scripts/build.sh both build`。用户明确只改一边时不要改另一边。
 3. [firmware-flash](../skills/firmware-flash/SKILL.md)：只烧当前要跑的那一个模块。
-4. [serial-console](../skills/serial-console/SKILL.md)：需要看日志时再读串口。
+4. [serial-console](../skills/serial-console/SKILL.md)：需要看日志时再读串口。要接住启动行用 `./scripts/serial-ch341-read.sh --reset`。`bytes=0` 不算日志正常。
 
 ## 回路
 

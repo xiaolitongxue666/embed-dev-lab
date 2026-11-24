@@ -63,6 +63,7 @@ embedded-debugger 与 `scripts/build.sh flash` 一样走 probe-rs。使用前：
 | 现象 | 处理 |
 |------|------|
 | `probe-rs list` 为空 | ST-Link USB 不在。Windows：`./scripts/install/stlink-winusb-windows.sh --check-only`，需要时 `--install`。驱动包在 `vendor-pack/STLink/STLink/USBDriver/`。正常时应见到 `STLink V2 -- 0483:3748` |
+| `Failed to open probe` / USB error 5 | ST-Link 已被另一次 probe-rs 占用。等这次 `flash` 结束再 `reset` 或再下载。不要并行 |
 | `JtagGetIdcodeError` | 回到 [board-power](../board-power/SKILL.md)。MCU 未上电或 SWD 未接 |
 | 烧完行为仍是旧的 | 源码改过但没有先 `build`。回到编译 Skill |
 | 要看日志 | [serial-console](../serial-console/SKILL.md)。串口与 SWD 是两根线 |

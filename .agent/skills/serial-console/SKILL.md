@@ -43,17 +43,19 @@ description: 读取或切换 CH341 串口时使用。serial-ch341-switch、seria
 ./scripts/serial-ch341-read.sh --list
 ./scripts/serial-ch341-read.sh --port COM5 --no-switch
 ./scripts/serial-ch341-read.sh --send PING --seconds 3
+./scripts/serial-ch341-read.sh --reset --seconds 8
 EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 ```
 
 - 默认会 `to-win`，再按 VID:PID 找 COM，再按波特抓取
 - `--baud` 或 `EMBED_SERIAL_BAUD`：与固件一致。默认 1500000
 - `--port` 仅在 `--list` 确认那个 COM 是 CH341 之后使用
-- `--seconds` 默认 5
-- `--send` 打开后先写再读。文本，或 `hex:50494E47`
+- `--seconds` 默认 5。要看到约 1 秒一行的 DEBUG，抓 8 秒以上
+- `--send` 打开后先写再读。文本，或 `hex:50494E47`。manual-reg 的 RX 处理会把这段写回 TX
+- `--reset`：端口打开并清空缓冲之后执行 `probe-rs reset --chip STM32F103C8Tx`。启动 `[I]` 只有这样才会落在本次抓取里。不要在 `flash` 还没结束时加 `--reset`
 - `--no-switch` 不调用 `to-win`
 - 依赖 pyserial。脚本优先 `uv run --with pyserial`。本机代理为 `http://127.0.0.1:7890`
-- 要抓启动行：先让读脚本打开串口，再复位板子
+- 结束时看 `INFO: bytes=`。主循环的 DEBUG 不复位也应该出现。`bytes=0` 表示 CH341 没有收到边沿
 
 WSL 里不要用 `serial-ch341-read.sh`。
 
@@ -72,7 +74,8 @@ picocom -b 1500000 /dev/ttyUSB0
 | 现象 | 处理 |
 |------|------|
 | 无 COM / 无 tty | `status`，再 `to-win` 或 `to-wsl` |
-| 乱码 | 对照工程 `usart.c` 或 HAL 初始化里的波特，然后 `--baud` 或 picocom `-b`。不要猜 |
+| 乱码 | 对照工程 `usart.c` 或 HAL 初始化里的波特，然后 `--baud` 或 picocom `-b`。不要猜。乱码说明线上有边沿 |
+| `INFO: bytes=0` | 口能打开但没有边沿。查 RX←PA9、GND、宿主是否就是这一侧。不要先改波特 |
 | 打不开口 | 已有程序占用。关掉 GUI 或换宿主。不要两端一起占 |
 | WSL Permission denied | 用户加入 `dialout`，或本次用 sudo |
 | 有 LED 无日志 | 波特、RX←PA9、GND、宿主是否切到你正在读的那一侧 |

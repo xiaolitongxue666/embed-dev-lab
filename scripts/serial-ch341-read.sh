@@ -9,6 +9,7 @@
 #   ./scripts/serial-ch341-read.sh --baud 115200 --seconds 8
 #   ./scripts/serial-ch341-read.sh --port COM5 --no-switch
 #   ./scripts/serial-ch341-read.sh --send PING --seconds 3
+#   ./scripts/serial-ch341-read.sh --reset --seconds 8
 #   ./scripts/serial-ch341-read.sh --list
 #   EMBED_SERIAL_BAUD=921600 ./scripts/serial-ch341-read.sh
 #
@@ -35,6 +36,7 @@ SECONDS_CAP=5
 DO_SWITCH=true
 LIST_ONLY=false
 SEND=""
+DO_RESET=false
 
 usage() {
   cat <<'EOF'
@@ -44,6 +46,7 @@ Usage: ./scripts/serial-ch341-read.sh [options]
   --port COMx    Force COM port (default: auto-detect CH341 VID:PID 1a86:5523)
   --seconds N    Capture duration (default: 5)
   --send TEXT    Write TEXT after open (prefix hex: for hex bytes)
+  --reset        After the COM port is open, probe-rs reset (boot log falls in this capture)
   --no-switch    Skip serial-ch341-switch.sh to-win
   --list         List COM ports (mark CH341) and exit
   -h, --help     Show help
@@ -69,6 +72,10 @@ while [[ $# -gt 0 ]]; do
     --send)
       SEND="${2:?}"
       shift 2
+      ;;
+    --reset)
+      DO_RESET=true
+      shift
       ;;
     --no-switch)
       DO_SWITCH=false
@@ -151,6 +158,9 @@ fi
 py_args=(--baud "$BAUD" --seconds "$SECONDS_CAP")
 if [[ -n "$SEND" ]]; then
   py_args+=(--send "$SEND")
+fi
+if [[ "$DO_RESET" == true ]]; then
+  py_args+=(--reset)
 fi
 if [[ -n "$PORT" ]]; then
   py_args+=(--port "$PORT")

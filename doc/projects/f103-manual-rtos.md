@@ -4,7 +4,7 @@ STM32F103C8T6 上的手写调度工程。外设寄存器从 [`f103-manual-reg`](
 
 它不是第三条必须与 manual-reg / cmsis-hal 同步的功能路线。那两条 demo 改行为时，不要默认改这里。`./scripts/build.sh both` 也不包含本工程。
 
-原理六问：[手写调度：上下文切换](../learn/manual-rtos-context-switch.md)。单步演示：[调度器介绍页](../learn/f103-manual-rtos-scheduler.html)。
+原理六问：[手写调度：上下文切换](../learn/manual-rtos-context-switch.md)。单步演示：[调度器介绍页](../learn/f103-manual-rtos-scheduler.html)。时间片与双栈：[f103-manual-rtos-timeslice.html](../learn/f103-manual-rtos-timeslice.html)。PendSV 逐指令：[f103-manual-rtos-pendsv.html](../learn/f103-manual-rtos-pendsv.html)。
 
 ## 构建
 

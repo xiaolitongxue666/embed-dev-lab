@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>f103-manual-rtos · PendSV 逐指令</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1c2128; --border:#30363d;
+  --text:#c9d1d9; --dim:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#f0883e; --cyan:#79c0ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.5;
+}
+.wrap { max-width:1080px; margin:0 auto; padding:16px; }
+h1 { font-size:20px; margin:0 0 6px; color:var(--blue); }
+.nav a { color:var(--dim); margin-right:12px; }
+.panel {
+  background:var(--bg2); border:1px solid var(--border); border-radius:6px;
+  padding:12px 14px; margin:12px 0;
+}
+code, .asm { font-family:Consolas,"JetBrains Mono",monospace; }
+.asm { color:var(--green); font-size:15px; }
+.grid { display:grid; grid-template-columns:1.2fr .8fr; gap:12px; }
+@media (max-width:800px) { .grid { grid-template-columns:1fr; } }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+td { border-bottom:1px solid var(--border); padding:6px 4px; vertical-align:top; }
+td:first-child { color:var(--orange); white-space:nowrap; width:8em; }
+button {
+  background:var(--bg3); color:var(--text); border:1px solid var(--border);
+  border-radius:4px; padding:6px 12px; cursor:pointer;
+}
+button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+button:disabled { opacity:.4; cursor:default; }
+.controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.bar { height:6px; background:var(--bg3); border-radius:3px; margin:8px 0; }
+.bar > div { height:100%; background:var(--blue); border-radius:3px; }
+.note { color:var(--dim); font-size:13px; }
+ol { margin:8px 0 0; padding-left:1.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>PendSV_Handler 逐条指令</h1>
+  <div class="nav">
+    <a href="f103-manual-rtos-scheduler.html">调度器单步</a>
+    <a href="f103-manual-rtos-timeslice.html">时间片与双栈</a>
+    <a href="manual-rtos-context-switch.md">原理</a>
+  </div>
+</header>
+<section class="panel">
+  <div id="stepname"></div>
+  <div class="bar"><div id="progress"></div></div>
+  <p class="asm" id="asm"></p>
+  <p id="explain"></p>
+  <div class="controls">
+    <button id="prev" type="button">上一步</button>
+    <button id="next" type="button">下一步</button>
+    <button id="play" class="primary" type="button">自动播放</button>
+    <button id="reset" type="button">重置</button>
+  </div>
+</section>
+<div class="grid">
+  <section class="panel">
+    <table id="regs"></table>
+  </section>
+  <section class="panel note">
+    <p>进入本段之前，硬件已经把 R0–R3、R12、LR、PC、xPSR 压进 key 的 PSP。下面只补 R4–R11，再换成 usart。</p>
+    <p>地址是示意。key 的硬件帧在 <code>0x20000FE0</code>。usart 的 <code>sp</code> 指着它栈帧里的 R4：<code>0x20001400</code>。</p>
+  </section>
+</div>
+<section class="panel note">
+  <p><code>PUSH</code> / <code>POP</code> 是对当前活动 SP 做 STMDB / LDMIA 的别名。Handler 里活动 SP 是 MSP，所以 R4–R11 必须写明 PSP，不能 <code>PUSH {R4-R11}</code>。</p>
+  <p>Cortex-M3 可以一条指令带走 R8–R11。Cortex-M0 的多寄存器存取只能直接带 R0–R7，高寄存器要先搬到低寄存器。</p>
+  <p>FreeRTOS 的 GCC ARM_CM3 端口在 <code>BL vTaskSwitchContext</code> 前后写 BASEPRI，并在 MSP 上保存 R3 和 R14。本工程的 PendSV 只 <code>PUSH {LR}</code>，不写 BASEPRI。临界区在 <code>os.c</code> 里用 PRIMASK。</p>
+  <ol>
+    <li>先看 <code>MRS R0, PSP</code>：要操作的是任务栈，不是 MSP。</li>
+    <li>再看 <code>STMDB</code>：减 32 字节，R4 在最低地址。</li>
+    <li><code>STR R0, [R2]</code> 把进度写入当前 TCB。</li>
+    <li><code>LDR R0, [R0]</code> 取出下一个任务的 <code>sp</code>。</li>
+    <li><code>MSR PSP, R0</code> 和 <code>BX LR</code> 之后，硬件才从新 PSP 恢复剩下的 8 个字。</li>
+  </ol>
+</section>
+</div>
+<script>
+'use strict';
+const steps = [
+  ['mrs r0, psp',
+    '读出 key 的 PSP。此时它指着硬件刚压好的 8 个字，地址 0x20000FE0。',
+    [['R0', '0x20000FE0', 'key 的硬件帧'], ['PSP', '0x20000FE0', '还没保存 R4–R11'], ['MSP', '0x20004FC0', 'PendSV 自己用主栈'], ['LR', '0xFFFFFFFD', '异常返回值'], ['current', 'key', '还没换人']]],
+  ['cbz r0, 1f',
+    'PSP 不是 0，不跳。第一次由 SVC 启动时才可能是 0；这次 key 已经在跑。',
+    [['R0', '0x20000FE0', '条件不成立'], ['PSP', '0x20000FE0', '继续保存'], ['MSP', '0x20004FC0', '主栈未动'], ['LR', '0xFFFFFFFD', '仍是异常返回值'], ['current', 'key', '当前任务']]],
+  ['stmdb r0!, {r4-r11}',
+    '先减 32 字节再存。R4 落在 0x20000FC0，R11 在 0x20000FDC。R0 和 PSP 寄存器此刻还不是同一个值，PSP 要等后面 MSR 才改。',
+    [['R0', '0x20000FC0', '减 32 之后'], ['PSP', '0x20000FE0', '特殊寄存器还没写'], ['栈', 'R4 在最低地址', 'R11 在旧指针减 4'], ['LR', '0xFFFFFFFD', '未改'], ['current', 'key', '现场还没写入 TCB']]],
+  ['ldr r1, =current_tcb',
+    'R1 拿到 current_tcb 这个符号的地址。sp 是 TCB 的第一项，所以后面写 [R2] 就是写 sp。',
+    [['R1', '&current_tcb', '符号地址（示意）'], ['R0', '0x20000FC0', '准备写入的栈指针'], ['PSP', '0x20000FE0', '未改'], ['LR', '0xFFFFFFFD', '未改'], ['current', 'key', 'TCB 还是 key']]],
+  ['ldr r2, [r1]',
+    'R2 = key 的 TCB 指针。',
+    [['R2', 'TCB_key', '当前任务'], ['R0', '0x20000FC0', '新的 sp'], ['PSP', '0x20000FE0', '未改'], ['LR', '0xFFFFFFFD', '未改'], ['current', 'key', '即将记下 sp']]],
+  ['str r0, [r2]',
+    'key->sp = 0x20000FC0。key 做到哪，记在它自己的 TCB 里。',
+    [['key.sp', '0x20000FC0', '含 R4–R11 和硬件帧'], ['R0', '0x20000FC0', '已存入 TCB'], ['PSP', '0x20000FE0', '寄存器仍是旧值'], ['LR', '0xFFFFFFFD', '还在 LR 里'], ['current', 'key', '人还没换']]],
+  ['push {lr}',
+    'BL 会改写 LR。异常返回值先压进 MSP。这不是 key 的任务现场。',
+    [['MSP', '0x20004FBC', '压了 4 字节'], ['栈上的 LR', '0xFFFFFFFD', '留在主栈'], ['LR', '即将被 BL 改掉', '寄存器里先不用管'], ['PSP', '0x20000FE0', '任务栈指针未改'], ['key.sp', '0x20000FC0', '已经保存']]],
+  ['bl schedule_next',
+    '同级还有 usart，key 的时间片是 0，返回 usart 的 TCB。被抢占时不会旋转链表头。BL 把返回地址写进 LR。',
+    [['R0', 'TCB_usart', 'C 的返回值'], ['LR', 'bl 的返回地址', '异常返回值在 MSP 上'], ['MSP', '0x20004F80', 'schedule_next 的 C 栈（示意）'], ['current', '仍是 key', '下一条才写'], ['usart.sp', '0x20001400', '指着 R4']]],
+  ['pop {lr}',
+    '从 MSP 把 0xFFFFFFFD 取回来。任务现场仍在各自的 PSP 栈上。',
+    [['LR', '0xFFFFFFFD', '异常返回值回来了'], ['MSP', '0x20004FC0', '弹掉刚才压的字'], ['R0', 'TCB_usart', '还没被下一条用掉'], ['PSP', '0x20000FE0', '仍是 key 的旧 PSP'], ['current', 'key', '马上改成 usart']]],
+  ['ldr r1, =current_tcb',
+    '再次取 current_tcb 的地址，准备写成下一个任务。',
+    [['R1', '&current_tcb', '写回用'], ['R0', 'TCB_usart', 'schedule_next 的结果'], ['LR', '0xFFFFFFFD', '已恢复'], ['PSP', '0x20000FE0', '未改'], ['current', 'key', '下一条写入']]],
+  ['str r0, [r1]',
+    'current_tcb = usart。',
+    [['current', 'usart', '已换人'], ['R0', 'TCB_usart', '下一步取出它的 sp'], ['LR', '0xFFFFFFFD', '保持'], ['PSP', '0x20000FE0', '还指着 key'], ['key.sp', '0x20000FC0', 'key 的进度留在 TCB']]],
+  ['ldr r0, [r0]',
+    'R0 = usart->sp = 0x20001400。sp 是 TCB 第一项，所以一条 LDR 就够。',
+    [['R0', '0x20001400', 'usart 栈上的 R4'], ['current', 'usart', '已是当前任务'], ['PSP', '0x20000FE0', '还没装新值'], ['LR', '0xFFFFFFFD', '保持'], ['下一步', 'LDMIA', '从这个地址弹出 R4–R11']]],
+  ['ldmia r0!, {r4-r11}',
+    '先取出 R4，再增加地址。8 个字之后 R0 = 0x20001420，指着 usart 的硬件帧。',
+    [['R0', '0x20001420', '加回 32 字节'], ['R4–R11', 'usart 的值', '从最低地址的 R4 开始取'], ['PSP', '0x20000FE0', '特殊寄存器仍是旧的'], ['LR', '0xFFFFFFFD', '保持'], ['current', 'usart', '现场正在装入']]],
+  ['msr psp, r0',
+    'PSP 正式改指 usart 的硬件帧。之前几条用的是 R0，不是 PSP 这个特殊寄存器。',
+    [['PSP', '0x20001420', 'usart 的硬件帧'], ['R0', '0x20001420', '与 PSP 一致'], ['LR', '0xFFFFFFFD', 'bit2 已经是 1'], ['MSP', '0x20004FC0', '主栈不跟着变'], ['current', 'usart', '切换的核心就是换这个指针']]],
+  ['orr lr, lr, #0x04',
+    'bit2 表示返回后用 PSP。0xFFFFFFFD 这一位本来就是 1，再或一次仍然是返回线程并用 PSP。',
+    [['LR', '0xFFFFFFFD', 'Thread + PSP'], ['PSP', '0x20001420', '硬件将从这里弹出'], ['IPSR', '0x00E', '还在 PendSV'], ['MSP', '0x20004FC0', '返回后不再执行 Handler'], ['current', 'usart', '等待异常返回']]],
+  ['bx lr',
+    '处理器认出异常返回值，离开 Handler，从 usart 的 PSP 弹出 R0–R3、R12、LR、PC、xPSR。usart 从上次的 PC 继续。',
+    [['IPSR', '0x000', '回到 Thread'], ['PSP', '0x20001440', '硬件再弹出 32 字节'], ['PC', 'usart 的 PC', '不是任务入口'], ['LR', 'usart 的 LR', '任务自己的返回地址'], ['MSP', '0x20004FC0', '留给下一次中断']]
+  ]
+];
+
+const $ = (id) => document.getElementById(id);
+let idx = 0;
+let timer = null;
+
+function render() {
+  const s = steps[idx];
+  $('stepname').textContent = '指令 ' + (idx + 1) + ' / ' + steps.length;
+  $('asm').textContent = s[0];
+  $('explain').textContent = s[1];
+  $('progress').style.width = ((idx + 1) / steps.length * 100) + '%';
+  $('prev').disabled = idx === 0;
+  $('next').disabled = idx === steps.length - 1;
+  $('regs').innerHTML = s[2].map((row) =>
+    '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td><td>' + row[2] + '</td></tr>'
+  ).join('');
+}
+
+function stop() {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+    $('play').textContent = '自动播放';
+  }
+}
+
+$('prev').addEventListener('click', () => { stop(); if (idx > 0) { idx--; render(); } });
+$('next').addEventListener('click', () => { stop(); if (idx < steps.length - 1) { idx++; render(); } });
+$('reset').addEventListener('click', () => { stop(); idx = 0; render(); });
+$('play').addEventListener('click', () => {
+  if (timer) { stop(); return; }
+  $('play').textContent = '暂停';
+  timer = setInterval(() => {
+    if (idx >= steps.length - 1) { stop(); return; }
+    idx++;
+    render();
+  }, 1400);
+});
+render();
+</script>
+</body>
+</html>

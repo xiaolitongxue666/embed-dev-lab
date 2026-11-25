@@ -10,6 +10,7 @@
 - 不用 `HAL_Delay`。任务里等节拍用 `os_delay`。BMP280 在调度器启动前仍用 `SysTick_GetMs` 忙等
 - 串口仍是 `LOG_*` → `printf` + `syscalls.c` → `USART1_Write`。多任务发送走 `USART1_Lock`，等 DMA 时不要关中断
 - `OS_TASK_STACK_WORDS` 保持 384。状态任务的 `printf` 在 256 字栈上会写进下一块任务，表现为 HardFault INVPC。不要改回 256
+- 文档不要把本工程写成 `MSR CONTROL` + `ISB`，也不要写成 PendSV 里的 `BASEPRI`。切到 PSP 是 `MSR PSP` 加上异常返回值 `0xFFFFFFFD`。PendSV 只 `PUSH {LR}`。临界区在 `os.c` 里用 PRIMASK
 - 中断里不调用 `os_delay` / `task_create`
 - 时钟在 `SystemInit` 升至 72 MHz。SysTick 重装值 71999。没有 `SystemCoreClock`
 - `main` 在任何 `NVIC_IRQ_SetPriority` 之前调用 `NVIC_SetPriorityGroup4`

@@ -16,5 +16,6 @@ alwaysApply: false
 - 任务等待用 `os_delay`。中断里不调用 `os_delay` / `task_create`
 - 串口 `LOG_*` → printf → DMA TX。多任务发送用 `USART1_Lock`，等 DMA 时中断保持打开
 - `OS_TASK_STACK_WORDS` 保持 384。256 字栈上的 `printf` 会写穿进下一个任务，HardFault 的 CFSR 为 INVPC。不要改回 256
+- 文档不要把本工程写成 `MSR CONTROL` + `ISB`，也不要写成 PendSV 里的 `BASEPRI`。切到 PSP 是 `MSR PSP` 加上异常返回值 `0xFFFFFFFD`。PendSV 只 `PUSH {LR}`。临界区用 PRIMASK
 - `main` 先 `NVIC_SetPriorityGroup4`，再写外设 NVIC 优先级
 - 构建：`./scripts/build.sh f103-manual-rtos`；文档：`doc/projects/f103-manual-rtos.md`

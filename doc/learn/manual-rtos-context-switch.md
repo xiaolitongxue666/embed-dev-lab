@@ -1,6 +1,6 @@
 # 手写调度：上下文切换
 
-这篇只讲 `f103-manual-rtos` 里那套 SysTick(System Tick: 内核节拍定时器) + PendSV(Pendable Service Call: 可挂起服务调用) 为什么能让一个核看起来在同时跑多个任务。单步演示见 [调度器介绍页](f103-manual-rtos-scheduler.html)。接线、任务周期和排错在 [f103-manual-rtos 工程说明](../projects/f103-manual-rtos.md)。向量号和 NVIC(Nested Vectored Interrupt Controller: 嵌套向量中断控制器) 优先级位见 [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)。
+这篇只讲 `f103-manual-rtos` 里那套 SysTick(System Tick: 内核节拍定时器) + PendSV(Pendable Service Call: 可挂起服务调用) 为什么能让一个核看起来在同时跑多个任务。单步演示见 [调度器介绍页](f103-manual-rtos-scheduler.html)。时间片见 [时间片与双栈](f103-manual-rtos-timeslice.html)。PendSV 逐条指令见 [PendSV 逐指令](f103-manual-rtos-pendsv.html)。接线、任务周期和排错在 [f103-manual-rtos 工程说明](../projects/f103-manual-rtos.md)。向量号和 NVIC(Nested Vectored Interrupt Controller: 嵌套向量中断控制器) 优先级位见 [中断向量表与 NVIC](interrupt-vector-table-and-nvic.md)。
 
 源码符号：`PendSV_Handler`、`SVC_Handler`、`SysTick_Handler`、`tcb_t`、`idle_task`。
 
@@ -19,6 +19,30 @@ STM32F103 是 Cortex-M3。下面几件事硬件直接支持，本工程都用上
 
 不链接 CMSIS(Cortex Microcontroller Software Interface Standard: 内核软件接口标准)，也不使用标准库的 `stm32f10x.h`。优先级写 `SCB_SHPR3`。SCB(System Control Block: 系统控制块) 的 SHPR3(System Handler Priority Register 3: 系统异常优先级寄存器 3) 放着系统异常的优先级。挂起 PendSV(Pendable Service Call: 可挂起服务调用) 写 `SCB_ICSR` 的 bit28。ICSR(Interrupt Control and State Register: 中断控制及状态寄存器) 的这一位只表示“记一笔，稍后做”。
 
+## 从 main 到第一次任务，再到以后每次切换
+
+可以把 MSP(Main Stack Pointer: 主栈指针) 和 PSP(Process Stack Pointer: 进程栈指针) 想成两本记事本。中断和内核记在 MSP 上，普通任务记在 PSP 上。全芯片只有一个 PSP 寄存器。每个任务有自己的一块栈；切换时把该任务 TCB(Task Control Block: 任务控制块) 里的 `sp` 装进这个寄存器。
+
+复位后 CPU(Central Processing Unit: 中央处理器) 在 Thread 模式，活动栈是 MSP。MSP 的初值来自向量表第一个字，链接脚本里的 `_estack`（`0x20005000`）。PSP 复位后没有可用的初值，必须由软件先写入。
+
+`os_start` 选好第一个任务后执行 `svc #0`。SVC(Supervisor Call: 监督调用) 是同步异常，立刻进入 Handler 模式，活动栈强制换成 MSP。`SVC_Handler` 只做这一次起跑：从 TCB 弹出 R4–R11，`MSR PSP`，把 `os_running` 写成 1，再把 LR(Link Register: 链接寄存器，存放返回地址) 的 bit2 置上，然后 `BX LR`。返回 Thread 时，硬件按异常返回值 `0xFFFFFFFD` 改用 PSP。第一个任务从这里开始跑。
+
+有的移植在 SVC 处理函数里写 CONTROL(Control Register: 控制寄存器) 的 SPSEL 位，再执行 `ISB`。本工程的 `port.c` 不写 CONTROL，也不执行 `ISB`。切到 PSP 靠的是 `MSR PSP` 加上这条异常返回值。
+
+SVC 之后的换人不再走 SVC。SysTick(System Tick: 内核节拍定时器) 或 `os_delay` 只挂起 PendSV(Pendable Service Call: 可挂起服务调用)。PendSV 的优先级是 `0xF0`，等高优先级中断做完才运行。进入 PendSV 时，硬件已经把 R0–R3、R12、LR、PC(Program Counter: 程序计数器)、xPSR(Program Status Register: 程序状态寄存器) 压进当时正在用的栈。任务在跑时，这 8 个字进的是它的 PSP 栈。随后活动栈换成 MSP，Handler 自己的压栈和任务现场分开。
+
+PendSV 再把 R4–R11 压进同一块 PSP 栈，把此时的指针写入 `current_tcb->sp`，再从下一个 TCB 取出 `sp` 装回 PSP。时间片到 0 且同级只剩当前任务时，只重装时间片，不挂 PendSV。
+
+搬运这 8 个寄存器的方向：
+
+- STMDB(Store Multiple Decrement Before: 先减地址再存) `R0!, {R4-R11}`：8 个字，共减 32 字节。最低编号的 R4 落在最低地址（旧指针减 32），R11 在这块的最高地址（旧指针减 4）。栈向下长，所以是先减再存。
+- LDMIA(Load Multiple Increment After: 先取出再增地址) 方向相反。R4 从最低地址弹出，指针加回 32。
+- `PUSH` / `POP` 是对当前活动 SP 做 STMDB / LDMIA 的别名。Handler 里活动 SP 是 MSP，所以保存任务现场必须写明 PSP，不能用会作用在 MSP 上的 `PUSH {R4-R11}`。
+
+Cortex-M3 的 Thumb-2 可以在一条 `STMDB` / `LDMIA` 里带上 R8–R11。Cortex-M0 的多寄存器存取只能直接带 R0–R7。R8–R11 要先搬到低寄存器再存，恢复时用来中转的低寄存器最后恢复。本工程是 Cortex-M3，用一条 `{R4-R11}`。
+
+FreeRTOS 的 GCC `ARM_CM3` 端口在 `BL vTaskSwitchContext` 前后用 BASEPRI(Base Priority Register: 优先级屏蔽阈值)，并在 MSP 上保存 `R3` 和 `R14`。源码见 [FreeRTOS ARM_CM3 port.c](https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/portable/GCC/ARM_CM3/port.c)。本工程的 PendSV 只 `PUSH {LR}`。临界区在 `os.c` 里用 PRIMASK(Priority Mask Register: 优先级屏蔽，关掉可配置中断)，不在 PendSV 里写 BASEPRI。
+
 ## PendSV(Pendable Service Call: 可挂起服务调用)
 
 PendSV(Pendable Service Call: 可挂起服务调用) 是专门用来换任务的异常。
@@ -33,7 +57,7 @@ PendSV(Pendable Service Call: 可挂起服务调用) 是专门用来换任务的
 
 R4 到 R11(Register 4–11: 被调函数要保存的通用寄存器) 是 CPU(Central Processing Unit: 中央处理器) 里的通用寄存器。C 源码里写这些名字不会通过，编译器按 AAPCS(Procedure Call Standard for the ARM Architecture: ARM 过程调用标准) 自己分配。这 8 个是被调函数要保存的寄存器。
 
-汇编可以直接点名。`STMDB R0!, {R4-R11}` 的意思是：STMDB(Store Multiple Decrement Before: 先减地址再存多个寄存器) 把 R4 到 R11 按高到低存进 R0 指向的内存，R0 每次先减再写。
+汇编可以直接点名。`STMDB R0!, {R4-R11}` 先把指针减 32 字节，再把 8 个寄存器写入这块内存。R4 在最低地址，R11 在最高地址（旧指针减 4）。
 
 异常进入时，硬件已经把 R0–R3、R12、LR(Link Register: 链接寄存器，存放返回地址)、PC(Program Counter: 程序计数器)、xPSR(Program Status Register: 程序状态寄存器) 压进**当前正在用的栈**。任务跑在 PSP(Process Stack Pointer: 进程栈指针) 上时，这 8 个字进的是任务栈。`PendSV_Handler` 因此只再保存 R4–R11，然后改 PSP(Process Stack Pointer: 进程栈指针)。两边加起来才是完整现场。
 

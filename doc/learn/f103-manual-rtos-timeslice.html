@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>f103-manual-rtos · 时间片与双栈</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1c2128; --border:#30363d;
+  --text:#c9d1d9; --dim:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#f0883e; --cyan:#79c0ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.5;
+}
+.wrap { max-width:1080px; margin:0 auto; padding:16px; }
+header { margin-bottom:12px; }
+h1 { font-size:20px; margin:0 0 6px; color:var(--blue); }
+.nav a { color:var(--dim); margin-right:12px; }
+.panel {
+  background:var(--bg2); border:1px solid var(--border); border-radius:6px;
+  padding:12px 14px; margin-bottom:12px;
+}
+.stepname { font-weight:600; color:var(--cyan); }
+.bar { height:6px; background:var(--bg3); border-radius:3px; margin:8px 0; }
+.bar > div { height:100%; background:var(--blue); border-radius:3px; }
+.grid { display:grid; grid-template-columns:1.1fr .9fr .9fr; gap:12px; }
+@media (max-width:900px) { .grid { grid-template-columns:1fr; } }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+td { border-bottom:1px solid var(--border); padding:6px 4px; vertical-align:top; }
+td:first-child { color:var(--orange); white-space:nowrap; width:7.5em; }
+.stack { font-family:Consolas,"JetBrains Mono",monospace; font-size:12px; }
+.stack div { padding:3px 8px; border-bottom:1px solid var(--border); }
+.stack div.top { background:rgba(88,166,255,.18); color:#fff; }
+h2 { font-size:13px; margin:0 0 8px; color:var(--dim); font-weight:600; }
+button {
+  background:var(--bg3); color:var(--text); border:1px solid var(--border);
+  border-radius:4px; padding:6px 12px; cursor:pointer;
+}
+button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+button:disabled { opacity:.4; cursor:default; }
+.controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.note { color:var(--dim); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>时间片到期后，key 怎样换成 usart</h1>
+  <div class="nav">
+    <a href="f103-manual-rtos-scheduler.html">调度器单步</a>
+    <a href="f103-manual-rtos-pendsv.html">PendSV 逐指令</a>
+    <a href="manual-rtos-context-switch.md">原理</a>
+  </div>
+</header>
+<section class="panel">
+  <div class="stepname" id="stepname"></div>
+  <div class="bar"><div id="progress"></div></div>
+  <p id="explain"></p>
+  <div class="controls">
+    <button id="prev" type="button">上一步</button>
+    <button id="next" type="button">下一步</button>
+    <button id="play" class="primary" type="button">自动播放</button>
+    <button id="reset" type="button">重置</button>
+  </div>
+</section>
+<div class="grid">
+  <section class="panel">
+    <h2>寄存器（地址是示意）</h2>
+    <table id="regs"></table>
+  </section>
+  <section class="panel">
+    <h2>PSP 栈 · 任务现场</h2>
+    <div class="stack" id="psp"></div>
+    <p class="note" id="psp-note"></p>
+  </section>
+  <section class="panel">
+    <h2>MSP 栈 · 中断现场</h2>
+    <div class="stack" id="msp"></div>
+    <p class="note" id="msp-note"></p>
+  </section>
+</div>
+<p class="note">key 与 usart 都是优先级 4，时间片 1 ms。同级只剩当前任务时不挂起 PendSV。本工程不写 CONTROL，也不在 PendSV 里写 BASEPRI。异常返回值 0xFFFFFFFD 表示回到线程并用 PSP。</p>
+</div>
+<script>
+'use strict';
+const states = [
+  {
+    title: 'SVC 起跑之后',
+    desc: '复位后 Thread 模式用 MSP。os_start 选中 key，执行 svc #0。SVC_Handler 在 MSP 上弹出 R4–R11，MSR PSP，把 os_running 写成 1，再把 LR 的 bit2 置上后返回。这一帧是返回之后：key 已经在 PSP 上跑。本工程没有写 CONTROL，也没有 ISB。',
+    regs: [
+      ['IPSR', '0x000', 'Thread 模式'],
+      ['PSP', '0x20001000', 'key 的当前栈顶（示意）'],
+      ['MSP', '0x20004FC0', 'main 和 SVC 用过的主栈，留在原地'],
+      ['LR', '任务 LR', 'key 自己的返回地址，不是这次异常的返回值'],
+      ['ICSR', '0x00000000', '没有挂起的 PendSV'],
+      ['当前任务', 'key', '优先级 4，时间片还剩 1 拍']
+    ],
+    psp: ['key 局部变量', 'key 调用现场', 'PSP → 0x20001000'],
+    msp: ['SVC 留下的帧', 'main 的栈', 'MSP → 0x20004FC0'],
+    pspNote: '全芯片只有一个 PSP 寄存器。key 有自己的一块栈，指针现在指着它。',
+    mspNote: '中断接下来仍用 MSP。key 的进度不写在这本记事本上。'
+  },
+  {
+    title: 'key 正在运行',
+    desc: 'CPU 在 Thread 模式执行 key。活动栈是 PSP。SysTick 还在递减，这一拍还没到。',
+    regs: [
+      ['IPSR', '0x000', 'Thread 模式'],
+      ['PSP', '0x20001000', 'key 当前栈顶'],
+      ['MSP', '0x20004FC0', '内核主栈'],
+      ['LR', 'key 的 LR', '普通函数返回地址'],
+      ['ICSR', '0x00000000', '没有挂起的 SysTick / PendSV'],
+      ['时间片', '1', 'OS_TIME_SLICE_TICKS']
+    ],
+    psp: ['key 局部变量', 'key 调用现场', 'PSP →'],
+    msp: ['主栈空闲区', '等待下一次异常', 'MSP →'],
+    pspNote: 'key 的 PSP 指向自己的栈。',
+    mspNote: 'Thread 模式这一拍不使用 MSP。'
+  },
+  {
+    title: '硬件自动压栈',
+    desc: 'SysTick 数到 0。硬件把 R0–R3、R12、LR、PC、xPSR 共 8 个字压进 key 正在用的 PSP 栈，然后进入 Handler 模式，活动栈换成 MSP。',
+    regs: [
+      ['IPSR', '0x00F', '异常号 15：SysTick'],
+      ['PSP', '0x20000FE0', '压入 32 字节之后'],
+      ['MSP', '0x20004FC0', 'Handler 从这里开始用主栈'],
+      ['LR', '0xFFFFFFFD', '异常返回：回线程并用 PSP'],
+      ['ICSR', '0x00000000', 'SysTick 已被响应'],
+      ['当前任务', 'key', '现场冻在它自己的栈里']
+    ],
+    psp: ['xPSR', 'PC', 'LR', 'R12', 'R3', 'R2', 'R1', 'R0', 'key 原有栈'],
+    msp: ['MSP → Handler 栈顶', 'SysTick 尚未压自己的局部量'],
+    pspNote: '这 8 个字在 key 的栈上，不在 MSP 上。图中从上到下是高地址到低地址。',
+    mspNote: '进入 Handler 后，C 代码使用 MSP。'
+  },
+  {
+    title: 'SysTick 只拍板',
+    desc: 'SysTick_Handler 加毫秒、走延时链表，并把 key 的时间片减到 0。同级还有 usart，于是写 ICSR 的 bit28，挂起 PendSV。这里不换栈。',
+    regs: [
+      ['IPSR', '0x00F', '仍在 SysTick'],
+      ['PSP', '0x20000FE0', 'key 的硬件帧还在'],
+      ['MSP', '0x20004F80', 'SysTick 的 C 调用栈（示意）'],
+      ['LR', '0xFFFFFFFD', '异常返回值'],
+      ['ICSR', '0x10000000', 'PENDSVSET = 1'],
+      ['时间片', '0', 'key 这一拍用完了']
+    ],
+    psp: ['xPSR', 'PC', 'LR', 'R12', 'R0–R3', 'key 原有栈'],
+    msp: ['SysTick 局部量', 'MSP → 调用帧'],
+    pspNote: 'PSP 没有再变。key 的硬件现场仍在自己的栈里。',
+    mspNote: '挂起只是记一笔。串口、DMA、按键若还在跑，PendSV 会等它们结束。'
+  },
+  {
+    title: 'PendSV 保存 key 的 R4–R11',
+    desc: 'SysTick 返回后进入 PendSV（异常号 14）。MRS 读出 PSP，STMDB 把 R4–R11 再压 32 字节。R4 在最低地址。然后把新指针写入 key 的 TCB。',
+    regs: [
+      ['IPSR', '0x00E', '异常号 14：PendSV'],
+      ['PSP', '0x20000FC0', '再减 32 字节'],
+      ['MSP', '0x20004F7C', 'PUSH {LR} 把异常返回值留在主栈'],
+      ['LR', '0xFFFFFFFD', '还在 MSP 上，没有被 BL 冲掉'],
+      ['ICSR', '0x00000000', 'PendSV 已被响应'],
+      ['key.sp', '0x20000FC0', 'TCB 记住 key 做到哪']
+    ],
+    psp: ['R11', 'R10', 'R9', 'R8', 'R7', 'R6', 'R5', 'R4', '硬件 8 字', 'key 原有栈'],
+    msp: ['保存的 LR', 'PendSV 在主栈上跑'],
+    pspNote: '软件的 8 个字叠在硬件 8 个字下面。R4 在 0x20000FC0，R11 在 0x20000FDC。',
+    mspNote: 'PUSH {LR} 作用在 MSP。任务的 R4–R11 写在 PSP 上。'
+  },
+  {
+    title: 'schedule_next 选中 usart',
+    desc: 'BL schedule_next 之前 LR 已压进 MSP。key 与 usart 同为优先级 4，key 的时间片是 0，链表头拨到 usart。更高优先级抢占时不会这样旋转。',
+    regs: [
+      ['IPSR', '0x00E', '仍在 PendSV'],
+      ['PSP', '0x20000FC0', '还指着 key，下一条才装 usart'],
+      ['MSP', '0x20004F40', 'schedule_next 的 C 栈（示意）'],
+      ['LR', '在 MSP 上', 'BL 改过的是寄存器里的 LR'],
+      ['current', '即将变成 usart', '返回值是 usart 的 TCB'],
+      ['usart.sp', '0x20001400', '指着 usart 栈帧里的 R4']
+    ],
+    psp: ['key：R4 在最低地址', 'key：R11 … 硬件帧', 'key 的进度已保存'],
+    msp: ['schedule_next 调用帧', '压着的异常返回值'],
+    pspNote: '选人的时候还不改 PSP。key 的现场已经在 TCB 里。',
+    mspNote: 'MSP 不会变成 usart 的栈。'
+  },
+  {
+    title: '恢复 usart 的 R4–R11',
+    desc: 'POP {LR} 把异常返回值取回。current_tcb 改成 usart，从它的 sp 做 LDMIA，弹出 R4–R11。PSP 停在 usart 的硬件帧上。',
+    regs: [
+      ['IPSR', '0x00E', '仍在 PendSV'],
+      ['PSP', '0x20001420', '弹出 32 字节之后，指着硬件帧'],
+      ['MSP', '0x20004F80', 'LR 已弹回寄存器'],
+      ['LR', '0xFFFFFFFD', 'bit2 已是 1，返回线程并用 PSP'],
+      ['R4–R11', 'usart 的值', '从 usart 的栈弹出'],
+      ['current', 'usart', 'TCB 已换人']
+    ],
+    psp: ['xPSR', 'PC', 'LR', 'R12', 'R0–R3', 'usart 原有栈'],
+    msp: ['PendSV 即将退出', '主栈不再保存任务现场'],
+    pspNote: 'LDMIA 先取 R4 再加地址。8 个字取完，指针加回 32。',
+    mspNote: '异常返回值在 LR 里，不在 usart 的栈帧里。'
+  },
+  {
+    title: '异常返回，硬件恢复 usart',
+    desc: 'BX LR。处理器认出 0xFFFFFFFD：回到 Thread，并用 PSP。硬件从 usart 的栈弹出 R0–R3、R12、LR、PC、xPSR。usart 从上次停下的指令继续，不是从头再进任务函数。',
+    regs: [
+      ['IPSR', '0x000', '回到 Thread'],
+      ['PSP', '0x20001440', '硬件再弹出 32 字节'],
+      ['MSP', '0x20004FC0', '主栈回到 Handler 之前附近'],
+      ['LR', 'usart 的 LR', '任务自己的返回地址'],
+      ['PC', 'usart 的 PC', '上次被打断的位置'],
+      ['ICSR', '0x00000000', '这次 PendSV 已处理完']
+    ],
+    psp: ['usart 局部变量', 'usart 调用现场', 'PSP →'],
+    msp: ['主栈空闲', '等待下一次异常'],
+    pspNote: '硬件弹出的是 usart 自己的 8 个字。',
+    mspNote: '回到 Thread 后活动栈是 PSP。'
+  },
+  {
+    title: 'usart 继续运行',
+    desc: 'CPU 现在执行 usart。下一个节拍若 key 也就绪，同级时间片用尽会再轮转。若这一级只剩 usart，只重装时间片，不挂起 PendSV。',
+    regs: [
+      ['IPSR', '0x000', 'Thread 模式'],
+      ['PSP', '0x20001440', 'usart 当前栈顶'],
+      ['MSP', '0x20004FC0', '留给下一次中断'],
+      ['LR', 'usart 的 LR', '普通执行现场'],
+      ['ICSR', '0x00000000', '当前无挂起异常'],
+      ['当前任务', 'usart', '优先级 4']
+    ],
+    psp: ['usart 当前栈', '局部变量 / 调用现场', 'PSP →'],
+    msp: ['MSP 栈顶', '等待中断', '内核主栈'],
+    pspNote: 'usart 从断点继续。切换的是栈指针和寄存器，不是把函数入口再调用一次。',
+    mspNote: '以后的异常仍先压进当时的 PSP，再改用 MSP。'
+  }
+];
+
+const $ = (id) => document.getElementById(id);
+let idx = 0;
+let timer = null;
+
+function render() {
+  const s = states[idx];
+  $('stepname').textContent = '阶段 ' + (idx + 1) + ' / ' + states.length + '：' + s.title;
+  $('explain').textContent = s.desc;
+  $('progress').style.width = ((idx + 1) / states.length * 100) + '%';
+  $('prev').disabled = idx === 0;
+  $('next').disabled = idx === states.length - 1;
+  $('regs').innerHTML = s.regs.map((row) =>
+    '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td><td>' + row[2] + '</td></tr>'
+  ).join('');
+  $('psp').innerHTML = s.psp.map((line, i) =>
+    '<div' + (i === 0 ? ' class="top"' : '') + '>' + line + '</div>'
+  ).join('');
+  $('msp').innerHTML = s.msp.map((line, i) =>
+    '<div' + (i === 0 ? ' class="top"' : '') + '>' + line + '</div>'
+  ).join('');
+  $('psp-note').textContent = s.pspNote;
+  $('msp-note').textContent = s.mspNote;
+}
+
+function stop() {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+    $('play').textContent = '自动播放';
+  }
+}
+
+$('prev').addEventListener('click', () => { stop(); if (idx > 0) { idx--; render(); } });
+$('next').addEventListener('click', () => { stop(); if (idx < states.length - 1) { idx++; render(); } });
+$('reset').addEventListener('click', () => { stop(); idx = 0; render(); });
+$('play').addEventListener('click', () => {
+  if (timer) { stop(); return; }
+  $('play').textContent = '暂停';
+  timer = setInterval(() => {
+    if (idx >= states.length - 1) { stop(); return; }
+    idx++;
+    render();
+  }, 1600);
+});
+render();
+</script>
+</body>
+</html>

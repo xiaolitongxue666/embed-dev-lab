@@ -28,6 +28,9 @@ html,body {
   border-radius:6px; flex-shrink:0; gap:12px; flex-wrap:wrap;
 }
 .title { font-size:15px; font-weight:600; color:var(--blue); }
+.learn-nav { margin-top:4px; font-size:12px; font-weight:400; }
+.learn-nav a { color:var(--dim); text-decoration:none; }
+.learn-nav a:hover { color:var(--blue); }
 .status { display:flex; gap:16px; font-size:12px; color:var(--dim); flex-wrap:wrap; }
 .status b { color:var(--green); font-weight:600; }
 .status b.dimmed { color:var(--dim); font-weight:600; }
@@ -427,7 +430,9 @@ button:disabled { opacity:.4; cursor:not-allowed; }
 <body>
 <div class="app">
   <header class="header">
-    <div class="title">f103-manual-rtos · 手写调度器</div>
+    <div class="title">f103-manual-rtos · 手写调度器
+      <div class="learn-nav"><a href="f103-manual-rtos-timeslice.html">时间片与双栈</a> · <a href="f103-manual-rtos-pendsv.html">PendSV 逐指令</a> · <a href="manual-rtos-context-switch.md">原理</a></div>
+    </div>
     <div class="status">
       <span>Tick: <b id="hdr-tick">0</b></span>
       <span>模式: <b id="hdr-mode">-</b></span>

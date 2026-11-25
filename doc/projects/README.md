@@ -28,6 +28,8 @@ doc/projects/<name>.md    # 工程说明、硬件要点、排错（本目录）
 | 裸机 printf / nosys / HAL 串口 | [newlib-nosys-stdio-retarget.md](../learn/newlib-nosys-stdio-retarget.md) |
 | vendor-pack 三层参照 | [stm32-cmsis-component-repos.md](../learn/stm32-cmsis-component-repos.md) §5 |
 | 手写调度与上下文切换 | [manual-rtos-context-switch.md](../learn/manual-rtos-context-switch.md) |
+| 时间片与双栈演示 | [f103-manual-rtos-timeslice.html](../learn/f103-manual-rtos-timeslice.html) |
+| PendSV 逐指令演示 | [f103-manual-rtos-pendsv.html](../learn/f103-manual-rtos-pendsv.html) |
 
 ## 新增工程 checklist
 

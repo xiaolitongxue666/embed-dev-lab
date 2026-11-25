@@ -19,7 +19,7 @@ description: STM32F103 embed-dev-lab 开发规范 — 选择编译、烧写、�
 ## 硬约束
 
 - 双路线：`f103-manual-reg`（手写寄存器）与 `f103-cmsis-hal`（CMSIS+HAL，Cube 风格，非 CubeMX 生成）。对外行为对齐，除非用户明确只改一边。规则：[`.agent/rules/architecture.md`](../../rules/architecture.md)
-- `f103-manual-rtos`：手写 SysTick + PendSV，外设同 manual-reg。不参与双路线同步，`both` 不编译它。任务栈保持 384 字。规则：[`.agent/rules/f103-manual-rtos.md`](../../rules/f103-manual-rtos.md)
+- `f103-manual-rtos`：手写 SysTick + PendSV，外设同 manual-reg。不参与双路线同步，`both` 不编译它。任务栈保持 384 字。切到 PSP 用 `MSR PSP` 和异常返回值 `0xFFFFFFFD`，不写 CONTROL，PendSV 里不用 BASEPRI。规则：[`.agent/rules/f103-manual-rtos.md`](../../rules/f103-manual-rtos.md)。演示：[时间片与双栈](../../../doc/learn/f103-manual-rtos-timeslice.html)、[PendSV 逐指令](../../../doc/learn/f103-manual-rtos-pendsv.html)
 - `bytes=0` 时先按 serial-console 对照 USART 寄存器，不要改接线。`probe-rs list` 为空时先按 firmware-flash 区分描述符失败和 WinUSB
 - Windows 脚本在 Git Bash 运行
 - `./scripts/build.sh <module> flash` 不编译。改代码后先 build

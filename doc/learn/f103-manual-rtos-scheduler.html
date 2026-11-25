@@ -76,8 +76,8 @@ html,body {
 .right-col {
   display:flex; flex-direction:column; gap:8px; min-height:0;
 }
-.flow-panel { flex:0 1 auto; max-height:58%; }
-.reg-panel { flex:1 1 auto; min-height:120px; }
+.flow-panel { flex:1 1 auto; max-height:64%; min-height:0; }
+.reg-panel { flex:1 1 auto; min-height:88px; }
 
 .flowchart {
   flex:1; overflow-y:auto;
@@ -157,15 +157,38 @@ html,body {
   font-family:monospace;
   transition:color .3s;
 }
-.fc-arrow svg { width:14px; height:14px; }
-.fc-arrow svg path { stroke:currentColor; }
-
+.fc-stem-wrap {
+  position:relative; display:flex; flex-direction:column;
+  align-items:center; width:14px; height:28px;
+}
+.fc-stem-svg { width:14px; height:18px; display:block; }
+.fc-head-svg { width:14px; height:10px; display:block; }
+.fc-arrow svg path { stroke:currentColor; fill:none; }
+.fc-stem {
+  stroke-dasharray:3 4;
+  animation:stem-flow 1.15s linear infinite;
+}
+@keyframes stem-flow { to { stroke-dashoffset:-14; } }
 @keyframes arrow-flow {
   0%,100% { transform:translateY(-1px); }
   50%     { transform:translateY(2px); }
 }
 .fc-arrow.active { color:var(--yellow); font-weight:600; }
-.fc-arrow.active svg { animation:arrow-flow .7s ease-in-out infinite; }
+.fc-arrow.active .fc-stem { animation-duration:.45s; }
+.fc-arrow.active .fc-head-svg { animation:arrow-flow .7s ease-in-out infinite; }
+.fc-dot {
+  position:absolute; left:50%; top:0; width:5px; height:5px;
+  margin-left:-2.5px; border-radius:50%;
+  background:var(--yellow); box-shadow:0 0 6px var(--yellow);
+  opacity:0; pointer-events:none;
+}
+.fc-arrow.active .fc-dot { opacity:1; animation:fc-dot-down .7s linear infinite; }
+@keyframes fc-dot-down {
+  0% { transform:translateY(0); opacity:0; }
+  18% { opacity:1; }
+  82% { opacity:1; }
+  100% { transform:translateY(16px); opacity:0; }
+}
 
 .fc-loop {
   display:flex; align-items:center; gap:8px;
@@ -174,12 +197,30 @@ html,body {
   font-family:monospace; transition:color .3s;
 }
 .fc-loop-line {
-  flex:1; height:1px;
+  position:relative; flex:1; height:2px;
   background:repeating-linear-gradient(90deg,currentColor 0 4px,transparent 4px 8px);
+  background-size:8px 2px;
   opacity:.5;
+  animation:loop-march 1.2s linear infinite;
+}
+.fc-loop-line::after {
+  content:""; position:absolute; top:50%; left:0;
+  width:5px; height:5px; margin-top:-2.5px; border-radius:50%;
+  background:var(--yellow); box-shadow:0 0 6px var(--yellow);
+  opacity:0;
 }
 .fc-loop.active { color:var(--yellow); font-weight:600; }
-.fc-loop.active .fc-loop-line { opacity:1; }
+.fc-loop.active .fc-loop-line { opacity:1; animation-duration:.45s; }
+.fc-loop.active .fc-loop-line::after { opacity:1; animation:loop-dot .8s linear infinite; }
+#arrow-wake .fc-loop-line { animation-direction:reverse; }
+#arrow-wake.active .fc-loop-line::after { animation-direction:reverse; }
+@keyframes loop-march { to { background-position:8px 0; } }
+@keyframes loop-dot {
+  0% { left:0; opacity:0; }
+  12% { opacity:1; }
+  88% { opacity:1; }
+  100% { left:calc(100% - 5px); opacity:0; }
+}
 
 .regs-grid {
   display:grid; grid-template-columns:1fr 1fr; gap:4px;
@@ -204,7 +245,7 @@ html,body {
 
 .tasks-row {
   display:flex; gap:8px; overflow-x:auto;
-  height:250px; flex-shrink:0; padding:0;
+  height:150px; flex-shrink:0; padding:0;
 }
 .task-card {
   flex:1 0 200px; max-width:280px;
@@ -256,7 +297,7 @@ html,body {
 
 .bottom-row {
   display:grid; grid-template-columns:1fr 1fr; gap:8px;
-  height:140px; flex-shrink:0;
+  height:104px; flex-shrink:0;
 }
 #lists-content, #log-content { padding:8px; overflow-y:auto; flex:1; }
 #log-content { font-family:monospace; font-size:11px; line-height:1.6; }
@@ -307,6 +348,80 @@ button:disabled { opacity:.4; cursor:not-allowed; }
 .controls label { font-size:12px; color:var(--dim); }
 #step-counter { margin-left:auto; color:var(--dim);
   font-family:monospace; font-size:12px; }
+
+.overview-panel { height:190px; flex-shrink:0; }
+.ov-canvas {
+  position:relative; flex:1; min-height:0;
+  display:grid;
+  grid-template-columns:minmax(148px,1.15fr) 1fr 1fr 1fr;
+  gap:18px 26px; align-items:stretch;
+  padding:16px 14px 22px;
+  background-color:var(--bg);
+  background-image:radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size:16px 16px;
+}
+.ov-svg {
+  position:absolute; inset:0; width:100%; height:100%;
+  z-index:0; pointer-events:none; overflow:visible;
+}
+.ov-path {
+  fill:none; stroke:var(--dim); stroke-width:1.5;
+  stroke-linecap:round; stroke-dasharray:5 7; opacity:.55;
+  animation:ov-dash 1.5s linear infinite;
+}
+.ov-path.active { stroke:var(--yellow); opacity:1; animation-duration:.65s; }
+@keyframes ov-dash { to { stroke-dashoffset:-24; } }
+.ov-dot { fill:var(--yellow); stroke:var(--yellow); stroke-width:4; stroke-opacity:.35; }
+.ov-card {
+  position:relative; z-index:1; min-width:0;
+  display:flex; flex-direction:column; overflow:hidden;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:6px; padding:6px 8px;
+}
+.ov-card[data-state="ready"]  { border-left:3px solid var(--blue); }
+.ov-card[data-state="running"]{ border-left:3px solid var(--green); }
+.ov-card[data-state="delayed"]{ border-left:3px solid var(--orange); }
+.ov-hub { border-left:3px solid var(--cyan); }
+.ov-card[data-state="running"] .fc-count { background:rgba(63,185,80,.15); color:var(--green); }
+.ov-card[data-state="delayed"] .fc-count { background:rgba(240,136,62,.15); color:var(--orange); }
+.ov-card .fc-tasks { max-height:64px; overflow:auto; }
+.ov-meta {
+  display:grid; grid-template-columns:auto minmax(0,1fr);
+  gap:2px 8px; align-items:baseline;
+  font-family:"JetBrains Mono",Consolas,monospace;
+  font-size:11px; color:var(--dim);
+}
+.ov-meta b {
+  color:var(--text); font-weight:600; text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.ov-pend {
+  display:flex; align-items:center; gap:6px;
+  margin-top:6px; color:var(--dim); font-size:10px;
+  font-family:"JetBrains Mono",Consolas,monospace;
+}
+.ov-pend b { font-weight:600; color:var(--dim); }
+.ov-pend b.hot { color:var(--green); }
+.ov-stem {
+  position:relative; flex:1; min-width:28px; height:2px;
+  color:var(--dim);
+  background:repeating-linear-gradient(90deg,currentColor 0 4px,transparent 4px 8px);
+  background-size:8px 2px; opacity:.5;
+  animation:loop-march 1.2s linear infinite;
+}
+.ov-stem::after {
+  content:""; position:absolute; top:50%; left:0;
+  width:5px; height:5px; margin-top:-2.5px; border-radius:50%;
+  background:var(--yellow); box-shadow:0 0 6px var(--yellow); opacity:0;
+}
+.ov-pend.active .ov-stem { color:var(--yellow); opacity:1; animation-duration:.45s; }
+.ov-pend.active .ov-stem::after { opacity:1; animation:loop-dot .7s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-stem, .fc-dot, .fc-head-svg, .fc-loop-line, .fc-loop-line::after,
+  .ov-path, .ov-stem, .ov-stem::after { animation:none !important; }
+  .ov-dot { display:none; }
+}
 </style>
 </head>
 <body>
@@ -322,6 +437,47 @@ button:disabled { opacity:.4; cursor:not-allowed; }
       <span>PendSV: <b id="hdr-pendsv" class="dimmed">空闲</b></span>
     </div>
   </header>
+
+  <section class="panel overview-panel">
+    <div class="panel-header">调度总览</div>
+    <div class="ov-canvas" id="ov-canvas">
+      <svg class="ov-svg" id="ov-svg" aria-hidden="true">
+        <path id="ov-path-wake" class="ov-path"></path>
+        <path id="ov-path-dispatch" class="ov-path"></path>
+        <path id="ov-path-delay" class="ov-path"></path>
+        <path id="ov-path-slice" class="ov-path"></path>
+        <circle id="ov-dot-dispatch" class="ov-dot" r="3" cx="0" cy="0" opacity="0"></circle>
+        <circle id="ov-dot-delay" class="ov-dot" r="3" cx="0" cy="0" opacity="0"></circle>
+        <circle id="ov-dot-slice" class="ov-dot" r="3" cx="0" cy="0" opacity="0"></circle>
+        <circle id="ov-dot-wake" class="ov-dot" r="3" cx="0" cy="0" opacity="0"></circle>
+      </svg>
+      <div class="ov-card ov-hub" id="ov-hub">
+        <div class="fc-label">调度中枢</div>
+        <div class="ov-meta">
+          <span>Tick</span><b id="ov-tick">0</b>
+          <span>os_running</span><b id="ov-os-running">0</b>
+          <span>当前</span><b id="ov-current">-</b>
+        </div>
+        <div class="ov-pend" id="ov-pend">
+          <span>SysTick</span>
+          <span class="ov-stem"></span>
+          <span>PendSV <b id="ov-pendsv">空闲</b></span>
+        </div>
+      </div>
+      <div class="ov-card" data-state="ready" id="ov-ready-card">
+        <div class="fc-label">READY · 就绪 <span class="fc-count" id="ov-ready-count">0</span></div>
+        <div class="fc-tasks" id="ov-ready"></div>
+      </div>
+      <div class="ov-card" data-state="running" id="ov-running-card">
+        <div class="fc-label">RUNNING · 运行 <span class="fc-count" id="ov-running-count">0</span></div>
+        <div class="fc-tasks" id="ov-running"></div>
+      </div>
+      <div class="ov-card" data-state="delayed" id="ov-delayed-card">
+        <div class="fc-label">DELAYED · 延时 <span class="fc-count" id="ov-delayed-count">0</span></div>
+        <div class="fc-tasks" id="ov-delayed"></div>
+      </div>
+    </div>
+  </section>
 
   <div class="main">
     <section class="panel code-panel">
@@ -339,8 +495,15 @@ button:disabled { opacity:.4; cursor:not-allowed; }
             <div class="fc-tasks" id="fc-ready"></div>
           </div>
           <div class="fc-arrow" id="arrow-dispatch">
-            <svg viewBox="0 0 12 12"><path d="M6 0 L6 8 M2 5 L6 9 L10 5"
-              fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="fc-stem-wrap">
+              <svg class="fc-stem-svg" viewBox="0 0 12 20" aria-hidden="true">
+                <path class="fc-stem" d="M6 0 V20" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <i class="fc-dot"></i>
+              <svg class="fc-head-svg" viewBox="0 0 12 12" aria-hidden="true">
+                <path class="fc-head" d="M2 4 L6 9 L10 4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
             <span>被调度</span>
           </div>
           <div class="fc-state" data-state="running">
@@ -353,8 +516,15 @@ button:disabled { opacity:.4; cursor:not-allowed; }
             <span class="fc-loop-line"></span>
           </div>
           <div class="fc-arrow" id="arrow-delay">
-            <svg viewBox="0 0 12 12"><path d="M6 0 L6 8 M2 5 L6 9 L10 5"
-              fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="fc-stem-wrap">
+              <svg class="fc-stem-svg" viewBox="0 0 12 20" aria-hidden="true">
+                <path class="fc-stem" d="M6 0 V20" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <i class="fc-dot"></i>
+              <svg class="fc-head-svg" viewBox="0 0 12 12" aria-hidden="true">
+                <path class="fc-head" d="M2 4 L6 9 L10 4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
             <span>os_delay()</span>
           </div>
           <div class="fc-state" data-state="delayed">
@@ -632,6 +802,9 @@ let S = null;
 let prevRegs = {};
 let prevStacks = {};
 let prevTaskStates = {};
+let overviewHighlight = undefined;
+let particlePhase = 0;
+let particleStamp = 0;
 let currentStepIdx = -1;
 let isPlaying = false;
 let autoTimer = null;
@@ -917,7 +1090,8 @@ function escapeHtml(text) {
 function render() {
   renderHeader();
   renderCode();
-  renderFlowchart();
+  const groups = renderFlowchart();
+  renderOverview(groups);
   renderRegs();
   renderTasks();
   renderLists();
@@ -968,7 +1142,7 @@ function renderCode() {
   }
 }
 
-function renderFlowchart() {
+function collectTaskGroups() {
   const groups = { ready: [], running: [], delayed: [] };
   Object.keys(S.tasks).forEach(function (name) {
     const state = taskVisualState(name);
@@ -979,37 +1153,193 @@ function renderFlowchart() {
       return b.priority - a.priority || a.name.localeCompare(b.name);
     });
   });
+  return groups;
+}
 
+function taskGroupHtml(items, state) {
+  if (items.length === 0) {
+    return '<span class="fc-empty">（空）</span>';
+  }
+  return items.map(function (item) {
+    const changed = prevTaskStates[item.name] !== state;
+    return '<span class="fc-task ' + state + (changed ? ' pop' : '') + '">' +
+      item.name + '<small>P' + item.priority + '</small></span>';
+  }).join('');
+}
+
+function paintStateBoxes(prefix, groups) {
+  ['ready', 'running', 'delayed'].forEach(function (state) {
+    document.getElementById(prefix + '-' + state + '-count').textContent =
+      String(groups[state].length);
+    document.getElementById(prefix + '-' + state).innerHTML =
+      taskGroupHtml(groups[state], state);
+  });
+}
+
+function setActiveClass(el, on) {
+  if (!el) {
+    return;
+  }
+  if (el.classList.contains('active') !== on) {
+    el.classList.toggle('active', on);
+  }
+}
+
+function syncFlowActive() {
+  const activeId = S.flowHighlight ? 'arrow-' + S.flowHighlight : '';
+  document.querySelectorAll('.fc-arrow, .fc-loop').forEach(function (el) {
+    setActiveClass(el, el.id === activeId);
+  });
+  ['dispatch', 'delay', 'slice', 'wake'].forEach(function (name) {
+    setActiveClass(document.getElementById('ov-path-' + name), S.flowHighlight === name);
+  });
+  if (S.flowHighlight !== overviewHighlight) {
+    overviewHighlight = S.flowHighlight;
+    particlePhase = 0;
+    particleStamp = 0;
+  }
+}
+
+function renderFlowchart() {
+  const groups = collectTaskGroups();
+  paintStateBoxes('fc', groups);
+  paintStateBoxes('ov', groups);
   const nextStates = {};
   ['ready', 'running', 'delayed'].forEach(function (state) {
-    const box = document.getElementById('fc-' + state);
-    const countEl = document.getElementById('fc-' + state + '-count');
-    countEl.textContent = String(groups[state].length);
-    if (groups[state].length === 0) {
-      box.innerHTML = '<span class="fc-empty">（空）</span>';
-    } else {
-      box.innerHTML = groups[state].map(function (item) {
-        const changed = prevTaskStates[item.name] !== state;
-        nextStates[item.name] = state;
-        return '<span class="fc-task ' + state + (changed ? ' pop' : '') + '">' +
-          item.name + '<small>P' + item.priority + '</small></span>';
-      }).join('');
-    }
     groups[state].forEach(function (item) {
       nextStates[item.name] = state;
     });
   });
   prevTaskStates = nextStates;
+  syncFlowActive();
+  return groups;
+}
 
-  document.querySelectorAll('.fc-arrow, .fc-loop').forEach(function (el) {
-    el.classList.remove('active');
-  });
-  if (S.flowHighlight) {
-    const arrow = document.getElementById('arrow-' + S.flowHighlight);
-    if (arrow) {
-      arrow.classList.add('active');
-    }
+function renderOverview(groups) {
+  document.getElementById('ov-tick').textContent = String(S.ticks);
+  document.getElementById('ov-os-running').textContent = String(S.osRunning);
+  document.getElementById('ov-current').textContent = S.current || '-';
+  const pendLabel = document.getElementById('ov-pendsv');
+  const pending = !!S.pendsv;
+  pendLabel.textContent = pending ? '挂起' : '空闲';
+  if (pendLabel.classList.contains('hot') !== pending) {
+    pendLabel.classList.toggle('hot', pending);
   }
+  setActiveClass(document.getElementById('ov-pend'), pending);
+  scheduleOverviewWires();
+  return groups;
+}
+
+function scheduleOverviewWires() {
+  requestAnimationFrame(layoutOverviewWires);
+}
+
+function cardBox(el, canvasRect) {
+  const rect = el.getBoundingClientRect();
+  return {
+    left: rect.left - canvasRect.left,
+    right: rect.right - canvasRect.left,
+    top: rect.top - canvasRect.top,
+    bottom: rect.bottom - canvasRect.top,
+    cx: rect.left - canvasRect.left + rect.width / 2,
+    cy: rect.top - canvasRect.top + rect.height / 2
+  };
+}
+
+function px(value) {
+  return Math.round(value);
+}
+
+function setPathD(id, d) {
+  const path = document.getElementById(id);
+  if (path && path.getAttribute('d') !== d) {
+    path.setAttribute('d', d);
+  }
+}
+
+/** 曲线走卡片间隙和上下留白，避免穿过 READY。只改 d，不重建节点。 */
+function layoutOverviewWires() {
+  const canvas = document.getElementById('ov-canvas');
+  const hub = document.getElementById('ov-hub');
+  const ready = document.getElementById('ov-ready-card');
+  const running = document.getElementById('ov-running-card');
+  const delayed = document.getElementById('ov-delayed-card');
+  if (!canvas || !hub || !ready || !running || !delayed) {
+    return;
+  }
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (width < 1 || height < 1) {
+    return;
+  }
+  const svg = document.getElementById('ov-svg');
+  svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+  const origin = canvas.getBoundingClientRect();
+  const hubBox = cardBox(hub, origin);
+  const readyBox = cardBox(ready, origin);
+  const runningBox = cardBox(running, origin);
+  const delayedBox = cardBox(delayed, origin);
+  const lane = 6;
+  setPathD('ov-path-dispatch',
+    'M ' + px(hubBox.right) + ' ' + px(hubBox.top + 10) +
+    ' C ' + px(hubBox.right) + ' ' + lane + ', ' +
+    px(runningBox.left) + ' ' + lane + ', ' +
+    px(runningBox.left) + ' ' + px(runningBox.top + 10));
+  const midX = (runningBox.right + delayedBox.left) / 2;
+  const bow = 14;
+  setPathD('ov-path-delay',
+    'M ' + px(runningBox.right) + ' ' + px(runningBox.cy) +
+    ' C ' + px(midX) + ' ' + px(runningBox.cy - bow) + ', ' +
+    px(midX) + ' ' + px(delayedBox.cy - bow) + ', ' +
+    px(delayedBox.left) + ' ' + px(delayedBox.cy));
+  const peakY = Math.max(4, runningBox.top - 12);
+  setPathD('ov-path-slice',
+    'M ' + px(runningBox.cx) + ' ' + px(runningBox.top) +
+    ' C ' + px(runningBox.cx + 10) + ' ' + px(peakY) + ', ' +
+    px(runningBox.right - 10) + ' ' + px(peakY) + ', ' +
+    px(runningBox.right - 4) + ' ' + px(runningBox.top + 14));
+  const floor = height - 6;
+  setPathD('ov-path-wake',
+    'M ' + px(delayedBox.cx) + ' ' + px(delayedBox.bottom) +
+    ' C ' + px(delayedBox.cx) + ' ' + px(floor) + ', ' +
+    px(readyBox.cx) + ' ' + px(floor) + ', ' +
+    px(readyBox.cx) + ' ' + px(readyBox.bottom));
+}
+
+function tickOverviewParticles(now) {
+  requestAnimationFrame(tickOverviewParticles);
+  const name = S && S.flowHighlight;
+  ['dispatch', 'delay', 'slice', 'wake'].forEach(function (key) {
+    const dot = document.getElementById('ov-dot-' + key);
+    if (!dot || key === name) {
+      return;
+    }
+    if (dot.getAttribute('opacity') !== '0') {
+      dot.setAttribute('opacity', '0');
+    }
+  });
+  if (!name) {
+    return;
+  }
+  const path = document.getElementById('ov-path-' + name);
+  const dot = document.getElementById('ov-dot-' + name);
+  if (!path || !dot || !path.getAttribute('d')) {
+    return;
+  }
+  if (!particleStamp) {
+    particleStamp = now;
+  }
+  const dt = Math.min(48, now - particleStamp);
+  particleStamp = now;
+  particlePhase = (particlePhase + dt / 900) % 1;
+  const len = path.getTotalLength();
+  if (!len) {
+    return;
+  }
+  const point = path.getPointAtLength(len * particlePhase);
+  dot.setAttribute('cx', String(point.x));
+  dot.setAttribute('cy', String(point.y));
+  dot.setAttribute('opacity', '1');
 }
 
 function renderRegs() {
@@ -1647,6 +1977,16 @@ document.getElementById('speed').addEventListener('input', function (event) {
 
 initState();
 render();
+
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  requestAnimationFrame(tickOverviewParticles);
+}
+if (window.ResizeObserver) {
+  const overviewObserver = new ResizeObserver(function () {
+    layoutOverviewWires();
+  });
+  overviewObserver.observe(document.getElementById('ov-canvas'));
+}
 
 if (typeof globalThis !== 'undefined' && globalThis.__RTOS_TEST__) {
   globalThis.__rtosDemo = {

@@ -10,3 +10,4 @@
 - 2026-11-24：`f103-manual-rtos` 已烧录（未做全片擦除）。第一次停核是 HardFault INVPC，原因是状态任务 `printf` 写穿 1024 字节栈。栈改为 384 字后 CFSR 为 0，显示任务在刷 SH1106，状态任务在 `os_delay`。COM9 复位后抓 8 秒仍是 `bytes=0`，USART 侧 TC 已置位。外设连接与 manual-reg 相同。
 - 2026-11-24：调度器介绍页 `doc/learn/f103-manual-rtos-scheduler.html`。单步按 `os.c` / `port.c`：时间片 1，同级才轮转，抢占不拨链表头，`BL schedule_next` 前 `push {lr}`。演示把 usart 画成 2 拍、key 画成 4 拍，源码仍是 `os_delay(1)` 与 `os_delay(5)`。
 - 2026-11-25：同一页在页头下增加深色点阵「调度总览」（中枢 / READY / RUNNING / DELAYED，贝塞尔虚线与光点）。右侧原流程图连线也流动。配色和单步脚本未改。约 850px 高时总览 190px、任务行 150px、底栏 104px，避免流程图被挤没。
+- 2026-11-25：`doc/learn/f103-manual-rtos-timeslice.html` 用 key 与 usart（都是优先级 4，时间片 1 ms）走九个阶段；`doc/learn/f103-manual-rtos-pendsv.html` 对照 `port.c` 的 PendSV，16 条指令。页上地址是示意。切到 PSP 靠 `MSR PSP` 和 `0xFFFFFFFD`，不写 CONTROL，PendSV 里不写 BASEPRI。这两页没有改固件。
